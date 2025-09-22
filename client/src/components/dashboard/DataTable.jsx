@@ -35,11 +35,16 @@ export function DataTable({
     }
   };
 
-  const filteredData = data.filter((item) =>
-    Object.values(item).some((value) =>
+  // const filteredData = data.filter((item) =>
+  //   Object.values(item).some((value) =>
+  //     value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+  //   )
+  // );
+  const filteredData = Array.isArray(data) ? data.filter((item) =>
+    item && Object.values(item).some((value) =>
       value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
     )
-  );
+  ) : [];
 
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortColumn) return 0;

@@ -1,16 +1,30 @@
-import { useState } from 'react';
-import { categories } from '../../data/mockData';
+import { useEffect, useState } from 'react';
+// import { categories } from '../../data/mockData';
 import { DataTable } from '../../components/dashboard/DataTable';
 import { CategoryForm } from '../../components/dashboard/CategoryForm';
 import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../hooks/use-toast';
+// eslint-disable-next-line no-unused-vars
+import { createCategory, createCategoryWithSubcategories, fetchAllCategories, fetchCategoryById } from '../../api/category/categoryApi';
 
 const CategoryManagement = () => {
-  const [categoryList, setCategoryList] = useState(categories);
+  const [categoryList, setCategoryList] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [editingCategory, setEditingCategory] = useState(undefined);
   const { toast } = useToast();
 
+  const genderMap = {
+    male: "Nam",
+    female: "Nữ",
+    kids: "Trẻ em",
+  };
+
+  const typeMap = {
+    clothing: "Quần áo",
+    shoes: "Giày dép",
+    accessories: "Phụ kiện thể thao",
+  };
   const columns = [
     {
       key: 'icon',
@@ -18,15 +32,26 @@ const CategoryManagement = () => {
       render: (value) => <span className="text-2xl">{value}</span>,
     },
     { key: 'name', label: 'Tên danh mục', sortable: true },
-    { key: 'id', label: 'Mã danh mục', sortable: true },
+    { 
+      key: 'gender', 
+      label: 'Giới tính', 
+      sortable: true,
+      render: (value) => genderMap[value] || value, // map DB value sang label
+    },
+    { 
+      key: 'type', 
+      label: 'Loại sản phẩm', 
+      sortable: true,
+      render: (value) => typeMap[value] || value, // map DB value sang label
+    },
     {
       key: 'subcategories',
       label: 'Danh mục con',
       render: (value) => (
         <div className="flex flex-wrap gap-1">
           {value.slice(0, 3).map((sub, index) => (
-            <Badge key={index} variant="secondary" className="text-xs">
-              {sub}
+            <Badge key={sub._id || index} variant="secondary" className="text-xs">
+              {sub.name}
             </Badge>
           ))}
           {value.length > 3 && (
@@ -39,38 +64,60 @@ const CategoryManagement = () => {
     },
   ];
 
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await fetchAllCategories();
+        console.log(categories);
+        setCategoryList(categories);
+      // eslint-disable-next-line no-unused-vars
+      } catch (err) {
+        toast({
+          title: "Lỗi",
+          description: "Không thể tải danh mục",
+          variant: "destructive",
+        });
+      }
+    };
+    loadCategories();
+  }, [toast]);
+
   const handleAdd = () => {
     setEditingCategory(undefined);
     setIsFormOpen(true);
+    setIsReadOnly(false);
   };
 
   const handleEdit = (category) => {
     setEditingCategory(category);
     setIsFormOpen(true);
+    setIsReadOnly(false);
   };
 
-  const handleFormSubmit = (categoryData) => {
-    if (categoryData.id) {
-      // Editing existing category
-      setCategoryList(
-        categoryList.map((cat) =>
-          cat.id === categoryData.id ? { ...categoryData, id: categoryData.id } : cat
-        )
-      );
+  const handleFormSubmit = async (categoryData) => {
+    try {
+      if (categoryData.id) {
+      // Nếu bạn muốn có API update thì sẽ viết sau
       toast({
-        title: 'Đã cập nhật danh mục',
-        description: `${categoryData.name} đã được cập nhật thành công`,
+        title: "Cập nhật chưa được hỗ trợ",
+        description: "API update sẽ được thêm sau",
       });
     } else {
-      // Adding new category
-      const newCategory = {
-        ...categoryData,
-        id: `cat_${Date.now()}`,
-      };
+      console.log(categoryData);
+      const newCategory = await createCategoryWithSubcategories(categoryData);
       setCategoryList([...categoryList, newCategory]);
       toast({
-        title: 'Đã thêm danh mục',
-        description: `${categoryData.name} đã được thêm thành công`,
+        title: "Đã thêm danh mục",
+        description: `${newCategory.name} đã được thêm thành công`,
+      });
+    }
+    // eslint-disable-next-line no-unused-vars
+    } catch (error) {
+      console.log('error', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể thêm danh mục" ,
+        variant: "destructive",
       });
     }
   };
@@ -83,11 +130,11 @@ const CategoryManagement = () => {
     });
   };
 
-  const handleView = (category) => {
-    toast({
-      title: 'Chi tiết danh mục',
-      description: `Xem chi tiết ${category.name}`,
-    });
+  const handleView = async (category) => {
+    console.log("View category:", category);
+    setEditingCategory(category);
+    setIsReadOnly(true);
+    setIsFormOpen(true);
   };
 
   return (
@@ -110,6 +157,7 @@ const CategoryManagement = () => {
 
       <CategoryForm
         open={isFormOpen}
+        readonly={isReadOnly}
         onOpenChange={setIsFormOpen}
         category={editingCategory}
         onSubmit={handleFormSubmit}
