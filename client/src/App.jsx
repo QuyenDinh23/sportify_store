@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/dashboard/DashBoard";
 import Overview from "./pages/dashboard/Overview";
 import CategoryManagement from "./pages/dashboard/CategoryManagement";
+import BrandManagement from "./pages/dashboard/BrandManagement";
 
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Dashboard />}>
             <Route index element={<Overview />} />
             <Route path="/dashboard/categories" element={<CategoryManagement />} />
+            <Route path="/dashboard/brands" element={<BrandManagement />} />
           </Route>
         </Routes>
       </BrowserRouter>
