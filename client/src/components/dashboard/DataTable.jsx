@@ -20,9 +20,10 @@ export function DataTable({
   onEdit,
   onDelete,
   onView,
-  searchPlaceholder = "Tìm kiếm..."
+  searchPlaceholder = "Tìm kiếm...",
+  searchTerm,
+  onSearch
 }) {
-  const [searchTerm, setSearchTerm] = useState('');
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
 
@@ -40,22 +41,22 @@ export function DataTable({
   //     value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
   //   )
   // );
-  const filteredData = Array.isArray(data) ? data.filter((item) =>
-    item && Object.values(item).some((value) =>
-      value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  ) : [];
+  // const filteredData = Array.isArray(data) ? data.filter((item) =>
+  //   item && Object.values(item).some((value) =>
+  //     value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+  //   )
+  // ) : [];
 
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (!sortColumn) return 0;
+  // const sortedData = [...filteredData].sort((a, b) => {
+  //   if (!sortColumn) return 0;
     
-    const aValue = a[sortColumn];
-    const bValue = b[sortColumn];
+  //   const aValue = a[sortColumn];
+  //   const bValue = b[sortColumn];
     
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+  //   if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+  //   if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+  //   return 0;
+  // });
 
   return (
     <Card>
@@ -68,7 +69,7 @@ export function DataTable({
               <Input
                 placeholder={searchPlaceholder}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => onSearch(e.target.value)}
                 className="pl-10 w-full sm:w-64"
               />
             </div>
@@ -112,14 +113,14 @@ export function DataTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedData.length === 0 ? (
+              {data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length + 1} className="text-center py-8">
                     Không có dữ liệu
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedData.map((item) => (
+                data.map((item) => (
                   <TableRow key={item.id}>
                     {columns.map((column) => (
                       <TableCell key={column.key}>

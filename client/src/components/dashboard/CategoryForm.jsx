@@ -27,22 +27,8 @@ import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { X, Plus, Shirt, Waves, Footprints, Watch, Glasses, Backpack, Trophy, Target, Dumbbell, Bike, Users, Calendar, MapPin } from 'lucide-react';
-
-const availableIcons = [
-  { name: 'Shirt', icon: Shirt, label: 'Áo quần' },
-  { name: 'Waves', icon: Waves, label: 'Đồ bơi' },
-  { name: 'Footprints', icon: Footprints, label: 'Giày dép' },
-  { name: 'Watch', icon: Watch, label: 'Phụ kiện' },
-  { name: 'Glasses', icon: Glasses, label: 'Kính' },
-  { name: 'Backpack', icon: Backpack, label: 'Túi xách' },
-  { name: 'Trophy', icon: Trophy, label: 'Thể thao' },
-  { name: 'Target', icon: Target, label: 'Mục tiêu' },
-  { name: 'Dumbbell', icon: Dumbbell, label: 'Gym' },
-  { name: 'Bike', icon: Bike, label: 'Xe đạp' },
-  { name: 'Users', icon: Users, label: 'Nhóm' },
-  { name: 'Calendar', icon: Calendar, label: 'Lịch' },
-  { name: 'MapPin', icon: MapPin, label: 'Địa điểm' },
-];
+import { availableIcons } from '../../data/icons';
+import { checkCategoryNameExists } from '../../api/category/categoryApi';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Tên danh mục là bắt buộc'),
@@ -55,7 +41,7 @@ const categorySchema = z.object({
   }),
 });
 
-export const CategoryForm = ({ open, readonly, onOpenChange, category, onSubmit }) => {
+export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, onSubmit }) => {
   const [subcategories, setSubcategories] = useState(category?.subcategories || []);
   const [newSubcategory, setNewSubcategory] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(category?.icon || '');
@@ -98,9 +84,16 @@ export const CategoryForm = ({ open, readonly, onOpenChange, category, onSubmit 
     form.setValue('icon', iconName);
   };
 
-  const handleSubmit = (values) => {
+  const handleSubmit = async (values) => {
+    // Kiểm tra tên category tồn tại chưa
+    const res = await checkCategoryNameExists(values.name, category?._id);
+    if (res) {
+      form.setError("name", { type: "manual", message: "Tên danh mục đã tồn tại" });
+      return;
+    }
     const categoryData = {
-      ...(category?.id && { id: category.id }),
+      // ...(category?.id && { id: category.id }),
+      id: category?._id,
       name: values.name,
       icon: values.icon,
       gender : values.gender,
@@ -250,32 +243,54 @@ export const CategoryForm = ({ open, readonly, onOpenChange, category, onSubmit 
               
               {subcategories.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {subcategories.map((sub, index) => (
+                  {subcategories.map((sub, index) => {
+                    // const label = readonly ? sub.name : sub;
+                    const label = (readonly || editing) 
+                    ? (typeof sub === 'object' && sub !== null ? sub.name : sub) 
+                    : sub;
+                    return (
                     <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                      {sub.name}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0"
-                        onClick={() => handleRemoveSubcategory(index)}
-                        disabled={readonly}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
+                      {label}
+                      {!readonly && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0"
+                          onClick={() => handleRemoveSubcategory(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
                     </Badge>
-                  ))}
+                  );
+                })}
                 </div>
               )}
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => {
+                onOpenChange(false);
+                if (!readonly && !editing) {
+                  form.reset({
+                    name: '',
+                    icon: '',
+                    gender: '',
+                    type: ''
+                  });
+                  setSelectedIcon('');
+                  setSubcategories([]);
+                  setNewSubcategory('');
+                }
+              }}>
                 Hủy
               </Button>
-              <Button type="submit">
-                {category ? 'Cập nhật' : 'Thêm mới'}
-              </Button>
+              {!readonly && (
+                <Button type="submit">
+                  {category ? 'Cập nhật' : 'Thêm mới'}
+                </Button>
+              )}
             </div>
           </form>
         </Form>
