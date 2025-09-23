@@ -93,7 +93,6 @@ const CategoryManagement = () => {
   //   };
   //   loadCategories();
   // }, [toast]);
-  useEffect(() => {
   const loadCategories = async () => {
     try {
       console.log("Current page:", currentPage);
@@ -111,8 +110,9 @@ const CategoryManagement = () => {
       });
     }
   };
-  loadCategories();
-}, [currentPage, searchTerm, toast]);
+  useEffect(() => {
+    loadCategories();
+  }, [currentPage, searchTerm, toast]);
 const handlePageChange = (page) => {
   setCurrentPage(page);
 };
@@ -157,6 +157,7 @@ const handlePageChange = (page) => {
           description: `${newCategory.name} đã được thêm thành công`,
         });
       }
+      loadCategories();
     // eslint-disable-next-line no-unused-vars
     } catch (error) {
       console.log('error', error);

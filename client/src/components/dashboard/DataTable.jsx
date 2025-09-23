@@ -36,28 +36,6 @@ export function DataTable({
     }
   };
 
-  // const filteredData = data.filter((item) =>
-  //   Object.values(item).some((value) =>
-  //     value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-  //   )
-  // );
-  // const filteredData = Array.isArray(data) ? data.filter((item) =>
-  //   item && Object.values(item).some((value) =>
-  //     value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-  //   )
-  // ) : [];
-
-  // const sortedData = [...filteredData].sort((a, b) => {
-  //   if (!sortColumn) return 0;
-    
-  //   const aValue = a[sortColumn];
-  //   const bValue = b[sortColumn];
-    
-  //   if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-  //   if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-  //   return 0;
-  // });
-
   return (
     <Card>
       <CardHeader>

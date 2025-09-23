@@ -207,11 +207,11 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
               name="gender"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Giới tính</FormLabel>
+                  <FormLabel>Dành cho</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readonly}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Chọn giới tính" />
+                        <SelectValue placeholder="Chọn đối tượng" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
