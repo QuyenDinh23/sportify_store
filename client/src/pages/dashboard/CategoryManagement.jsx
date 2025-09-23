@@ -79,8 +79,6 @@ const CategoryManagement = () => {
 
   const loadCategories = async () => {
     try {
-      console.log("Current page:", currentPage);
-      console.log("Limit: ", itemsPerPage); 
       // Gọi API phân trang
       const res = await fetchCategoriesByPage(currentPage, itemsPerPage, searchTerm);
       setCategoryList(res.categories);
@@ -110,7 +108,6 @@ const handlePageChange = (page) => {
   };
 
   const handleEdit = (category) => {
-    console.log("Edit category:", category);
     setEditingCategory(category);
     setIsEditing(true);
     setIsFormOpen(true);
@@ -133,7 +130,6 @@ const handlePageChange = (page) => {
           description: `${updatedCategory.name} đã được cập nhật thành công`,
         });
       } else {
-        console.log(categoryData);
         const newCategory = await createCategoryWithSubcategories(categoryData);
         setCategoryList([...categoryList, newCategory]);
         toast({

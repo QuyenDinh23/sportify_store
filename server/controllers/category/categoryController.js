@@ -156,7 +156,6 @@ export const checkCategoryName = async (req, res) => {
 };
 
 // Lấy danh sách category theo phân trang
-// controller
 export const getCategoriesByPage = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;

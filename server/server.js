@@ -6,6 +6,7 @@ import { URL, DB_NAME, PORT, HOST } from "./config.js";
 import categoryRoutes from "./routes/category/categoryRoutes.js";
 import subcategoryRoutes from "./routes/category/subCategoryRoutes.js";
 import imageRoutes from "./routes/image/imageRoutes.js";
+import brandRoutes from "./routes/brand/brandRoutes.js";
 
 //create server
 const server = express();
@@ -21,6 +22,8 @@ server.use(cookieParser());
 server.use("/api/categories", categoryRoutes);
 server.use("/api/subcategories", subcategoryRoutes);
 server.use("/api/upload", imageRoutes)
+server.use("/api/brands", brandRoutes)
+
 
 //connect tới DB
 mongoose.connect(`${URL}${DB_NAME}`)

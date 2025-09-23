@@ -1,15 +1,21 @@
-import { useState } from 'react';
-import { brands, subcategories } from '../../data/mockData';
+import { useEffect, useState } from 'react';
 import { DataTable } from '../../components/dashboard/DataTable';
 import { BrandForm } from '../../components/dashboard/BrandForm';
 import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../hooks/use-toast';
+import { createBrand, fetchBrandsByPage, updateBrand } from '../../api/brand/brandApi';
+import Pagination from '../../components/pagination/Pagination';
 
 const BrandManagement = () => {
-  const [brandList, setBrandList] = useState(brands);
-  const [subcategoryList] = useState(subcategories);
+  const [brandList, setBrandList] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState();
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const itemsPerPage = 1;
   const { toast } = useToast();
 
   const columns = [
@@ -21,7 +27,7 @@ const BrandManagement = () => {
           <img
             src={value}
             alt="Brand logo"
-            className="w-12 h-12 object-cover rounded-md"
+            className="w-20 h-20 object-contain rounded-md"
           />
         ) : (
           <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center text-xs">
@@ -31,80 +37,84 @@ const BrandManagement = () => {
     },
     { key: 'name', label: 'Tên thương hiệu', sortable: true },
     {
-      key: 'subcategoryId',
-      label: 'Danh mục con',
-      sortable: true,
-      render: (value) => {
-        const subcategory = subcategoryList.find((sc) => sc.id === value);
-        return subcategory ? (
-          <Badge variant="outline">{subcategory.name}</Badge>
-        ) : (
-          'N/A'
-        );
-      },
-    },
-    {
-      key: 'subBrands',
-      label: 'Dòng sản phẩm',
-      render: (value = []) => (
-        <div className="flex flex-wrap gap-1">
-          {value.slice(0, 2).map((sub, index) => (
-            <Badge key={index} variant="secondary" className="text-xs">
-              {sub.name}
-            </Badge>
-          ))}
-          {value.length > 2 && (
-            <Badge variant="outline" className="text-xs">
-              +{value.length - 2} khác
-            </Badge>
-          )}
-          {value.length === 0 && (
-            <span className="text-muted-foreground text-sm">Chưa có</span>
-          )}
-        </div>
-      ),
-    },
-    {
       key: 'description',
       label: 'Mô tả',
-      render: (value) => value || 'Chưa có mô tả',
+      render: (value) =>
+        value
+          ? value.length > 100
+            ? value.substring(0, 100) + "..."
+            : value
+          : "Chưa có mô tả",
     },
   ];
 
+  const loadBrands = async () => {
+    try {
+      //Gọi API phân trang
+      const res = await fetchBrandsByPage(currentPage, itemsPerPage, searchTerm);
+      setBrandList(res.brands);
+      setTotalPages(res.totalPages);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: `${error}`,
+        variant: "destructive",
+      });
+    }
+  }
+  useEffect(() => {
+      loadBrands();
+  }, [currentPage, searchTerm, toast]);
+  
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
   const handleAdd = () => {
     setEditingBrand(undefined);
+    setIsEditing(false);
+    setIsReadOnly(false);
     setIsFormOpen(true);
   };
 
   const handleEdit = (brand) => {
     setEditingBrand(brand);
+    setIsEditing(true);
     setIsFormOpen(true);
+    setIsReadOnly(false);
   };
 
-  const handleFormSubmit = (brandData) => {
-    if (brandData.id) {
-      // Editing existing brand
-      setBrandList(
-        brandList.map((b) =>
-          b.id === brandData.id ? { ...brandData, id: brandData.id } : b
-        )
-      );
+  const handleFormSubmit = async (brandData) => {
+    try {
+      if (brandData.id) {
+        // Editing existing brand
+        const updatedBrand = await updateBrand(brandData.id, brandData);
+        //Cập nhật lại state brandList
+        setBrandList((prev) =>
+          prev.map((b) => (b.id === updatedBrand.id ? updatedBrand : b))
+        );
+        toast({
+          title: 'Đã cập nhật thương hiệu',
+          description: `${brandData.name} đã được cập nhật thành công`,
+        });
+      } else {
+        // Adding new brand
+        const newBrand = await createBrand(brandData);
+        setBrandList([...brandList, newBrand]);
+        toast({
+          title: 'Đã thêm thương hiệu',
+          description: `${brandData.name} đã được thêm thành công`,
+        });
+      }
+      loadBrands();
+    } catch (error) {
+      console.log('error', error);
       toast({
-        title: 'Đã cập nhật thương hiệu',
-        description: `${brandData.name} đã được cập nhật thành công`,
-      });
-    } else {
-      // Adding new brand
-      const newBrand = {
-        ...brandData,
-        id: `brand_${Date.now()}`,
-      };
-      setBrandList([...brandList, newBrand]);
-      toast({
-        title: 'Đã thêm thương hiệu',
-        description: `${brandData.name} đã được thêm thành công`,
+        title: "Lỗi",
+        description: `${error}` ,
+        variant: "destructive",
       });
     }
+    
   };
 
   const handleDelete = (brand) => {
@@ -116,10 +126,11 @@ const BrandManagement = () => {
   };
 
   const handleView = (brand) => {
-    toast({
-      title: 'Chi tiết thương hiệu',
-      description: `Xem chi tiết ${brand.name}`,
-    });
+    console.log('brand', brand); 
+    setEditingBrand(brand);
+    setIsEditing(false);
+    setIsReadOnly(true);
+    setIsFormOpen(true);
   };
 
   return (
@@ -140,14 +151,23 @@ const BrandManagement = () => {
         onDelete={handleDelete}
         onView={handleView}
         searchPlaceholder="Tìm kiếm thương hiệu..."
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
       />
 
       <BrandForm
         open={isFormOpen}
+        readonly={isReadOnly}
+        editing={isEditing}
         onOpenChange={setIsFormOpen}
         brand={editingBrand}
-        subcategories={subcategoryList}
         onSubmit={handleFormSubmit}
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
       />
     </div>
   );
