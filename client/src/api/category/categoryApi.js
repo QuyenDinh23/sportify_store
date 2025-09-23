@@ -40,4 +40,32 @@ export const createCategoryWithSubcategories = async (data) => {
     throw err;
   }
 };
+// Cập nhật category
+export const updateCategory = async (id, data) => {
+  try {
+    const response = await axiosInstance.put(`/categories/${id}`, data);
+    return response.data.category;
+  } catch (err) {
+    console.error(`Lỗi khi update category id=${id}:`, err);
+    throw err;
+  }
+};
+// Kiểm tra tên category đã tồn tại hay chưa
+export const checkCategoryNameExists = async (name, id = null) => {
+  try {
+    const params = id ? { name, id } : { name };
+    const response = await axiosInstance.get("/categories/check-name-exist", { params });
+    return response.data.exists; 
+  } catch (err) {
+    console.error("Lỗi khi kiểm tra tên category:", err);
+    throw err;
+  }
+};
+// Phân trang danh sách category 
+export const fetchCategoriesByPage = async (page, limit, search) => {
+  const res = await axiosInstance.get("/categories/paging", {
+    params: { page, limit, search },
+  });
+  return res.data; // { categories: [...], totalPages: n }
+};
 
