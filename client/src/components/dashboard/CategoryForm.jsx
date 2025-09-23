@@ -217,7 +217,8 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
                     <SelectContent>
                       <SelectItem value="male">Nam</SelectItem>
                       <SelectItem value="female">Nữ</SelectItem>
-                      <SelectItem value="kids">Trẻ em</SelectItem>
+                      <SelectItem value="boy">Bé trai (8-16 tuổi)</SelectItem>
+                      <SelectItem value="girl">Bé gái (8-16 tuổi)</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

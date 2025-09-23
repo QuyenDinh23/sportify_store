@@ -33,7 +33,7 @@ const brandSchema = z.object({
   description: z.string().optional(),
 });
 
-export const BrandForm = ({ open, onOpenChange, brand, subcategories, onSubmit }) => {
+export const BrandForm = ({ open, onOpenChange, brand, onSubmit }) => {
   const form = useForm({
     resolver: zodResolver(brandSchema),
     defaultValues: {
@@ -83,44 +83,36 @@ export const BrandForm = ({ open, onOpenChange, brand, subcategories, onSubmit }
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="subcategoryId"
-              render={({ field }) => (
+            {/* <FormField name="image" control={form.control} rules={{ required: "Vui lòng chọn hình ảnh" }} render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Danh mục con</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn danh mục con" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {subcategories.map((subcategory) => (
-                        <SelectItem key={subcategory.id} value={subcategory.id}>
-                          {subcategory.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="logo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Logo URL (Tùy chọn)</FormLabel>
+                  <FormLabel>Hình ảnh</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://..." {...field} />
+                    <>
+                      <Input type="file" accept="image/*" ref={fileInputRef} onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setPreview(URL.createObjectURL(file));
+                          setUploading(true);
+                          try {
+                            const url = await uploadToCloudinary(file);
+                            console.log("URL hình ảnh:", url);
+                            form.setValue("image", url);
+                          } catch (err) {
+                            console.error("Lỗi upload ảnh:", err);
+                          } finally {
+                            setUploading(false);
+                          }
+                        }
+                      }} />
+                      {uploading && <p className="text-sm text-muted">Đang tải ảnh...</p>}
+                      {preview && (
+                        <img src={preview} alt="Preview" className="mt-2 h-32 rounded-md object-cover border" />
+                      )}
+                    </>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-              )}
-            />
+              )} /> */}
 
             <FormField
               control={form.control}

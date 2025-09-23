@@ -24,7 +24,8 @@ const CategoryManagement = () => {
   const genderMap = {
     male: "Nam",
     female: "Nữ",
-    kids: "Trẻ em",
+    boy: "Bé trai (8-16 tuổi)",
+    girl: "Bé gái (8-16 tuổi)",
   };
 
   const typeMap = {
@@ -76,23 +77,6 @@ const CategoryManagement = () => {
     },
   ];
 
-  // useEffect(() => {
-  //   const loadCategories = async () => {
-  //     try {
-  //       const categories = await fetchAllCategories();
-  //       console.log(categories);
-  //       setCategoryList(categories);
-  //     // eslint-disable-next-line no-unused-vars
-  //     } catch (err) {
-  //       toast({
-  //         title: "Lỗi",
-  //         description: "Không thể tải danh mục",
-  //         variant: "destructive",
-  //       });
-  //     }
-  //   };
-  //   loadCategories();
-  // }, [toast]);
   const loadCategories = async () => {
     try {
       console.log("Current page:", currentPage);
