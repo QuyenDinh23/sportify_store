@@ -8,9 +8,15 @@ const subcategorySchema = new mongoose.Schema({
   },
   category: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Category", // tham chiếu lại Category
+    ref: "Category",
     required: true,
   },
+  brands: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Brand", 
+      },
+    ],
 }, {
   timestamps: true,
 });

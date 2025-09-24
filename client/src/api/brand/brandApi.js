@@ -45,3 +45,15 @@ export const fetchBrandsByPage = async (page, limit, search) => {
     throw err;
   }
 };
+
+// Kiểm tra brand name có tồn tại không
+export const checkBrandNameExist = async (name, id = null) => {
+  try {
+    const params = id ? { name, id } : { name };
+    const response = await axiosInstance.get("/brands/check-name-exist", {params});
+    return response.data.exists; 
+  } catch (err) {
+    console.error("Lỗi khi check brand name:", err);
+    throw err;
+  }
+};

@@ -18,7 +18,7 @@ const CategoryManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const itemsPerPage = 1;
+  const itemsPerPage = 10;
   const { toast } = useToast();
   console.log('categoryList', categoryList);
   const genderMap = {

@@ -27,6 +27,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { Button } from '../../components/ui/button';
 import { useEffect, useState } from 'react';
 import { uploadToBackend } from '../../api/image/uploadImageApi';
+import { checkBrandNameExist } from '../../api/brand/brandApi';
 
   const brandSchema = z.object({
     name: z.string().min(1, 'Tên thương hiệu là bắt buộc'),
@@ -56,6 +57,12 @@ import { uploadToBackend } from '../../api/image/uploadImageApi';
     }, [brand, form]);
 
     const handleSubmit = (values) => {
+      // Kiem tra ten brand da ton tai chua
+      const res = checkBrandNameExist(values.name, brand?._id);
+      if(res) {
+        form.setError("name", { type: "manual", message: "Tên brand đã tồn tại" });
+        return;
+      }
       const brandData = {
         id : brand?._id,
         name: values.name,

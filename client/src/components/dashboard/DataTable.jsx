@@ -22,7 +22,8 @@ export function DataTable({
   onView,
   searchPlaceholder = "Tìm kiếm...",
   searchTerm,
-  onSearch
+  onSearch,
+  headerActions
 }) {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
@@ -51,11 +52,15 @@ export function DataTable({
                 className="pl-10 w-full sm:w-64"
               />
             </div>
-            {onAdd && (
-              <Button onClick={onAdd} variant="sport" >
-                <Plus className="h-4 w-4 mr-2" />
-                Thêm mới
-              </Button>
+            {headerActions ? (
+              headerActions
+            ) : (
+              onAdd && (
+                <Button onClick={onAdd} variant="sport">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Thêm mới
+                </Button>
+              )
             )}
           </div>
         </div>

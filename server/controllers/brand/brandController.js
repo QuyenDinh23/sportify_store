@@ -94,3 +94,31 @@ export const getBrandsByPage = async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy danh sách brand" });
   }
 };
+
+// Check brand name tồn tại chưa
+export const checkBrandName = async (req, res) => {
+  try {
+    console.log("Query received:", req.query);
+    const { name, id } = req.query;
+    console.log("Name:", name);
+    console.log("Id:", id);
+
+    if (!name) {
+      return res.status(400).json({ message: "Tên thương hiệu là bắt buộc" });
+    }
+
+    let query = { name };
+
+    // Nếu có id hợp lệ thì loại bỏ brand hiện tại khi update
+    if (id && mongoose.Types.ObjectId.isValid(id)) {
+      query._id = { $ne: id };
+    }
+
+    const existingBrand = await Brand.findOne(query);
+
+    res.status(200).json({ exists: !!existingBrand });
+  } catch (error) {
+    console.error("Lỗi check brand name:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

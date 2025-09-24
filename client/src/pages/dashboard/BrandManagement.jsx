@@ -15,7 +15,7 @@ const BrandManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const itemsPerPage = 1;
+  const itemsPerPage = 10;
   const { toast } = useToast();
 
   const columns = [
@@ -126,7 +126,6 @@ const BrandManagement = () => {
   };
 
   const handleView = (brand) => {
-    console.log('brand', brand); 
     setEditingBrand(brand);
     setIsEditing(false);
     setIsReadOnly(true);

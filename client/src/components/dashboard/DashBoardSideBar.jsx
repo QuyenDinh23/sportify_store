@@ -18,6 +18,7 @@ const menuItems = [
   { title: 'Tổng quan', url: '/dashboard', icon: BarChart3 },
   { title: 'Quản lý sản phẩm', url: '/dashboard/products', icon: Package },
   { title: 'Quản lý danh mục', url: '/dashboard/categories', icon: Grid3X3 },
+  { title: 'Quản lý danh mục con', url: '/dashboard/subcategories', icon: Award },
   { title: 'Quản lý thương hiệu', url: '/dashboard/brands', icon: Award },
   { title: 'Quản lý môn thể thao', url: '/dashboard/sports', icon: Trophy },
 ];
