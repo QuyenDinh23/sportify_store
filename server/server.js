@@ -4,6 +4,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { URL, DB_NAME, PORT, HOST } from "./config.js";
 import authRoute from "./routes/auth.js";
+import categoryRoutes from "./routes/category/categoryRoutes.js";
+import subcategoryRoutes from "./routes/category/subCategoryRoutes.js";
 //create server
 const server = express();
 server.use(
@@ -16,8 +18,10 @@ server.use(
 server.use(express.json()); // Sử dụng middleware để parse JSON
 server.use(cookieParser());
 
-//route
+//Routes
 server.use("/api/auth", authRoute);
+server.use("/api/categories", categoryRoutes);
+server.use("/api/subcategories", subcategoryRoutes);
 
 //connect tới DB
 mongoose
