@@ -29,12 +29,6 @@ const SubcategoryManagement = () => {
   const itemsPerPage = 10;
   const { toast } = useToast();
 
-  // Filter subcategories based on selected category
-  // const filteredSubcategories =
-  //   selectedCategoryFilter === 'all'
-  //     ? subcategoryList
-  //     : subcategoryList.filter((sc) => sc.categoryId === selectedCategoryFilter);
-
   const columns = [
     { key: 'name', label: 'Tên danh mục con', sortable: true },
     {
