@@ -8,6 +8,8 @@ import categoryRoutes from "./routes/category/categoryRoutes.js";
 import subcategoryRoutes from "./routes/category/subCategoryRoutes.js";
 import imageRoutes from "./routes/image/imageRoutes.js";
 import brandRoutes from "./routes/brand/brandRoutes.js";
+import sportRoutes from "./routes/sport/sportRoutes.js";
+
 
 //create server
 const server = express();
@@ -25,8 +27,10 @@ server.use(cookieParser());
 server.use("/api/auth", authRoute);
 server.use("/api/categories", categoryRoutes);
 server.use("/api/subcategories", subcategoryRoutes);
-server.use("/api/upload", imageRoutes)
-server.use("/api/brands", brandRoutes)
+server.use("/api/upload", imageRoutes);
+server.use("/api/brands", brandRoutes);
+server.use("/api/sports", sportRoutes);
+
 
 
 //connect tới DB

@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +19,7 @@ import {
 } from '../../components/ui/form';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
+import { checkSportNameExist } from '../../api/sport/sportApi';
 
 const sportIcons = [
   '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏓', '🏸', '🏒', '🏑',
@@ -32,8 +34,8 @@ const sportFormSchema = z.object({
     .max(500, { message: "Mô tả không được quá 500 ký tự" })
 });
 
-export function SportForm({ sport, isOpen, onClose, onSubmit }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+// eslint-disable-next-line no-unused-vars
+export function SportForm({ sport, isOpen, readonly, editing, onClose, onSubmit }) {
 
   const form = useForm({
     resolver: zodResolver(sportFormSchema),
@@ -61,11 +63,15 @@ export function SportForm({ sport, isOpen, onClose, onSubmit }) {
   }, [sport, form]);
 
   const handleSubmit = async (data) => {
-    setIsSubmitting(true);
-
+    //Kiem tra ten sport da ton tai chua
+    const res = await checkSportNameExist(data.name, sport?._id);
+    if(res) {
+      form.setError("name", { type: "manual", message: "Tên môn thể thao đã tồn tại" });
+      return;
+    }
     try {
       const sportData = {
-        id: sport?.id || `sport-${Date.now()}`,
+        id: sport?._id,
         name: data.name,
         icon: data.icon,
         description: data.description
@@ -77,8 +83,7 @@ export function SportForm({ sport, isOpen, onClose, onSubmit }) {
     } catch (error) {
       console.error('Lỗi khi lưu môn thể thao:', error);
     } finally {
-      setIsSubmitting(false);
-    }
+      form.reset();}
   };
 
   const handleClose = () => {
@@ -91,7 +96,11 @@ export function SportForm({ sport, isOpen, onClose, onSubmit }) {
       <DialogContent className="sm:max-w-[425px] bg-background border shadow-lg">
         <DialogHeader>
           <DialogTitle>
-            {sport ? 'Chỉnh sửa môn thể thao' : 'Thêm môn thể thao mới'}
+            {readonly
+              ? 'Chi tiết môn thể thao'
+              : sport
+                ? 'Chỉnh sửa môn thể thao'
+                : 'Thêm môn thể thao mới'}
           </DialogTitle>
         </DialogHeader>
 
@@ -108,6 +117,7 @@ export function SportForm({ sport, isOpen, onClose, onSubmit }) {
                       placeholder="Nhập tên môn thể thao..."
                       {...field}
                       className="bg-background border"
+                      disabled={readonly}
                     />
                   </FormControl>
                   <FormMessage />
@@ -128,6 +138,7 @@ export function SportForm({ sport, isOpen, onClose, onSubmit }) {
                           <button
                             key={icon}
                             type="button"
+                            disabled={readonly}
                             onClick={() => field.onChange(icon)}
                             className={`p-2 text-xl hover:bg-accent rounded ${
                               field.value === icon ? 'bg-primary text-primary-foreground' : ''
@@ -160,6 +171,7 @@ export function SportForm({ sport, isOpen, onClose, onSubmit }) {
                       placeholder="Nhập mô tả môn thể thao..."
                       {...field}
                       className="bg-background border"
+                      disabled={readonly}
                     />
                   </FormControl>
                   <FormMessage />
@@ -172,17 +184,14 @@ export function SportForm({ sport, isOpen, onClose, onSubmit }) {
                 type="button"
                 variant="outline"
                 onClick={handleClose}
-                disabled={isSubmitting}
               >
                 Hủy
               </Button>
-              <Button
-                type="submit"
-                variant="sport"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Đang lưu...' : (sport ? 'Cập nhật' : 'Thêm mới')}
-              </Button>
+              {!readonly && (
+                <Button type="submit">
+                  {sport ? 'Cập nhật' : 'Thêm mới'}
+                </Button>
+              )}   
             </div>
           </form>
         </Form>
