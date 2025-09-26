@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config(); //nạp các biến môi trường từ file .env vào process.env
-export const PORT = process.env.PORT || 3000
+export const PORT = process.env.PORT
 export const HOST = process.env.HOST
 export const URL = process.env.URL
 export const DB_NAME = process.env.DB_NAME

@@ -1,5 +1,14 @@
-import { BarChart3, Package, Grid3X3, Award, Trophy, Settings, Home, LogOut } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import {
+  BarChart3,
+  Package,
+  Grid3X3,
+  Award,
+  Trophy,
+  Settings,
+  Home,
+  LogOut,
+} from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -11,16 +20,17 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
-} from '../ui/sidebar';
-import { Button } from '../ui/button';
+} from "../ui/sidebar";
+import { Button } from "../ui/button";
+import { authApi } from "../../services/authApi";
 
 const menuItems = [
-  { title: 'Tổng quan', url: '/dashboard', icon: BarChart3 },
-  { title: 'Quản lý sản phẩm', url: '/dashboard/products', icon: Package },
-  { title: 'Quản lý danh mục', url: '/dashboard/categories', icon: Grid3X3 },
+  { title: "Tổng quan", url: "/", icon: BarChart3 },
+  { title: "Quản lý sản phẩm", url: "/dashboard/products", icon: Package },
+  { title: "Quản lý danh mục", url: "/dashboard/categories", icon: Grid3X3 },
   { title: 'Quản lý danh mục con', url: '/dashboard/subcategories', icon: Award },
-  { title: 'Quản lý thương hiệu', url: '/dashboard/brands', icon: Award },
-  { title: 'Quản lý môn thể thao', url: '/dashboard/sports', icon: Trophy },
+  { title: "Quản lý thương hiệu", url: "/dashboard/brands", icon: Award },
+  { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
 ];
 
 export function DashboardSidebar() {
@@ -32,8 +42,12 @@ export function DashboardSidebar() {
   // eslint-disable-next-line no-unused-vars
   const isActive = (path) => currentPath === path;
 
+  const handleLogOut = async () => {
+    await authApi.logout();
+  };
+
   return (
-    <Sidebar className={isCollapsed ? "w-14" : "w-60"}  collapsible="icon">
+    <Sidebar className={isCollapsed ? "w-14" : "w-60"} collapsible="icon">
       <SidebarTrigger className="m-2 self-end" />
 
       <SidebarContent>
@@ -43,7 +57,9 @@ export function DashboardSidebar() {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">S</span>
             </div>
-            {!isCollapsed && <span className="font-bold text-lg">SportShop Admin</span>}
+            {!isCollapsed && (
+              <span className="font-bold text-lg">SportShop Admin</span>
+            )}
           </div>
         </div>
 
@@ -77,7 +93,12 @@ export function DashboardSidebar() {
         {/* Bottom Actions */}
         <div className="mt-auto p-4 border-t">
           <div className="space-y-2">
-            <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start"
+              asChild
+            >
               <NavLink to="/">
                 <Home className="h-4 w-4" />
                 {!isCollapsed && <span className="ml-2">Về trang chủ</span>}
@@ -87,7 +108,12 @@ export function DashboardSidebar() {
               <Settings className="h-4 w-4" />
               {!isCollapsed && <span className="ml-2">Cài đặt</span>}
             </Button>
-            <Button variant="ghost" size="sm" className="w-full justify-start">
+            <Button
+              onClick={handleLogOut}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start"
+            >
               <LogOut className="h-4 w-4" />
               {!isCollapsed && <span className="ml-2">Đăng xuất</span>}
             </Button>

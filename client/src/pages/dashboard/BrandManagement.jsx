@@ -107,7 +107,6 @@ const BrandManagement = () => {
       }
       loadBrands();
     } catch (error) {
-      console.log('error', error);
       toast({
         title: "Lỗi",
         description: `${error}` ,

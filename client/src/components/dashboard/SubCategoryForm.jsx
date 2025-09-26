@@ -29,7 +29,7 @@ import { useState, useEffect } from 'react';
 
 const subcategorySchema = z.object({
   name: z.string().min(1, 'Tên danh mục con là bắt buộc'),
-  categoryId: z.string().min(1, 'Danh mục chính là bắt buộc'),
+  // categoryId: z.string().min(1, 'Danh mục chính là bắt buộc'),
   brandIds: z.array(z.string()).min(0),
 });
 
@@ -39,12 +39,12 @@ export const SubcategoryForm = ({
   editing,
   onOpenChange,
   subcategory,
+  // eslint-disable-next-line no-unused-vars
   categories,
   brands,
   onSubmit,
 }) => {
   const [selectedBrandIds, setSelectedBrandIds] = useState([]);
-
   const form = useForm({
     resolver: zodResolver(subcategorySchema),
     defaultValues: {
@@ -65,14 +65,14 @@ export const SubcategoryForm = ({
   // Update selected brands when subcategory changes
   useEffect(() => {
     if (subcategory) {
-      const brandIds = subcategory.brands.map((b) => b.id);
+      const brandIds = subcategory.brands.map((b) => b._id);
       setSelectedBrandIds(brandIds);
       form.setValue('brandIds', brandIds);
     } else {
       setSelectedBrandIds([]);
       form.setValue('brandIds', []);
     }
-  }, [subcategory, form]);
+  }, [subcategory, readonly, editing, form]);
 
   const handleBrandToggle = (brandId, checked) => {
     const newSelectedIds = checked
@@ -84,13 +84,12 @@ export const SubcategoryForm = ({
   };
 
   const handleSubmit = (values) => {
-    const selectedBrands = brands.filter((brand) => values.brandIds.includes(brand.id));
-
+    const selectedBrands = brands.filter((brand) => values.brandIds.includes(brand._id));
     const subcategoryData = {
-      ...(subcategory?.id && { id: subcategory.id }),
+      id : subcategory?._id,
       name: values.name,
-      categoryId: values.categoryId,
-      brands: selectedBrands,
+      categoryId: subcategory?.category?._id,
+      brandIds: selectedBrands,
     };
 
     onSubmit(subcategoryData);
@@ -139,9 +138,9 @@ export const SubcategoryForm = ({
                     <Input
                       placeholder="Nhập danh mục chính"
                       {...field}
-                      disabled={readonly} 
+                      disabled={readonly || editing} 
                       value={
-                        subcategory?.category?.name || field.value || ''
+                        subcategory?.category?.name || ''
                       }
                     />
                   </FormControl>
@@ -159,7 +158,7 @@ export const SubcategoryForm = ({
                   <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
                     {brands.length > 0 ? (
                       brands.map((brand) => (
-                        <div key={brand.id} className="flex items-center space-x-2">
+                        <div key={brand._id} className="flex items-center space-x-2">
                           <Checkbox
                             id={`brand-${brand._id}`}
                             checked={selectedBrandIds.includes(brand._id)}

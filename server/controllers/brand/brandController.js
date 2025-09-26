@@ -98,11 +98,7 @@ export const getBrandsByPage = async (req, res) => {
 // Check brand name tồn tại chưa
 export const checkBrandName = async (req, res) => {
   try {
-    console.log("Query received:", req.query);
     const { name, id } = req.query;
-    console.log("Name:", name);
-    console.log("Id:", id);
-
     if (!name) {
       return res.status(400).json({ message: "Tên thương hiệu là bắt buộc" });
     }

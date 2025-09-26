@@ -131,10 +131,7 @@ export const updateCategory = async (req, res) => {
 
 export const checkCategoryName = async (req, res) => {
   try {
-    console.log("Query received:", req.query); // log toàn bộ query
     const { name, id } = req.query;
-    console.log("Name :", name);
-    console.log("Id: ", id);
     if (!name) {
       return res.status(400).json({ message: "Tên danh mục là bắt buộc" });
     }

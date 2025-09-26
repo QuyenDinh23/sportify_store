@@ -6,29 +6,45 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/dashboard/DashBoard";
 import Overview from "./pages/dashboard/Overview";
 import CategoryManagement from "./pages/dashboard/CategoryManagement";
-import BrandManagement from "./pages/dashboard/BrandManagement";
+import LoginPage from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
+import UseAuthCheck from "./hooks/use-authcheck";import BrandManagement from "./pages/dashboard/BrandManagement";
 import SubcategoryManagement from "./pages/dashboard/SubCategoryManagement";
 
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Dashboard />}>
-            <Route index element={<Overview />} />
-            <Route path="/dashboard/categories" element={<CategoryManagement />} />
-            <Route path="/dashboard/subcategories" element={<SubcategoryManagement />} />
-            <Route path="/dashboard/brands" element={<BrandManagement />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // useAuthCheck();
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+         <UseAuthCheck />
+          <Routes>
+            {/* route login */}
+            <Route path="/login" element={<LoginPage />} />
+    
+            {/* route dashboard */}
+            <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
+              <Route path="/" element={<Dashboard />}>
+                <Route index element={<Overview />} />
+                <Route
+                  path="/dashboard/categories"
+                  element={<CategoryManagement />}
+                />
+                <Route path="/dashboard/subcategories" element={<SubcategoryManagement />} />
+                <Route path="/dashboard/brands" element={<BrandManagement />} />
+              </Route>
+            </Route>
+            <Route element={<ProtectedRoute roles={["user"]} />}></Route>
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

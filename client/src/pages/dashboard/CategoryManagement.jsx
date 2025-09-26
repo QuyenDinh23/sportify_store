@@ -115,7 +115,6 @@ const handlePageChange = (page) => {
   };
 
   const handleFormSubmit = async (categoryData) => {
-    console.log("form submit: " , categoryData);
     try {
       if (categoryData.id) {
         const updatedCategory = await updateCategory(categoryData.id, categoryData);     

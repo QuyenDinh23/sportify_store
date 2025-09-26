@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { subcategories, categories, brands } from '../../data/mockData';
 import { DataTable } from '../../components/dashboard/DataTable';
 import { SubcategoryForm } from '../../components/dashboard/SubCategoryForm';
@@ -7,18 +8,25 @@ import { Button } from '../../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Plus } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
-import { getSubcategories } from '../../api/category/subCategoryApi';
+import { fetchSubcategoriesByPage, updateSubcategory } from '../../api/category/subCategoryApi';
 import { getBrands } from '../../api/brand/brandApi';
+import { fetchAllCategories } from '../../api/category/categoryApi';
+import Pagination from '../../components/pagination/Pagination';
 
 const SubcategoryManagement = () => {
   const [subcategoryList, setSubcategoryList] = useState(subcategories);
-  const [categoryList, setCategoryList] = useState(categories);
+  // eslint-disable-next-line no-unused-vars
+  const [categoryList, setCategoryList] = useState([]);
   const [brandList, setBrandList] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubcategory, setEditingSubcategory] = useState(undefined);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const itemsPerPage = 10;
   const { toast } = useToast();
 
   // Filter subcategories based on selected category
@@ -55,8 +63,12 @@ const SubcategoryManagement = () => {
   ];
   const loadSubcategories = async () => {
     try {
-      const res = await getSubcategories(); 
-      setSubcategoryList(res); 
+      const categoryFilter = selectedCategoryFilter !== "all" ? selectedCategoryFilter : "";
+      console.log("categoryFilter", categoryFilter);
+      const res = await fetchSubcategoriesByPage(currentPage, itemsPerPage, searchTerm, categoryFilter);
+
+      setSubcategoryList(res.subcategories);
+      setTotalPages(res.totalPages);
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -69,7 +81,6 @@ const SubcategoryManagement = () => {
   const loadBrands = async () => {
     try {
       const res = await getBrands(); 
-      console.log("brand data", res);
       setBrandList(res);
     } catch (error) {
       toast({
@@ -79,12 +90,31 @@ const SubcategoryManagement = () => {
       });
     }
   }
+  const loadCategories = async () => {
+    try {
+      const res = await fetchAllCategories(); 
+      setCategoryList(res);
+      console.log("category list" , categoryList);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: `${error}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     loadSubcategories();
     loadBrands();
-  }, [toast]);
+    loadCategories();
+  }, [currentPage, searchTerm, selectedCategoryFilter, toast]);
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // eslint-disable-next-line no-unused-vars
   const handleAdd = () => {
     setEditingSubcategory(undefined);
     setIsFormOpen(true);
@@ -92,60 +122,25 @@ const SubcategoryManagement = () => {
 
   const handleEdit = (subcategory) => {
     setEditingSubcategory(subcategory);
+    setIsEditing(true);
+    setIsReadOnly(false);
     setIsFormOpen(true);
   };
 
-  const handleFormSubmit = (subcategoryData) => {
+  const handleFormSubmit = async (subcategoryData) => {
     if (subcategoryData.id) {
       // Editing existing subcategory
-      setSubcategoryList(
-        subcategoryList.map((sc) =>
-          sc.id === subcategoryData.id ? { ...subcategoryData, id: subcategoryData.id } : sc
-        )
+      const updatedSub = await updateSubcategory(subcategoryData.id, subcategoryData);
+      setSubcategoryList((prev) =>
+        prev.map((sc) => (sc.id === updatedSub.id ? updatedSub : sc))
       );
-
-      // Update brands' subcategoryId
-      setBrandList(
-        brandList.map((brand) => {
-          if (subcategoryData.brands.some((b) => b.id === brand.id)) {
-            return { ...brand, subcategoryId: subcategoryData.id };
-          }
-          if (
-            brand.subcategoryId === subcategoryData.id &&
-            !subcategoryData.brands.some((b) => b.id === brand.id)
-          ) {
-            return { ...brand, subcategoryId: '' };
-          }
-          return brand;
-        })
-      );
-
       toast({
         title: 'Đã cập nhật danh mục con',
         description: `${subcategoryData.name} đã được cập nhật thành công`,
       });
-    } else {
-      // Adding new subcategory
-      const newSubcategory = {
-        ...subcategoryData,
-        id: `subcategory_${Date.now()}`,
-      };
-      setSubcategoryList([...subcategoryList, newSubcategory]);
-
-      // Update brands' subcategoryId
-      setBrandList(
-        brandList.map((brand) =>
-          subcategoryData.brands.some((b) => b.id === brand.id)
-            ? { ...brand, subcategoryId: newSubcategory.id }
-            : brand
-        )
-      );
-
-      toast({
-        title: 'Đã thêm danh mục con',
-        description: `${subcategoryData.name} đã được thêm thành công`,
-      });
     }
+    loadSubcategories();
+    loadBrands();
   };
 
   const handleDelete = (subcategory) => {
@@ -165,7 +160,6 @@ const SubcategoryManagement = () => {
   };
 
   const handleView = (subcategory) => {
-    console.log("subcategory", subcategory);
     setEditingSubcategory(subcategory);
     setIsFormOpen(true);
     setIsReadOnly(true);
@@ -187,6 +181,8 @@ const SubcategoryManagement = () => {
         onDelete={handleDelete}
         onView={handleView}
         searchPlaceholder="Tìm kiếm danh mục con..."
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
         headerActions={
           <div className="flex gap-2">
             <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
@@ -196,7 +192,7 @@ const SubcategoryManagement = () => {
               <SelectContent className="bg-background border shadow-md z-50">
                 <SelectItem value="all">Tất cả danh mục</SelectItem>
                 {categoryList.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
+                  <SelectItem key={category._id} value={category._id}>
                     {category.name}
                   </SelectItem>
                 ))}
@@ -219,6 +215,12 @@ const SubcategoryManagement = () => {
         categories={categoryList}
         brands={brandList}
         onSubmit={handleFormSubmit}
+      />
+
+       <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
       />
     </div>
   );

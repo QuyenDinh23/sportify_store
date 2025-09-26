@@ -1,5 +1,6 @@
 import Category from "../../models/category/Category.js";
 import SubCategory from "../../models/category/SubCategory.js";
+import mongoose from 'mongoose';
 
 //tạo subCategory
 export const createSubCategoy = async (req, res) => {
@@ -49,5 +50,58 @@ export const updateSubcategory = async (req, res) => {
     res.json(subcategory);
   } catch (error) {
     res.status(500).json({ message: "Lỗi server", error });
+  }
+};
+
+// Lấy tất cả brands theo subcategoryId
+export const getBrandsBySubcategory = async (req, res) => {
+  try {
+    const { subcategoryId } = req.params;
+
+    const subcategory = await SubCategory.findById(subcategoryId).populate("brands");
+
+    if (!subcategory) {
+      return res.status(404).json({ message: "Subcategory không tồn tại" });
+    }
+
+    res.json(subcategory.brands);
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
+  }
+};
+
+//lấy danh sách subcategories theo phân trang , tìm kiếm , category
+export const getSubcategoriesByPage = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || "";
+    const categoryId = req.query.categoryId; // lọc theo category
+
+    const skip = (page - 1) * limit;
+
+    // Tạo query lọc
+    let query = {};
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+    if (categoryId && mongoose.Types.ObjectId.isValid(categoryId) && categoryId !== "all") {
+      query.category = categoryId;
+    }
+
+    const total = await SubCategory.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
+
+    const subcategories = await SubCategory.find(query)
+      .populate("category", "name")
+      .populate("brands", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    res.json({ subcategories, totalPages });
+  } catch (error) {
+    console.error("Lỗi khi lấy subcategories:", error);
+    res.status(500).json({ message: "Lỗi server khi lấy subcategories" });
   }
 };

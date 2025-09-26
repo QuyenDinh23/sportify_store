@@ -56,9 +56,9 @@ import { checkBrandNameExist } from '../../api/brand/brandApi';
       setPreview(brand?.logo || '');
     }, [brand, form]);
 
-    const handleSubmit = (values) => {
+    const handleSubmit = async (values) => {
       // Kiem tra ten brand da ton tai chua
-      const res = checkBrandNameExist(values.name, brand?._id);
+      const res = await checkBrandNameExist(values.name, brand?._id);
       if(res) {
         form.setError("name", { type: "manual", message: "Tên brand đã tồn tại" });
         return;
@@ -80,7 +80,6 @@ import { checkBrandNameExist } from '../../api/brand/brandApi';
       setUploading(true);
       try {
         const url = await uploadToBackend(file); // gọi api backend
-        console.log("URL: ", url);
         setPreview(url);          // hiển thị preview
         form.setValue("logo", url); // cập nhật giá trị logo vào react-hook-form
       } catch (err) {
