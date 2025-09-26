@@ -1,22 +1,82 @@
+// Legacy categories for backward compatibility
 export const categories = [
   {
     id: 'shoes',
     name: 'Giày',
-    icon: '👟',
-    subcategories: ['Giày chạy bộ', 'Giày bóng đá', 'Giày bóng rổ', 'Giày tennis', 'Giày tập gym']
+    icon: 'Footprints',
+    gender: 'Unisex',
+    subcategories: [],
   },
   {
     id: 'clothing',
     name: 'Quần áo',
-    icon: '👕',
-    subcategories: ['Áo thể thao', 'Quần short', 'Quần dài', 'Áo khoác', 'Đồ bơi']
+    icon: 'Shirt',
+    gender: 'Nam',
+    subcategories: [],
   },
   {
     id: 'accessories',
     name: 'Phụ kiện',
-    icon: '🎒',
-    subcategories: ['Túi thể thao', 'Găng tay', 'Mũ nón', 'Đồng hồ', 'Thiết bị bảo hộ']
+    icon: 'Backpack',
+    gender: 'Unisex',
+    subcategories: [],
   }
+];
+
+// New hierarchical structure
+export const subBrands = [
+  { id: 'nike_pro', name: 'Nike Pro', description: 'Dòng sản phẩm chuyên nghiệp cao cấp', brandId: 'nike' },
+  { id: 'nike_swim', name: 'Nike Swim', description: 'Dòng sản phẩm bơi lội', brandId: 'nike' },
+  { id: 'adidas_originals', name: 'Adidas Originals', description: 'Dòng sản phẩm cổ điển', brandId: 'adidas' },
+  { id: 'adidas_performance', name: 'Adidas Performance', description: 'Dòng sản phẩm thể thao cao cấp', brandId: 'adidas' },
+];
+
+export const brands = [
+  {
+    id: 'nike',
+    name: 'Nike',
+    logo: 'https://logo.clearbit.com/nike.com',
+    description: 'Thương hiệu thể thao hàng đầu thế giới',
+    subcategoryId: 'men_swimwear',
+    subBrands: subBrands.filter(sb => sb.brandId === 'nike'),
+  },
+  {
+    id: 'adidas',
+    name: 'Adidas',
+    logo: 'https://logo.clearbit.com/adidas.com',
+    description: 'Thương hiệu thể thao châu Âu nổi tiếng',
+    subcategoryId: 'men_swimwear',
+    subBrands: subBrands.filter(sb => sb.brandId === 'adidas'),
+  },
+  {
+    id: 'speedo',
+    name: 'Speedo',
+    logo: 'https://logo.clearbit.com/speedo.com',  
+    description: 'Chuyên gia về đồ bơi',
+    subcategoryId: 'women_swimwear',
+    subBrands: [],
+  },
+];
+
+export const subcategories = [
+  {
+    id: 'men_swimwear',
+    name: 'Quần bơi nam',
+    categoryId: 'swimwear',
+    brands: brands.filter(b => b.subcategoryId === 'men_swimwear'),
+  },
+  {
+    id: 'women_swimwear',
+    name: 'Đồ bơi nữ',
+    categoryId: 'swimwear',
+    brands: brands.filter(b => b.subcategoryId === 'women_swimwear'),
+  },
+  {
+    id: 'swimming_accessories',
+    name: 'Phụ kiện bơi',
+    categoryId: 'swimwear',
+    brands: [],
+  },
 ];
 
 export const sportCategories = [
@@ -40,6 +100,7 @@ export const mockProducts = [
     brand: 'Nike',
     subBrand: 'Nike Running',
     sport: 'running',
+    gender: 'Unisex',
     rating: 4.5,
     reviewCount: 128,
     isOnSale: true
@@ -54,6 +115,7 @@ export const mockProducts = [
     brand: 'Adidas',
     subBrand: 'Adidas Football',
     sport: 'football',
+    gender: 'Nam',
     rating: 4.8,
     reviewCount: 95,
     isNew: true
@@ -68,6 +130,7 @@ export const mockProducts = [
     brand: 'Jordan',
     subBrand: 'Jordan Pro',
     sport: 'basketball',
+    gender: 'Nam',
     rating: 4.6,
     reviewCount: 76
   },
@@ -81,6 +144,7 @@ export const mockProducts = [
     subcategory: 'Túi thể thao',
     brand: 'Under Armour',
     sport: 'fitness',
+    gender: 'Unisex',
     rating: 4.3,
     reviewCount: 54,
     isOnSale: true
@@ -95,6 +159,7 @@ export const mockProducts = [
     brand: 'Puma',
     subBrand: 'Puma Sport',
     sport: 'running',
+    gender: 'Nữ',
     rating: 4.4,
     reviewCount: 89
   },
@@ -107,6 +172,7 @@ export const mockProducts = [
     subcategory: 'Vợt tennis',
     brand: 'Wilson',
     sport: 'tennis',
+    gender: 'Unisex',
     rating: 4.7,
     reviewCount: 43,
     isNew: true

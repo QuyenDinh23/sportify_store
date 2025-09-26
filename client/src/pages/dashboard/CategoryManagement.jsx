@@ -18,13 +18,14 @@ const CategoryManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const itemsPerPage = 1;
+  const itemsPerPage = 10;
   const { toast } = useToast();
   console.log('categoryList', categoryList);
   const genderMap = {
     male: "Nam",
     female: "Nữ",
-    kids: "Trẻ em",
+    boy: "Bé trai (8-16 tuổi)",
+    girl: "Bé gái (8-16 tuổi)",
   };
 
   const typeMap = {
@@ -76,27 +77,8 @@ const CategoryManagement = () => {
     },
   ];
 
-  // useEffect(() => {
-  //   const loadCategories = async () => {
-  //     try {
-  //       const categories = await fetchAllCategories();
-  //       console.log(categories);
-  //       setCategoryList(categories);
-  //     // eslint-disable-next-line no-unused-vars
-  //     } catch (err) {
-  //       toast({
-  //         title: "Lỗi",
-  //         description: "Không thể tải danh mục",
-  //         variant: "destructive",
-  //       });
-  //     }
-  //   };
-  //   loadCategories();
-  // }, [toast]);
   const loadCategories = async () => {
     try {
-      console.log("Current page:", currentPage);
-      console.log("Limit: ", itemsPerPage); 
       // Gọi API phân trang
       const res = await fetchCategoriesByPage(currentPage, itemsPerPage, searchTerm);
       setCategoryList(res.categories);
@@ -126,7 +108,6 @@ const handlePageChange = (page) => {
   };
 
   const handleEdit = (category) => {
-    console.log("Edit category:", category);
     setEditingCategory(category);
     setIsEditing(true);
     setIsFormOpen(true);
@@ -134,7 +115,6 @@ const handlePageChange = (page) => {
   };
 
   const handleFormSubmit = async (categoryData) => {
-    console.log("form submit: " , categoryData);
     try {
       if (categoryData.id) {
         const updatedCategory = await updateCategory(categoryData.id, categoryData);     
@@ -149,7 +129,6 @@ const handlePageChange = (page) => {
           description: `${updatedCategory.name} đã được cập nhật thành công`,
         });
       } else {
-        console.log(categoryData);
         const newCategory = await createCategoryWithSubcategories(categoryData);
         setCategoryList([...categoryList, newCategory]);
         toast({

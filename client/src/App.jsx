@@ -8,7 +8,10 @@ import Overview from "./pages/dashboard/Overview";
 import CategoryManagement from "./pages/dashboard/CategoryManagement";
 import LoginPage from "./pages/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
-import UseAuthCheck from "./hooks/use-authcheck";
+import UseAuthCheck from "./hooks/use-authcheck";import BrandManagement from "./pages/dashboard/BrandManagement";
+import SubcategoryManagement from "./pages/dashboard/SubCategoryManagement";
+import SportManagement from "./pages/dashboard/SportManagement";
+
 
 const queryClient = new QueryClient();
 
@@ -33,6 +36,9 @@ const App = () => {
                   path="/dashboard/categories"
                   element={<CategoryManagement />}
                 />
+                <Route path="/dashboard/subcategories" element={<SubcategoryManagement />} />
+                <Route path="/dashboard/brands" element={<BrandManagement />} />
+                <Route path="/dashboard/sports" element={<SportManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["user"]} />}></Route>
