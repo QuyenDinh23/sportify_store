@@ -9,6 +9,7 @@ import subcategoryRoutes from "./routes/category/subCategoryRoutes.js";
 import imageRoutes from "./routes/image/imageRoutes.js";
 import brandRoutes from "./routes/brand/brandRoutes.js";
 import sportRoutes from "./routes/sport/sportRoutes.js";
+import productRoutes from "./routes/product/productRoutes.js";
 
 
 //create server
@@ -30,7 +31,7 @@ server.use("/api/subcategories", subcategoryRoutes);
 server.use("/api/upload", imageRoutes);
 server.use("/api/brands", brandRoutes);
 server.use("/api/sports", sportRoutes);
-
+server.use("/api/products", productRoutes);
 
 
 //connect tới DB

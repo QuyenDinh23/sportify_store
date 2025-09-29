@@ -5,7 +5,12 @@ import mongoose from 'mongoose';
 // Lấy tất cả categories + subcategories
 export const getCategories = async (req, res) => {
   try {
-    const categories = await Category.find().populate("subcategories");
+    const categories = await Category.find()
+      .populate({
+        path: "subcategories",
+        populate: { path: "brands" }, // populate brands trong subcategories
+      })
+      .sort({ createdAt: -1 });
     res.status(200).json(categories);
   } catch (err) {
     res.status(500).json({ message: err.message });

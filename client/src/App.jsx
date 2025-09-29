@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import UseAuthCheck from "./hooks/use-authcheck";import BrandManagement from "./pages/dashboard/BrandManagement";
 import SubcategoryManagement from "./pages/dashboard/SubCategoryManagement";
 import SportManagement from "./pages/dashboard/SportManagement";
+import ProductManagement from "./pages/dashboard/ProductManagement";
 
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => {
             <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
               <Route path="/" element={<Dashboard />}>
                 <Route index element={<Overview />} />
+                <Route path="/dashboard/products" element={<ProductManagement />} />
                 <Route
                   path="/dashboard/categories"
                   element={<CategoryManagement />}
