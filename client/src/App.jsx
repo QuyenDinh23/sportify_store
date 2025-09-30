@@ -11,6 +11,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import UseAuthCheck from "./hooks/use-authcheck";import BrandManagement from "./pages/dashboard/BrandManagement";
 import SubcategoryManagement from "./pages/dashboard/SubCategoryManagement";
 import SportManagement from "./pages/dashboard/SportManagement";
+import ProductManagement from "./pages/dashboard/ProductManagement";
+import Home from "./pages/home/Home";
+import ProductDetail from "./pages/product/ProductDetail";
 
 
 const queryClient = new QueryClient();
@@ -27,18 +30,20 @@ const App = () => {
           <Routes>
             {/* route login */}
             <Route path="/login" element={<LoginPage />} />
-    
+            <Route path="/" element={<Home />} />
+            <Route path="product/:id" element={<ProductDetail />} />
             {/* route dashboard */}
             <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
-              <Route path="/" element={<Dashboard />}>
+              <Route path="/dashboard" element={<Dashboard />}>
                 <Route index element={<Overview />} />
+                <Route path="products" element={<ProductManagement />} />
                 <Route
-                  path="/dashboard/categories"
+                  path="categories"
                   element={<CategoryManagement />}
                 />
-                <Route path="/dashboard/subcategories" element={<SubcategoryManagement />} />
-                <Route path="/dashboard/brands" element={<BrandManagement />} />
-                <Route path="/dashboard/sports" element={<SportManagement />} />
+                <Route path="subcategories" element={<SubcategoryManagement />} />
+                <Route path="brands" element={<BrandManagement />} />
+                <Route path="sports" element={<SportManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["user"]} />}></Route>
