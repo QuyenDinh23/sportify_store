@@ -19,3 +19,13 @@ export const getProducts = async () => {
     throw err.response?.data || err;
   }
 };
+
+// Lấy product theo id
+export const getProductById = async (id) => {
+  try {
+    const res = await axiosInstance.get(`/products/${id}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
