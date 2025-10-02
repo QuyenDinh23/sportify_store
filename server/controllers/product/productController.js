@@ -97,3 +97,36 @@ export const getProductById = async (req, res) => {
     res.status(500).json({ message: "Server error khi lấy sản phẩm" });
   }
 };
+
+// Cập nhật sản phẩm
+export const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra id có hợp lệ không
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID sản phẩm không hợp lệ" });
+    }
+
+    const updateData = req.body;
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true } // trả về document sau khi update
+    )
+      .populate("category", "name")
+      .populate("subcategory", "name")
+      .populate("brand", "name logo")
+      .populate("sport", "name");
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Sản phẩm không tồn tại" });
+    }
+
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error("Error update product:", error);
+    res.status(500).json({ message: "Server error khi cập nhật sản phẩm" });
+  }
+};

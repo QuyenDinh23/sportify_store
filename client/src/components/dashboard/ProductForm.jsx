@@ -56,39 +56,6 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
     }
   });
 
-  // Khi edit hoặc xem chi tiết, reset form theo product props
-  useEffect(() => {
-    if (product) {
-      reset({
-        name: product.name || '',
-        description: product.description || '',
-        category: product.category?._id || '',
-        subcategory: product.subcategory?._id || '',
-        brand: product.brand?._id || '',
-        sport: product.sport?._id || '',
-        price: product.price || 0,
-        importPrice: product.importPrice || 0,
-        discountPercentage: product.discountPercentage || 0,
-        stockQuantity: product.stockQuantity || 0,
-        status: product.status || 'active',
-      });
-    } else {
-      reset({
-        name: '',
-        description: '',
-        category: '',
-        subcategory: '',
-        brand: '',
-        sport: '',
-        price: 0,
-        importPrice: 0,
-        discountPercentage: 0,
-        stockQuantity: 0,
-        status: 'active',
-      });
-    }
-  }, [product, reset]);
-
   const watchedPrice = watch('price');
   const watchedDiscount = watch('discountPercentage');
   const discountedPrice = watchedPrice - (watchedPrice * watchedDiscount / 100);
@@ -104,16 +71,22 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       reset({
         name: product.name,
         description: product.description,
-        category: product.category,
-        subcategory: product.subcategory,
-        brand: product.brand,
-        sport: product.sport,
+        category: product.category?._id || '',
+        subcategory: product.subcategory?._id || '',
+        brand: product.brand?._id || '',
+        sport: product.sport?._id || '',
         price: product.price,
         importPrice: product.importPrice,
         discountPercentage: product.discountPercentage,
         stockQuantity: product.stockQuantity,
         status: product.status,
       });
+      if (product.category?._id) {
+        onCategoryChange(product.category._id);
+      }
+      if (product.subcategory?._id) {
+        onSubCategoryChange(product.subcategory._id);
+      }
       setSizes(product.sizes || []);
       setColors(product.colors || []);
       setMaterials(product.materials || []);
@@ -125,7 +98,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       setMaterials([]);
       setTechnicalSpecs({});
     }
-  }, [product, reset]);
+  }, [brands, product, reset]);
 
   const addSize = () => {
     if (newSize && !sizes.includes(newSize)) {
@@ -204,7 +177,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
 
   const onFormSubmit = (data) => {
     const productData = {
-      id: product?.id || Date.now().toString(),
+      id: product?._id,
       name: data.name,
       description: data.description,
       category: data.category,

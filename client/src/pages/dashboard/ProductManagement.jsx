@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
-import { mockProducts, brands, sportCategories, subcategories } from '../../data/mockData';
+import { mockProducts, sportCategories } from '../../data/mockData';
 import { DataTable } from '../../components/dashboard/DataTable';
 import { ProductForm } from '../../components/dashboard/ProductForm';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { useToast } from '../../hooks/use-toast';
-import { createProduct } from '../../api/product/productApi';
+import { createProduct, getProducts, updateProduct } from '../../api/product/productApi';
 import { fetchAllCategories } from '../../api/category/categoryApi';
 import { getSports } from '../../api/sport/sportApi';
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState();
   const [selectedBrand, setSelectedBrand] = useState('all');
@@ -46,8 +46,29 @@ const ProductManagement = () => {
       }
     },
     { key: 'name', label: 'Tên sản phẩm', sortable: true },
-    { key: 'brand', label: 'Thương hiệu', sortable: true },
-    { key: 'sport', label: 'Môn thể thao', sortable: true },
+    {
+      key: 'brand',
+      label: 'Thương hiệu',
+      sortable: true,
+      render: (value, item) => (
+        <div className="flex items-center gap-2">
+          {item.brand?.logo && (
+            <img
+              src={item.brand.logo}
+              alt={item.brand.name}
+              className="w-6 h-6 object-contain"
+            />
+          )}
+          <span>{item.brand?.name || '-'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'sport',
+      label: 'Môn thể thao',
+      sortable: true,
+      render: (value, item) => <span>{item.sport?.name || '-'}</span>,
+    },
     {
       key: 'discountedPrice',
       label: 'Giá bán',
@@ -117,6 +138,20 @@ const ProductManagement = () => {
     }
   }
 
+  const loadProducts = async () => {
+    try {
+      const res = await getProducts();
+      setProducts(res);
+      console.log("Danh sách sản phẩm:", res);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: `${error.message || error}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCategoryChange = async (categoryId) => {
     const category = categories.find(c => c._id === categoryId);
     setSubcategories(category?.subcategories || []);
@@ -130,6 +165,7 @@ const ProductManagement = () => {
   useEffect(() => {
     loadCategories();
     loadSports();
+    loadProducts();
   }, []);
 
   useEffect(() => {
@@ -142,6 +178,7 @@ const ProductManagement = () => {
   };
 
   const handleEdit = (product) => {
+    console.log("Product to edit:", product);
     setEditingProduct(product);
     setIsFormOpen(true);
   };
@@ -158,11 +195,10 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData) => {
-    if (editingProduct) {
-      const updatedProducts = products.map(p => 
-        p.id === editingProduct.id ? productData : p
-      );
-      setProducts(updatedProducts);
+    if (productData.id) {
+      //Editing existing product
+      const updatedProduct = await updateProduct(productData.id, productData);
+      setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
       toast({
         title: "Đã cập nhật sản phẩm",
         description: `${productData.name} đã được cập nhật thành công`,
@@ -185,12 +221,12 @@ const ProductManagement = () => {
     });
   };
 
-  const filteredProducts = products.filter(product => {
-    const brandMatch = selectedBrand === 'all' || product.brand === selectedBrand;
-    const sportMatch = selectedSport === 'all' || product.sport === selectedSport;
-    const subcategoryMatch = selectedSubcategory === 'all' || product.subcategory === selectedSubcategory;
-    return brandMatch && sportMatch && subcategoryMatch;
-  });
+  // const filteredProducts = products.filter(product => {
+  //   const brandMatch = selectedBrand === 'all' || product.brand === selectedBrand;
+  //   const sportMatch = selectedSport === 'all' || product.sport === selectedSport;
+  //   const subcategoryMatch = selectedSubcategory === 'all' || product.subcategory === selectedSubcategory;
+  //   return brandMatch && sportMatch && subcategoryMatch;
+  // });
 
   const uniqueBrands = Array.from(new Set(products.map(p => p.brand)));
   const uniqueSports = Array.from(new Set(products.map(p => p.sport)));
@@ -209,7 +245,7 @@ const ProductManagement = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            <div>
+            {/* <div>
               <label className="text-sm font-medium">Thương hiệu</label>
               <Select value={selectedBrand} onValueChange={setSelectedBrand}>
                 <SelectTrigger>
@@ -252,14 +288,14 @@ const ProductManagement = () => {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
           </div>
         </CardContent>
       </Card>
 
       <DataTable
-        title={`Danh sách sản phẩm (${filteredProducts.length})`}
-        data={filteredProducts}
+        title={`Danh sách sản phẩm (${products.length})`}
+        data={products}
         columns={columns}
         onAdd={handleAdd}
         onEdit={handleEdit}

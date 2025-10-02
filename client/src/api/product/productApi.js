@@ -29,3 +29,13 @@ export const getProductById = async (id) => {
     throw err.response?.data || err;
   }
 };
+
+// Cập nhật product
+export const updateProduct = async (id, productData) => {
+  try {
+    const res = await axiosInstance.put(`/products/${id}`, productData);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
