@@ -1,16 +1,29 @@
-import { Search, ShoppingCart, User, Menu, Settings, HeadphonesIcon, Package, RotateCcw } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Badge } from '../components/ui/badge';
-import { Link } from 'react-router-dom';
+import {
+  Search,
+  ShoppingCart,
+  User,
+  Menu,
+  Settings,
+  HeadphonesIcon,
+  Package,
+  RotateCcw,
+} from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Badge } from "../components/ui/badge";
+import { Link } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuHover,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu';
+} from "../components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
+  const navigate = useNavigate();
+  const he = "/account/profile";
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4">
@@ -24,7 +37,9 @@ const Header = () => {
               <div className="w-8 h-8 bg-gradient-hero rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">S</span>
               </div>
-              <span className="font-bold text-xl text-foreground hidden sm:block">SportShop</span>
+              <span className="font-bold text-xl text-foreground hidden sm:block">
+                SportShop
+              </span>
             </Link>
           </div>
 
@@ -44,7 +59,10 @@ const Header = () => {
             {/* Support Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="hidden md:flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  className="hidden md:flex items-center gap-2"
+                >
                   <HeadphonesIcon className="h-5 w-5" />
                   <span className="text-sm">Hỗ trợ</span>
                 </Button>
@@ -65,14 +83,37 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="icon" className="hidden md:flex" asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:flex"
+              asChild
+            >
               <Link to="/dashboard">
                 <Settings className="h-5 w-5" />
               </Link>
             </Button>
-            <Button variant="ghost" size="icon" className="hidden md:flex">
-              <User className="h-5 w-5" />
-            </Button>
+            <DropdownMenuHover>
+              <DropdownMenuTrigger asChild>
+                <Button onClick={() => {navigate(`${he}`)}} variant="ghost" size="icon" className="hidden md:flex">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-card z-[100]">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Package className="mr-2 h-4 w-4" />
+                  <span>Theo dõi đơn hàng</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  <span>Đổi trả và bảo hành</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <HeadphonesIcon className="mr-2 h-4 w-4" />
+                  <span>Hỗ trợ CSKH</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenuHover>
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
               <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent">
