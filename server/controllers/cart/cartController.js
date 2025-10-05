@@ -6,7 +6,13 @@ const getCart = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    let cart = await Cart.findOne({ userId: userId }).populate('items.productId');
+    let cart = await Cart.findOne({ userId: userId }).populate({
+      path: 'items.productId',
+      populate: {
+        path: 'brand',
+        model: 'Brand'
+      }
+    });
     
     if (!cart) {
       // Tạo cart mới nếu chưa có
@@ -138,7 +144,7 @@ const addToCart = async (req, res) => {
         importPrice: product.importPrice,
         discountPercentage: product.discountPercentage,
         subtotal: priceAtAdd * quantity,
-        images: selectedColorObj.images
+        images: product.images
       };
       cart.items.push(newItem);
     }
@@ -146,7 +152,13 @@ const addToCart = async (req, res) => {
     await cart.save();
     
     // Populate product data để trả về
-    await cart.populate('items.productId');
+    await cart.populate({
+      path: 'items.productId',
+      populate: {
+        path: 'brand',
+        model: 'Brand'
+      }
+    });
     
     res.status(200).json({
       success: true,
@@ -172,7 +184,13 @@ const updateCartItem = async (req, res) => {
     const userId = req.user.id;
     const { itemId, quantity } = req.body;
     
-    const cart = await Cart.findOne({ userId: userId }).populate('items.productId');
+    const cart = await Cart.findOne({ userId: userId }).populate({
+      path: 'items.productId',
+      populate: {
+        path: 'brand',
+        model: 'Brand'
+      }
+    });
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -243,7 +261,13 @@ const removeFromCart = async (req, res) => {
     cart.items = cart.items.filter(item => item._id.toString() !== itemId);
     await cart.save();
     
-    await cart.populate('items.productId');
+    await cart.populate({
+      path: 'items.productId',
+      populate: {
+        path: 'brand',
+        model: 'Brand'
+      }
+    });
     
     res.status(200).json({
       success: true,

@@ -3,17 +3,18 @@ import { Link } from "react-router-dom";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
-import { cn } from "../../lib/utils";
 import { toast } from "sonner";
 import Header from '../../components/Header';
 import { MainNavigation } from '../../components/MainNavigation';
 import Footer from '../../components/Footer';
 import { removeFromCart, updateCartItem, clearCart, fetchCart } from "../../store/cartSlice";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Cart = () => {
   const dispatch = useDispatch();
-  const { items, totalQuantity, totalPrice, loading, error } = useSelector((state) => state.cart);
+  const navigate = useNavigate();
+  const { items, totalQuantity, totalPrice } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
 
   // Fetch cart khi component mount (chỉ khi user đã đăng nhập)
@@ -70,8 +71,11 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
-    // TODO: Implement checkout logic
-    toast.success("Chức năng thanh toán sẽ được cập nhật sau");
+    if (items.length === 0) {
+      toast.error("Giỏ hàng trống");
+      return;
+    }
+    navigate('/checkout');
   };
 
   // Show login message if user is not logged in
@@ -151,15 +155,15 @@ const Cart = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {items.map((item, index) => (
-              <div key={item._id || index} className="bg-card border border-border rounded-lg p-6">
+            {items.map((item) => (
+              <div key={item._id} className="bg-card border border-border rounded-lg p-6">
                 <div className="flex gap-4">
                   {/* Product Image */}
                   <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                    {item.images?.[0] && item.images[0].trim() !== "" ? (
+                    {item.images && item.images[0] && item.images[0].trim() !== "" ? (
                       <img
                         src={item.images[0]}
-                        alt={item.name || 'Product'}
+                        alt={item.productId?.name || 'Product'}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -172,16 +176,16 @@ const Cart = () => {
                   {/* Product Info */}
                   <div className="flex-1 min-w-0">
                     <Link 
-                      to={`/product/${item.productId || '#'}`}
+                      to={`/product/${item.productId?._id || item.productId}`}
                       className="hover:text-primary transition-colors"
                     >
                       <h3 className="font-semibold text-foreground line-clamp-2 mb-2">
-                        {item.name || 'Product'}
+                        {item.productId?.name || item.name}
                       </h3>
                     </Link>
                     
                     <p className="text-sm text-muted-foreground mb-2">
-                      Thương hiệu: {item.productId?.brand?.name || 'Unknown'}
+                      Thương hiệu: {item.productId?.brand?.name || 'N/A'}
                     </p>
                     
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
@@ -190,13 +194,13 @@ const Cart = () => {
                         <div 
                           className="w-4 h-4 rounded-full border border-border"
                           style={{ backgroundColor: item.selectedColor?.hex || '#ccc' }}
-                          title={item.selectedColor?.name || 'Unknown'}
+                          title={item.selectedColor?.name || 'N/A'}
                         />
-                        <span>{item.selectedColor?.name || 'Unknown'}</span>
+                        <span>{item.selectedColor?.name || 'N/A'}</span>
                       </div>
                       <div>
                         <span>Kích thước: </span>
-                        <span className="font-medium">{item.selectedSize}</span>
+                        <span className="font-medium">{item.selectedSize || 'N/A'}</span>
                       </div>
                     </div>
 

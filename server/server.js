@@ -17,6 +17,7 @@ import brandRoutes from "./routes/brand/brandRoutes.js";
 import sportRoutes from "./routes/sport/sportRoutes.js";
 import productRoutes from "./routes/product/productRoutes.js";
 import cartRoutes from "./routes/cart/cartRoutes.js";
+import orderRoutes from "./routes/order/orderRoutes.js";
 
 
 //create server
@@ -40,6 +41,7 @@ server.use("/api/brands", brandRoutes);
 server.use("/api/sports", sportRoutes);
 server.use("/api/products", productRoutes);
 server.use("/api/cart", cartRoutes);
+server.use("/api/orders", orderRoutes);
 
 
 //connect tới DB

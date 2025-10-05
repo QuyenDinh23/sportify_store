@@ -15,6 +15,8 @@ import ProductManagement from "./pages/dashboard/ProductManagement";
 import Home from "./pages/home/Home";
 import ProductDetail from "./pages/product/ProductDetail";
 import Cart from "./pages/cart/Cart";
+import Checkout from "./pages/checkout/Checkout";
+import OrderSuccess from "./pages/checkout/OrderSuccess";
 
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             {/* route dashboard */}
             <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>
