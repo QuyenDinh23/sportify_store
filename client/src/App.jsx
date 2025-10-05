@@ -14,6 +14,7 @@ import SportManagement from "./pages/dashboard/SportManagement";
 import ProductManagement from "./pages/dashboard/ProductManagement";
 import Home from "./pages/home/Home";
 import ProductDetail from "./pages/product/ProductDetail";
+import Cart from "./pages/cart/Cart";
 
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<Home />} />
             <Route path="product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
             {/* route dashboard */}
             <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>

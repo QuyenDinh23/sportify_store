@@ -3,6 +3,9 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Link } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchCart } from '../store/cartSlice';
+import { useEffect } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +14,17 @@ import {
 } from '../components/ui/dropdown-menu';
 
 const Header = () => {
+  const dispatch = useDispatch();
+  const { totalQuantity } = useSelector((state) => state.cart);
+  const { user } = useSelector((state) => state.auth);
+
+  // Fetch cart khi component mount (chỉ khi user đã đăng nhập)
+  useEffect(() => {
+    if (user) {
+      dispatch(fetchCart());
+    }
+  }, [dispatch, user]);
+
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4">
@@ -73,11 +87,15 @@ const Header = () => {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <User className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent">
-                2
-              </Badge>
+            <Button variant="ghost" size="icon" className="relative" asChild>
+              <Link to="/cart">
+                <ShoppingCart className="h-5 w-5" />
+                {totalQuantity > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent">
+                    {totalQuantity}
+                  </Badge>
+                )}
+              </Link>
             </Button>
           </div>
         </div>

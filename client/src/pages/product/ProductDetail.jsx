@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { ChevronRight, ShoppingCart, Heart, Share2, Minus, Plus, Star } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -11,10 +12,12 @@ import Header from '../../components/Header';
 import { MainNavigation } from '../../components/MainNavigation';
 import Footer from '../../components/Footer';
 import { getProductById } from "../../api/product/productApi";
+import { addToCart } from "../../store/cartSlice";
 
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const dispatch = useDispatch();
   
   const [product, setProduct] = useState(null);
   const [selectedColor, setSelectedColor] = useState(0);
@@ -22,7 +25,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState("");
 
-    const fetchProduct = async () => {
+    const fetchProduct = useCallback(async () => {
       try {
         const data = await getProductById(id); 
         setProduct(data);
@@ -33,14 +36,15 @@ const ProductDetail = () => {
             variant: "destructive",
         });
       }
-    };
+    }, [id]);
     useEffect(() => {
       fetchProduct();
-    }, [id]);
+    }, [id, fetchProduct]);
 
     useEffect(() => {
-        if (product) {
-            setMainImage(product.colors[selectedColor]?.images[0] || "/placeholder.svg");
+        if (product && product.colors && product.colors[selectedColor]) {
+            const firstImage = product.colors[selectedColor].images?.[0];
+            setMainImage(firstImage && firstImage.trim() !== "" ? firstImage : "/logo.png");
         }
     }, [product, selectedColor]);
     if (!product) {
@@ -56,12 +60,32 @@ const ProductDetail = () => {
 
   const hasDiscount = product.discountPercentage > 0;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedSize) {
       toast.error("Vui lòng chọn kích thước");
       return;
     }
-    toast.success("Đã thêm vào giỏ hàng!");
+    
+    // Check if user is logged in
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+      return;
+    }
+    
+    try {
+      // Dispatch async action để thêm vào giỏ hàng
+      await dispatch(addToCart({
+        productId: product._id,
+        selectedColor: product.colors[selectedColor].name,
+        selectedSize,
+        quantity
+      })).unwrap();
+      
+      toast.success("Đã thêm vào giỏ hàng!");
+    } catch (error) {
+      toast.error(error || "Có lỗi xảy ra khi thêm vào giỏ hàng");
+    }
   };
 
   return (
@@ -88,25 +112,33 @@ const ProductDetail = () => {
           <div className="space-y-4">
             {/* Main image */}
             <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-                <img
-                    src={mainImage}
-                    alt={`${product.name} - ${product.colors[selectedColor].name}`}
-                    className="w-full h-full object-cover"
-                />
+                {mainImage && mainImage.trim() !== "" ? (
+                    <img
+                        src={mainImage}
+                        alt={`${product.name} - ${product.colors[selectedColor]?.name || 'Product'}`}
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <span>No image available</span>
+                    </div>
+                )}
             </div>
             {/* Thumbnail images */}
             <div className="flex gap-2 overflow-x-auto mt-2">
                 {product.colors[selectedColor].images.map((img, index) => (
-                    <img
-                    key={index}
-                    src={img || "/placeholder.svg"}
-                    alt={`${product.name} thumbnail ${index + 1}`}
-                    className={cn(
-                        "w-20 h-20 object-cover rounded-lg border cursor-pointer",
-                        mainImage === img ? "border-primary" : "border-border"
-                    )}
-                    onClick={() => setMainImage(img)} // click thumbnail thay đổi ảnh chính
-                    />
+                    img && img.trim() !== "" ? (
+                        <img
+                            key={index}
+                            src={img}
+                            alt={`${product.name} thumbnail ${index + 1}`}
+                            className={cn(
+                                "w-20 h-20 object-cover rounded-lg border cursor-pointer",
+                                mainImage === img ? "border-primary" : "border-border"
+                            )}
+                            onClick={() => setMainImage(img)} // click thumbnail thay đổi ảnh chính
+                        />
+                    ) : null
                 ))}
             </div>
           </div>

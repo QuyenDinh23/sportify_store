@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -7,16 +7,27 @@ import { cn } from "../../lib/utils";
 
 const ProductCard = ({ product }) => {
   const hasDiscount = product.discountPercentage > 0;
+  const navigate = useNavigate();
+
+  const handleAddToCart = () => {
+    navigate(`/product/${product._id}`);
+  };
 
   return (
     <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in">
       {/* Product image */}
       <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden bg-muted">
-        <img
-          src={product.colors[0]?.images[0] || "/placeholder.svg"}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        {product.colors[0]?.images[0] && product.colors[0].images[0].trim() !== "" ? (
+          <img
+            src={product.colors[0].images[0]}
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <span>No image</span>
+          </div>
+        )}
 
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-2">
@@ -82,7 +93,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Add to Cart */}
-        <Button className="w-full" variant="sport">
+        <Button className="w-full" variant="sport" onClick={handleAddToCart}>
           <ShoppingCart className="h-4 w-4 mr-2" />
           Thêm vào giỏ
         </Button>
