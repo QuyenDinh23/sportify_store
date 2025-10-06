@@ -21,7 +21,7 @@ const productSchema = z.object({
   category: z.string().min(1, 'Vui lòng chọn danh mục'),
   subcategory: z.string().min(1, 'Vui lòng chọn danh mục con'),
   brand: z.string().min(1, 'Vui lòng chọn thương hiệu'),
-  sport: z.string().min(1, 'Vui lòng chọn môn thể thao'),
+  // sport: z.string().min(1, 'Vui lòng chọn môn thể thao'),
   price: z.number().min(1, 'Giá phải lớn hơn 0'),
   importPrice: z.number().min(1, 'Giá nhập phải lớn hơn 0'),
   discountPercentage: z.number().min(0).max(100, 'Phần trăm giảm giá từ 0-100'),
@@ -29,7 +29,7 @@ const productSchema = z.object({
   status: z.enum(['active', 'inactive']),
 });
 
-export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, subcategories, onCategoryChange, brands, onSubCategoryChange, sports }) => {
+export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, subcategories, onCategoryChange, brands, onSubCategoryChange, sports, readonly }) => {
   const [sizes, setSizes] = useState([]);
   const [newSize, setNewSize] = useState('');
   const [colors, setColors] = useState([]);
@@ -93,6 +93,19 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       setTechnicalSpecs(product.technicalSpecs || {});
       setSelectedCategory(product.category);
     } else {
+      reset({
+        name: '',
+        description: '',
+        category: '',
+        subcategory: '',
+        brand: '',
+        sport: '',
+        price: 0,
+        importPrice: 0,
+        discountPercentage: 0,
+        stockQuantity: 0,
+        status: 'active',
+      });
       setSizes([]);
       setColors([]);
       setMaterials([]);
@@ -206,16 +219,13 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
     onClose();
   };
 
-  const filteredSubcategories = subcategories.filter(sub => sub.categoryId === selectedCategory);
-  const filteredBrands = brands.filter(brand => 
-    filteredSubcategories.some(sub => sub.id === brand.subcategoryId)
-  );
-
  return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{product ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}</DialogTitle>
+          <DialogTitle>
+            {readonly ? 'Xem thống tin sản phẩm' : product ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
@@ -234,7 +244,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                   <Controller
                     name="name"
                     control={control}
-                    render={({ field }) => <Input {...field} />}
+                    render={({ field }) => <Input {...field} disabled={readonly} />}
                   />
                   {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                 </div>
@@ -246,7 +256,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={readonly}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -264,7 +274,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                 <Controller
                   name="description"
                   control={control}
-                  render={({ field }) => <Textarea {...field} rows={3} />}
+                  render={({ field }) => <Textarea {...field} rows={3} disabled={readonly} />}
                 />
                 {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
               </div>
@@ -281,7 +291,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                         field.onChange(value);        
                         onCategoryChange(value);
                       }}>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={readonly}>
                           <SelectValue placeholder="Chọn danh mục" />
                         </SelectTrigger>
                         <SelectContent>
@@ -305,7 +315,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                         onSubCategoryChange(val);
                         field.onChange(val);
                       }}>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={readonly}>
                           <SelectValue placeholder="Chọn danh mục con" />
                         </SelectTrigger>
                         <SelectContent>
@@ -328,7 +338,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={readonly}>
                           <SelectValue placeholder="Chọn thương hiệu" />
                         </SelectTrigger>
                         <SelectContent>
@@ -349,7 +359,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={readonly}>
                           <SelectValue placeholder="Chọn môn thể thao" />
                         </SelectTrigger>
                         <SelectContent>
@@ -375,6 +385,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                         {...field} 
                         type="number" 
                         onChange={e => field.onChange(Number(e.target.value))}
+                        disabled={readonly}
                       />
                     )}
                   />
@@ -391,6 +402,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                         {...field} 
                         type="number" 
                         onChange={e => field.onChange(Number(e.target.value))}
+                        disabled={readonly}
                       />
                     )}
                   />
@@ -409,6 +421,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                         min="0" 
                         max="100"
                         onChange={e => field.onChange(Number(e.target.value))}
+                        disabled={readonly}
                       />
                     )}
                   />
@@ -431,6 +444,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                         type="number" 
                         min="0"
                         onChange={e => field.onChange(Number(e.target.value))}
+                        disabled={readonly}
                       />
                     )}
                   />
@@ -450,6 +464,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                       value={newSize}
                       onChange={(e) => setNewSize(e.target.value)}
                       placeholder="Nhập kích thước"
+                      disabled={readonly}
                     />
                     <Button type="button" onClick={addSize}>
                       <Plus className="w-4 h-4" />
@@ -459,80 +474,18 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     {sizes.map(size => (
                       <Badge key={size} variant="secondary" className="flex items-center gap-1">
                         {size}
-                        <X className="w-3 h-3 cursor-pointer" onClick={() => removeSize(size)} />
+                        {!readonly && (
+                          <X
+                            className="w-3 h-3 cursor-pointer"
+                            onClick={() => removeSize(size)}
+                          />
+                        )}
                       </Badge>
                     ))}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Palette className="w-4 h-4" />
-                    Màu sắc
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button type="button" onClick={addColor} className="mb-4">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Thêm màu
-                  </Button>
-                  <div className="space-y-4">
-                    {colors.map((color, index) => (
-                      <div key={index} className="border p-4 rounded-lg">
-                        <div className="flex items-center gap-4 mb-3">
-                          <Input
-                            value={color.name}
-                            onChange={(e) => updateColor(index, 'name', e.target.value)}
-                            placeholder="Tên màu"
-                          />
-                          <Input
-                            type="color"
-                            value={color.hex}
-                            onChange={(e) => updateColor(index, 'hex', e.target.value)}
-                            className="w-16"
-                          />
-                          <Button type="button" variant="destructive" size="sm" onClick={() => removeColor(index)}>
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Hình ảnh</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="URL hình ảnh"
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  addImageToColor(index, e.currentTarget.value);
-                                  e.currentTarget.value = '';
-                                }
-                              }}
-                            />
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {color.images.map((image, imgIndex) => (
-                              <div key={imgIndex} className="relative">
-                                <img src={image} alt="" className="w-16 h-16 object-cover rounded" />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="sm"
-                                  className="absolute -top-2 -right-2 w-6 h-6 p-0"
-                                  onClick={() => removeImageFromColor(index, imgIndex)}
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card> */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -541,7 +494,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Button type="button" onClick={addColor} className="mb-4">
+                  <Button type="button" onClick={addColor} className="mb-4" disabled={readonly}>
                     <Plus className="w-4 h-4 mr-2" />
                     Thêm màu
                   </Button>
@@ -553,46 +506,64 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                             value={color.name}
                             onChange={(e) => updateColor(index, 'name', e.target.value)}
                             placeholder="Tên màu"
+                            disabled={readonly}
                           />
                           <Input
                             type="color"
                             value={color.hex}
                             onChange={(e) => updateColor(index, 'hex', e.target.value)}
                             className="w-16"
+                            disabled={readonly}
                           />
-                          <Button type="button" variant="destructive" size="sm" onClick={() => removeColor(index)}>
-                            <X className="w-4 h-4" />
-                          </Button>
+                          {!readonly && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => removeColor(index)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
                         </div>
                          <div className="space-y-2">
                            <Label>Hình ảnh</Label>
                            <div className="flex gap-2">
                              <Input
-                               type="file"
-                               multiple
-                               accept="image/*"
-                               onChange={(e) => {
-                                 if (e.target.files && e.target.files.length > 0) {
-                                   addImagesToColor(index, e.target.files);
-                                   e.target.value = '';
-                                 }
-                               }}
-                               className="cursor-pointer"
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => {
+                                  if (
+                                    !readonly &&
+                                    e.target.files &&
+                                    e.target.files.length > 0
+                                  ) {
+                                    addImagesToColor(index, e.target.files);
+                                    e.target.value = "";
+                                  }
+                                }}
+                                className="cursor-pointer"
+                                disabled={readonly}
                              />
                            </div>
                           <div className="flex flex-wrap gap-2">
                             {color.images.map((image, imgIndex) => (
                               <div key={imgIndex} className="relative">
                                 <img src={image} alt="" className="w-16 h-16 object-cover rounded" />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="sm"
-                                  className="absolute -top-2 -right-2 w-6 h-6 p-0"
-                                  onClick={() => removeImageFromColor(index, imgIndex)}
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
+                                {!readonly && (
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute -top-2 -right-2 w-6 h-6 p-0"
+                                    onClick={() =>
+                                      removeImageFromColor(index, imgIndex)
+                                    }
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -615,8 +586,9 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                       value={newMaterial}
                       onChange={(e) => setNewMaterial(e.target.value)}
                       placeholder="Nhập vật liệu"
+                      disabled={readonly}
                     />
-                    <Button type="button" onClick={addMaterial}>
+                    <Button type="button" onClick={addMaterial} disabled={readonly}>
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
@@ -624,7 +596,12 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     {materials.map(material => (
                       <Badge key={material} variant="secondary" className="flex items-center gap-1">
                         {material}
-                        <X className="w-3 h-3 cursor-pointer" onClick={() => removeMaterial(material)} />
+                         {!readonly && (
+                          <X
+                            className="w-3 h-3 cursor-pointer"
+                            onClick={() => removeMaterial(material)}
+                          />
+                        )}
                       </Badge>
                     ))}
                   </div>
@@ -643,13 +620,15 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                       value={newSpecKey}
                       onChange={(e) => setNewSpecKey(e.target.value)}
                       placeholder="Tên thông số"
+                      disabled={readonly}
                     />
                     <Input
                       value={newSpecValue}
                       onChange={(e) => setNewSpecValue(e.target.value)}
                       placeholder="Giá trị"
+                      disabled={readonly}
                     />
-                    <Button type="button" onClick={addTechnicalSpec}>
+                    <Button type="button" onClick={addTechnicalSpec} disabled={readonly}>
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
@@ -657,9 +636,16 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     {Object.entries(technicalSpecs).map(([key, value]) => (
                       <div key={key} className="flex items-center justify-between bg-muted p-2 rounded">
                         <span><strong>{key}:</strong> {value}</span>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeTechnicalSpec(key)}>
-                          <X className="w-4 h-4" />
-                        </Button>
+                        {!readonly && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeTechnicalSpec(key)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -672,9 +658,11 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
             <Button type="button" variant="outline" onClick={onClose}>
               Hủy
             </Button>
-            <Button type="submit">
-              {product ? 'Cập nhật' : 'Thêm mới'}
-            </Button>
+            {!readonly && (
+              <Button type="submit">
+                {product ? 'Cập nhật' : 'Thêm mới'}
+              </Button>
+            )}        
           </div>
         </form>
       </DialogContent>

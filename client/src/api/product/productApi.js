@@ -39,3 +39,13 @@ export const updateProduct = async (id, productData) => {
     throw err.response?.data || err;
   }
 };
+
+// Lấy danh sách sản phẩm theo filter
+export const getProductsByFilter = async (params) => {
+  try {
+    const res = await axiosInstance.get("/products/paging", { params });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};

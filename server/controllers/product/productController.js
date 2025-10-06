@@ -130,3 +130,53 @@ export const updateProduct = async (req, res) => {
     res.status(500).json({ message: "Server error khi cập nhật sản phẩm" });
   }
 };
+
+//Filter + pagination
+export const getProductsByFilter = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const { category, subcategory, brand, sport, search } = req.query;
+
+    const skip = (page - 1) * limit;
+
+    // Build query
+    let query = {};
+
+    if (category && category !== "all") {
+      query.category = category;
+    }
+    if (subcategory && subcategory !== "all") {
+      query.subcategory = subcategory;
+    }
+    if (brand && brand !== "all") {
+      query.brand = brand;
+    }
+    if (sport && sport !== "all") {
+      query.sport = sport;
+    }
+    if (search && search.trim() !== "") {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    // Count total
+    const total = await Product.countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
+
+    // Get data
+    const products = await Product.find(query)
+      .populate("category", "name")
+      .populate("subcategory", "name")
+      .populate("brand", "name logo")
+      .populate("sport", "name")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    res.json({ products, totalPages });
+  } catch (error) {
+    console.error("Error filter products:", error);
+    res.status(500).json({ message: "Lỗi server khi filter sản phẩm" });
+  }
+};
