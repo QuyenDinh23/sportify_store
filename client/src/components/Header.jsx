@@ -1,3 +1,11 @@
+import { Search, ShoppingCart, User, Menu, Settings, HeadphonesIcon, Package, RotateCcw } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { Link } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchCart } from '../store/cartSlice';
+import { useEffect } from 'react';
 import {
   Search,
   ShoppingCart,
@@ -22,6 +30,17 @@ import {
 import { useNavigate } from "react-router-dom";
 
 const Header = () => {
+  const dispatch = useDispatch();
+  const { totalQuantity } = useSelector((state) => state.cart);
+  const { user } = useSelector((state) => state.auth);
+
+  // Fetch cart khi component mount (chỉ khi user đã đăng nhập)
+  useEffect(() => {
+    if (user) {
+      dispatch(fetchCart());
+    }
+  }, [dispatch, user]);
+
   const navigate = useNavigate();
   const he = "/account/profile";
   return (
@@ -93,6 +112,18 @@ const Header = () => {
                 <Settings className="h-5 w-5" />
               </Link>
             </Button>
+            <Button variant="ghost" size="icon" className="hidden md:flex">
+              <User className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="relative" asChild>
+              <Link to="/cart">
+                <ShoppingCart className="h-5 w-5" />
+                {totalQuantity > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent">
+                    {totalQuantity}
+                  </Badge>
+                )}
+              </Link>
             <DropdownMenuHover>
               <DropdownMenuTrigger asChild>
                 <Button onClick={() => {navigate(`${he}`)}} variant="ghost" size="icon" className="hidden md:flex">
