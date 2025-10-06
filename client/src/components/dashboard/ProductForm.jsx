@@ -110,7 +110,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       setMaterials([]);
       setTechnicalSpecs({});
     }
-  }, [brands, product, reset]);
+  }, [isOpen, product]);
 
   const addSize = () => {
     if (newSize && !sizes.includes(newSize)) {
