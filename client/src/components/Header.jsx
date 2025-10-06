@@ -7,20 +7,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchCart } from '../store/cartSlice';
 import { useEffect } from 'react';
 import {
-  Search,
-  ShoppingCart,
-  User,
-  Menu,
-  Settings,
-  HeadphonesIcon,
-  Package,
-  RotateCcw,
-} from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
-import { Link } from "react-router-dom";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuHover,
@@ -124,6 +110,7 @@ const Header = () => {
                   </Badge>
                 )}
               </Link>
+            </Button>
             <DropdownMenuHover>
               <DropdownMenuTrigger asChild>
                 <Button onClick={() => {navigate(`${he}`)}} variant="ghost" size="icon" className="hidden md:flex">
@@ -156,6 +143,6 @@ const Header = () => {
       </div>
     </header>
   );
-};
+}
 
 export default Header;
