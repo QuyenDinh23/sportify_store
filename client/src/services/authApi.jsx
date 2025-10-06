@@ -57,6 +57,33 @@ export const authApi = {
       }
     }
   },
+  loginWithFb: async (name, email, fbId) => {
+    try {
+      const res = await api.post("/auth/login-fb", { name, email, fbId });
+      store.dispatch(setToken(res.data));
+      return res.data;
+    } catch (err) {
+      // err.response chứa response từ server (nếu server trả lỗi 4xx/5xx)
+      if (err.response) {
+        if (err.response.status === 400) {
+          return { needEmail: true, name: err.response.data.name, fbId: err.response.data.fbId }; 
+        }
+        toast({
+          title: "Đăng nhập thất bại",
+          description: err.response.data,
+          variant: "destructive",
+        });
+        console.error("Server error:", err.response.data);
+        throw new Error(err.response.data.error || "Login failed");
+      } else if (err.request) {
+        console.error("No response from server:", err.request);
+        throw new Error("No response from server");
+      } else {
+        console.error("Error", err.message);
+        throw new Error(err.message);
+      }
+    }
+  },
   logout: async () => {
     await api.post("/auth/logout");
     store.dispatch(logout());
@@ -74,7 +101,7 @@ export const authApi = {
 
   refreshToken: async () => {
     const res = await axios.post("/auth/refresh-token", {
-        withCredentials: true,
+      withCredentials: true,
     });
     store.dispatch(
       setCredentials({ accessToken: res.data.accessToken, user: null })

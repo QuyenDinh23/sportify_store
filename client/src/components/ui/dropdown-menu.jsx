@@ -11,6 +11,37 @@ const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
 const DropdownMenuSub = DropdownMenuPrimitive.Sub;
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
 
+const DropdownMenuHover = ({ children, ...props }) => {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <DropdownMenuPrimitive.Root open={open} onOpenChange={setOpen} {...props}>
+      {React.Children.map(children, (child) => {
+        if (!React.isValidElement(child)) return child;
+
+        // Nếu là Trigger thì thêm hover event
+        if (child.type.displayName === "DropdownMenuTrigger") {
+          return React.cloneElement(child, {
+            onMouseEnter: () => setOpen(true),
+            onMouseLeave: () => setOpen(false),
+          });
+        }
+
+        // Nếu là Content thì thêm hover event
+        if (child.type.displayName === "DropdownMenuContent") {
+          return React.cloneElement(child, {
+            onMouseEnter: () => setOpen(true),
+            onMouseLeave: () => setOpen(false),
+          });
+        }
+
+        return child;
+      })}
+    </DropdownMenuPrimitive.Root>
+  );
+};
+DropdownMenuHover.displayName = "DropdownMenuHover";
+
 const DropdownMenuSubTrigger = React.forwardRef(({ className, inset, children, ...props }, ref) => (
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
@@ -145,4 +176,5 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuRadioGroup,
+  DropdownMenuHover
 };
