@@ -30,15 +30,17 @@ const authController = {
 
   //GENERATE ACCESS TOKEN
   generateAccessToken: (user) => {
-    return jwt.sign({ id: user?._id || user?.id }, process.env.JWT_SECRET, {
+    const jwtSecret = process.env.JWT_SECRET || "your_jwt_secret_key_here";
+    return jwt.sign({ id: user?._id || user?.id }, jwtSecret, {
       expiresIn: "15m",
     });
   },
   //GENERATE REFRESH TOKEN
   generateRefreshToken: (user) => {
+    const refreshSecret = process.env.JWT_REFRESH_TOKEN_SECRET || "your_jwt_refresh_secret_key_here";
     return jwt.sign(
       { id: user?._id || user?.id },
-      process.env.JWT_REFRESH_TOKEN_SECRET,
+      refreshSecret,
       {
         expiresIn: "7d",
       }
@@ -90,9 +92,10 @@ const authController = {
     const token = await RefreshToken.findOne({ token: refreshToken });
     if (!token) return res.status(403).send("Forbidden");
 
+    const refreshSecret = process.env.JWT_REFRESH_TOKEN_SECRET || "your_jwt_refresh_secret_key_here";
     jwt.verify(
       refreshToken,
-      process.env.JWT_REFRESH_TOKEN_SECRET,
+      refreshSecret,
       (err, user) => {
         if (err) return res.status(403).send("Forbidden");
         const newAccessToken = authController.generateAccessToken(user);
