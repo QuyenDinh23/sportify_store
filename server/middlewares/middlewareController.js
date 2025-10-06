@@ -5,7 +5,7 @@ const middlewareController = {
     const authHeader = req.headers["authorization"];
     if (authHeader) {
       const token = authHeader.split(" ")[1];
-      const jwtSecret = process.env.JWT_SECRET || "your_jwt_secret_key_here";
+      const jwtSecret = process.env.JWT_SECRET || "your_jwt_secret_key_here_sportify_store_2025";
       
       const t = jwt.verify(token, jwtSecret, (err, user) => {
         if (err) {

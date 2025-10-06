@@ -1,10 +1,3 @@
-import { Search, ShoppingCart, User, Menu, Settings, HeadphonesIcon, Package, RotateCcw } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Badge } from '../components/ui/badge';
-import { Link } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { fetchCart } from '../store/cartSlice';
 import { useEffect } from 'react';
 import {
   Search,
@@ -28,9 +21,12 @@ import {
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchCart } from '../store/cartSlice';
 
 const Header = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { totalQuantity } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
 
@@ -41,8 +37,6 @@ const Header = () => {
     }
   }, [dispatch, user]);
 
-  const navigate = useNavigate();
-  const he = "/account/profile";
   return (
     <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4">
@@ -102,19 +96,56 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden md:flex"
-              asChild
-            >
-              <Link to="/dashboard">
-                <Settings className="h-5 w-5" />
-              </Link>
-            </Button>
-            <Button variant="ghost" size="icon" className="hidden md:flex">
-              <User className="h-5 w-5" />
-            </Button>
+            {/* Dashboard Button (Admin/Staff) */}
+            {user && (user.role === 'admin' || user.role === 'staff') && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden md:flex"
+                asChild
+              >
+                <Link to="/dashboard">
+                  <Settings className="h-5 w-5" />
+                </Link>
+              </Button>
+            )}
+
+            {/* User Menu */}
+            {user ? (
+              <DropdownMenuHover>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="hidden md:flex">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-card z-[100]">
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/account/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Thông tin cá nhân</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/orders')}>
+                    <Package className="mr-2 h-4 w-4" />
+                    <span>Theo dõi đơn hàng</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    <span>Đổi trả và bảo hành</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">
+                    <HeadphonesIcon className="mr-2 h-4 w-4" />
+                    <span>Hỗ trợ CSKH</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenuHover>
+            ) : (
+              <Button variant="ghost" size="icon" className="hidden md:flex" asChild>
+                <Link to="/login">
+                  <User className="h-5 w-5" />
+                </Link>
+              </Button>
+            )}
+
+            {/* Cart Button */}
             <Button variant="ghost" size="icon" className="relative" asChild>
               <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
@@ -124,32 +155,6 @@ const Header = () => {
                   </Badge>
                 )}
               </Link>
-            <DropdownMenuHover>
-              <DropdownMenuTrigger asChild>
-                <Button onClick={() => {navigate(`${he}`)}} variant="ghost" size="icon" className="hidden md:flex">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-card z-[100]">
-                <DropdownMenuItem className="cursor-pointer">
-                  <Package className="mr-2 h-4 w-4" />
-                  <span>Theo dõi đơn hàng</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  <span>Đổi trả và bảo hành</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
-                  <HeadphonesIcon className="mr-2 h-4 w-4" />
-                  <span>Hỗ trợ CSKH</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenuHover>
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent">
-                2
-              </Badge>
             </Button>
           </div>
         </div>

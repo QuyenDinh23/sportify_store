@@ -103,21 +103,21 @@ const AddressManage = () => {
       };
 
       loadEditAddress();
-    }, [editData]);
+    }, [provinces.length, setDistricts, setProvinces, setSelectedDistrict, setSelectedProvince, setSelectedWard, setWards]);
     useEffect(() => {
       if (wards.length && editData) {
         setSelectedWard(editData.ward.code);
         setLoading(false);
       }
-    }, [wards, editData]);
+    }, [wards, setSelectedWard]);
 
     useEffect(() => {
-      setForm({
-        ...form,
+      setForm(prevForm => ({
+        ...prevForm,
         city: selectedProvince,
         district: selectedDistrict,
         ward: selectedWard,
-      });
+      }));
     }, [selectedProvince, selectedDistrict, selectedWard]);
     const handleChange = (e) => {
       const { name, type, value, checked } = e.target;
@@ -271,14 +271,14 @@ const AddressManage = () => {
       } else {
         setForm(defaultForm);
       }
-    }, [editData]);
+    }, []);
     useEffect(() => {
       if (path === "Thêm địa chỉ" || path === "Cập nhật địa chỉ") {
         setAddForm(true);
       } else {
         setAddForm(false);
       }
-    }, [path]);
+    }, []);
     const [address, setAddress] = useState([]);
     useEffect(() => {
       const fetchAddress = async () => {

@@ -10,7 +10,6 @@ const HOST_NAME = HOST || 'localhost';
 const DB_URL = URL || 'mongodb://localhost:27017/';
 const DB_NAME_VAL = DB_NAME || 'sportify_store';
 import authRoute from "./routes/auth.js";
-import authRoute from "./routes/authentication/auth.js";
 import categoryRoutes from "./routes/category/categoryRoutes.js";
 import subcategoryRoutes from "./routes/category/subCategoryRoutes.js";
 import imageRoutes from "./routes/image/imageRoutes.js";

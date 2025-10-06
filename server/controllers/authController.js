@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import User from "../models/User.js";
+import User from "../models/user/User.js";
 import jwt from "jsonwebtoken";
 import RefreshToken from "../models/RefreshToken.js";
 const authController = {
@@ -30,7 +30,7 @@ const authController = {
 
   //GENERATE ACCESS TOKEN
   generateAccessToken: (user) => {
-    const jwtSecret = process.env.JWT_SECRET || "your_jwt_secret_key_here";
+    const jwtSecret = process.env.JWT_SECRET || "your_jwt_secret_key_here_sportify_store_2025";
     return jwt.sign({ id: user?._id || user?.id }, jwtSecret, {
       expiresIn: "15m",
     });
