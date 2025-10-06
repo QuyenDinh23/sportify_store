@@ -12,7 +12,6 @@ import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { X, Plus, Palette } from 'lucide-react';
-import { sportCategories } from '../../data/mockData';
 import { uploadToBackend } from '../../api/image/uploadImageApi';
 
 const productSchema = z.object({
