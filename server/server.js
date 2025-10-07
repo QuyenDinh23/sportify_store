@@ -12,6 +12,7 @@ import sportRoutes from "./routes/sport/sportRoutes.js";
 import productRoutes from "./routes/product/productRoutes.js";
 import userRoute from "./routes/user/userRoutes.js";
 import addressRouter from "./routes/address/addressRoute.js";
+import voucherRoute from "./routes/voucher/voucherRoute.js";
 
 //create server
 const server = express();
@@ -35,6 +36,7 @@ server.use("/api/sports", sportRoutes);
 server.use("/api/products", productRoutes);
 server.use("/api/users", userRoute);
 server.use("/api/address", addressRouter);
+server.use("/api/vouchers", voucherRoute);
 
 //connect tới DB
 mongoose

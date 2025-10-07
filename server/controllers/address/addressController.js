@@ -1,10 +1,23 @@
 import Address from "../../models/address/Address.js";
 
 const addressController = {
-  getAdress: async (req, res) => {
+  getAddress: async (req, res) => {
     try {
       const addressList = await Address.find({ user: req.user.id });
       res.status(200).json(addressList);
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
+  getAddressById: async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!id) return res.status(400).json({ error: "ID không hợp lệ" });
+      const address = await Address.findById(id);
+      if (!address)
+        return res.status(404).json({ error: "Không tìm thấy địa chỉ" });
+
+      res.status(200).json(address);
     } catch (error) {
       res.status(500).json(error);
     }
