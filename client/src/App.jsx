@@ -15,6 +15,9 @@ import SportManagement from "./pages/dashboard/SportManagement";
 import ProductManagement from "./pages/dashboard/ProductManagement";
 import Home from "./pages/home/Home";
 import ProductDetail from "./pages/product/ProductDetail";
+import Cart from "./pages/cart/Cart";
+import Checkout from "./pages/checkout/Checkout";
+import OrderSuccess from "./pages/checkout/OrderSuccess";
 import UserProfile from "./pages/AccountManage/UserProfile";
 import AddressManage from "./pages/AccountManage/AddressManagement";
 import AddEditAddress from "./pages/AccountManage/AddressAddEdit";
@@ -23,6 +26,7 @@ import SecurityMain from "./pages/AccountManage/SecurityManagement";
 import ChangePassword from "./pages/AccountManage/ChangePassword";
 import PermissopnAccess from "./pages/AccountManage/PermissionAccessManagement";
 import VoucherManagement from "./pages/dashboard/VoucherManagement";
+
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,9 @@ const App = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<Home />} />
             <Route path="product/:id" element={<ProductDetail />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             {/* route dashboard */}
             <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>

@@ -1,26 +1,32 @@
 import { useEffect, useState } from 'react';
-import { mockProducts, brands, sportCategories, subcategories } from '../../data/mockData';
 import { DataTable } from '../../components/dashboard/DataTable';
 import { ProductForm } from '../../components/dashboard/ProductForm';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { useToast } from '../../hooks/use-toast';
-import { createProduct } from '../../api/product/productApi';
+import { createProduct, getProductsByFilter, updateProduct } from '../../api/product/productApi';
 import { fetchAllCategories } from '../../api/category/categoryApi';
 import { getSports } from '../../api/sport/sportApi';
+import Pagination from '../../components/pagination/Pagination';
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState();
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [selectedSport, setSelectedSport] = useState('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [sports, setSports] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const itemsPerPage = 10;
   const { toast } = useToast();
 
   const formatPrice = (price) => {
@@ -46,8 +52,29 @@ const ProductManagement = () => {
       }
     },
     { key: 'name', label: 'Tên sản phẩm', sortable: true },
-    { key: 'brand', label: 'Thương hiệu', sortable: true },
-    { key: 'sport', label: 'Môn thể thao', sortable: true },
+    {
+      key: 'brand',
+      label: 'Thương hiệu',
+      sortable: true,
+      render: (value, item) => (
+        <div className="flex items-center gap-2">
+          {item.brand?.logo && (
+            <img
+              src={item.brand.logo}
+              alt={item.brand.name}
+              className="w-6 h-6 object-contain"
+            />
+          )}
+          <span>{item.brand?.name || '-'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'sport',
+      label: 'Môn thể thao',
+      sortable: true,
+      render: (value, item) => <span>{item.sport?.name || '-'}</span>,
+    },
     {
       key: 'discountedPrice',
       label: 'Giá bán',
@@ -117,6 +144,32 @@ const ProductManagement = () => {
     }
   }
 
+  const loadProducts = async () => {
+    try {
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchTerm || "",
+      };
+
+      if (selectedCategory !== "all") params.category = selectedCategory;
+      if (selectedSubcategory !== "all") params.subcategory = selectedSubcategory;
+      if (selectedBrand !== "all") params.brand = selectedBrand;
+      if (selectedSport !== "all") params.sport = selectedSport;
+
+      const res = await getProductsByFilter(params);
+      setProducts(res.products);
+      setTotalPages(res.totalPages);
+      console.log("Danh sách sản phẩm filter:", res.products);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: `${error.message || error}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCategoryChange = async (categoryId) => {
     const category = categories.find(c => c._id === categoryId);
     setSubcategories(category?.subcategories || []);
@@ -130,20 +183,27 @@ const ProductManagement = () => {
   useEffect(() => {
     loadCategories();
     loadSports();
-  }, []);
+    loadProducts();
+  }, [selectedCategory, selectedSubcategory, selectedBrand, selectedSport, searchTerm, currentPage]);
 
   useEffect(() => {
   
-}, [subcategories, brands]);
+  }, [subcategories, brands]);
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
   const handleAdd = () => {
     setEditingProduct(undefined);
     setIsFormOpen(true);
+    setIsReadOnly(false);
   };
 
   const handleEdit = (product) => {
+    console.log("Product to edit:", product);
     setEditingProduct(product);
     setIsFormOpen(true);
+    setIsReadOnly(false);
   };
 
   const handleDelete = (product) => {
@@ -158,43 +218,39 @@ const ProductManagement = () => {
   };
 
   const handleFormSubmit = async (productData) => {
-    if (editingProduct) {
-      const updatedProducts = products.map(p => 
-        p.id === editingProduct.id ? productData : p
-      );
-      setProducts(updatedProducts);
+    try {
+      if (productData.id) {
+        //Editing existing product
+        const updatedProduct = await updateProduct(productData.id, productData);
+        setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+        toast({
+          title: "Đã cập nhật sản phẩm",
+          description: `${productData.name} đã được cập nhật thành công`,
+        });
+      } else {
+        //Adding new product
+        const newProduct = await createProduct(productData);
+        setProducts([...products, newProduct]);
+        toast({
+          title: "Đã thêm sản phẩm",
+          description: `${productData.name} đã được thêm vào danh sách`,
+        });
+      }
+      loadProducts();
+    } catch (error) {
       toast({
-        title: "Đã cập nhật sản phẩm",
-        description: `${productData.name} đã được cập nhật thành công`,
-      });
-    } else {
-      //Adding new product
-      const newProduct = await createProduct(productData);
-      setProducts([...products, newProduct]);
-      toast({
-        title: "Đã thêm sản phẩm",
-        description: `${productData.name} đã được thêm vào danh sách`,
+        title: "Lỗi",
+        description: `${error}` ,
+        variant: "destructive",
       });
     }
   };
 
   const handleView = (product) => {
-    toast({
-      title: "Chi tiết sản phẩm",
-      description: `Xem chi tiết ${product.name}`,
-    });
+    setEditingProduct(product);
+    setIsFormOpen(true);
+    setIsReadOnly(true);
   };
-
-  const filteredProducts = products.filter(product => {
-    const brandMatch = selectedBrand === 'all' || product.brand === selectedBrand;
-    const sportMatch = selectedSport === 'all' || product.sport === selectedSport;
-    const subcategoryMatch = selectedSubcategory === 'all' || product.subcategory === selectedSubcategory;
-    return brandMatch && sportMatch && subcategoryMatch;
-  });
-
-  const uniqueBrands = Array.from(new Set(products.map(p => p.brand)));
-  const uniqueSports = Array.from(new Set(products.map(p => p.sport)));
-  const uniqueSubcategories = Array.from(new Set(products.map(p => p.subcategory)));
 
   return (
     <div className="space-y-6">
@@ -208,7 +264,46 @@ const ProductManagement = () => {
           <CardTitle>Bộ lọc sản phẩm</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
+            <div>
+              <label className="text-sm font-medium">Danh mục chính</label>
+              <Select value={selectedCategory} onValueChange={(val) => {
+                setSelectedCategory(val);
+                handleCategoryChange(val); // load subcategories theo category
+                setSelectedSubcategory("all"); // reset subcategory
+                setSelectedBrand("all"); // reset brand
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn danh mục chính" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả danh mục chính</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat._id} value={cat._id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Danh mục con</label>
+              <Select value={selectedSubcategory} onValueChange={(val) => {
+                setSelectedSubcategory(val);
+                handleSubcategoryChange(val); // load brands theo subcategory
+                setSelectedBrand("all"); // reset brand khi đổi subcategory
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn danh mục con" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả danh mục con</SelectItem>
+                  {subcategories.map(sub => (
+                    <SelectItem key={sub._id} value={sub._id}>{sub.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <label className="text-sm font-medium">Thương hiệu</label>
               <Select value={selectedBrand} onValueChange={setSelectedBrand}>
@@ -217,8 +312,8 @@ const ProductManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả thương hiệu</SelectItem>
-                  {uniqueBrands.map(brand => (
-                    <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                  {brands.map(brand => (
+                    <SelectItem key={brand._id} value={brand._id}>{brand.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -232,23 +327,8 @@ const ProductManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tất cả môn thể thao</SelectItem>
-                  {sportCategories.map(sport => (
-                    <SelectItem key={sport.id} value={sport.id}>{sport.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Danh mục con</label>
-              <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn danh mục con" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả danh mục con</SelectItem>
-                  {subcategories.map(sub => (
-                    <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
+                  {sports.map(sport => (
+                    <SelectItem key={sport._id} value={sport._id}>{sport.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -258,14 +338,16 @@ const ProductManagement = () => {
       </Card>
 
       <DataTable
-        title={`Danh sách sản phẩm (${filteredProducts.length})`}
-        data={filteredProducts}
+        title={`Danh sách sản phẩm (${products.length})`}
+        data={products}
         columns={columns}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onView={handleView}
         searchPlaceholder="Tìm kiếm sản phẩm..."
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
       />
 
       <ProductForm
@@ -275,6 +357,7 @@ const ProductManagement = () => {
           setEditingProduct(undefined);
         }}
         onSubmit={handleFormSubmit}
+        readonly={isReadOnly}
         product={editingProduct}
         categories={categories}
         subcategories={subcategories}
@@ -282,6 +365,12 @@ const ProductManagement = () => {
         brands={brands}
         onSubCategoryChange={handleSubcategoryChange}
         sports={sports}
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
       />
     </div>
   );
