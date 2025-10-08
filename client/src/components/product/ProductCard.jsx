@@ -61,7 +61,7 @@ const ProductCard = ({ product }) => {
           </h3>
         </Link>
 
-        <p className="text-sm text-muted-foreground mb-2">{product.brand.name}</p>
+        <p className="text-sm text-muted-foreground mb-2">{product.brand?.name}</p>
 
         {/* Color options */}
         <div className="flex gap-1 mb-3">

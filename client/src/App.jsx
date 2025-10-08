@@ -20,6 +20,7 @@ import Checkout from "./pages/checkout/Checkout";
 import OrderSuccess from "./pages/checkout/OrderSuccess";
 import UserProfile from "./pages/AccountManage/UserProfile";
 import AddressManage from "./pages/AccountManage/AddressManagement";
+import Products from "./pages/product/Products";
 
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => {
             {/* route login */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<Home />} />
+            <Route path="products" element={<Products />} />
             <Route path="product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />

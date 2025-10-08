@@ -38,6 +38,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   const [newSpecKey, setNewSpecKey] = useState('');
   const [newSpecValue, setNewSpecValue] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [newSizeInputs, setNewSizeInputs] = useState({});
   const { control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -112,19 +113,8 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
     }
   }, [isOpen, product]);
 
-  const addSize = () => {
-    if (newSize && !sizes.includes(newSize)) {
-      setSizes([...sizes, newSize]);
-      setNewSize('');
-    }
-  };
-
-  const removeSize = (size) => {
-    setSizes(sizes.filter(s => s !== size));
-  };
-
   const addColor = () => {
-    const newColor = { name: 'Màu mới', hex: '#000000', images: [] };
+    const newColor = { name: 'Màu mới', hex: '#000000', images: [], sizes: [] };
     setColors([...colors, newColor]);
   };
 
@@ -156,11 +146,33 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
 
 
   const removeImageFromColor = (colorIndex, imageIndex) => {
-  const updatedColors = [...colors];
-  updatedColors[colorIndex].images.splice(imageIndex, 1);
-  setColors(updatedColors);
-};
+    const updatedColors = [...colors];
+    updatedColors[colorIndex].images.splice(imageIndex, 1);
+    setColors(updatedColors);
+  };
+  const addSizeToColor = (colorIndex) => {
+    const size = newSizeInputs[colorIndex]?.trim();
+    if (!size) return;
+    
+    const updatedColors = [...colors];
+    if (!updatedColors[colorIndex].sizes.find(s => s.size === size)) {
+      updatedColors[colorIndex].sizes.push({ size, quantity: 0 });
+      setColors(updatedColors);
+      setNewSizeInputs({ ...newSizeInputs, [colorIndex]: '' });
+    }
+  };
 
+  const removeSizeFromColor = (colorIndex, sizeIndex) => {
+    const updatedColors = [...colors];
+    updatedColors[colorIndex].sizes.splice(sizeIndex, 1);
+    setColors(updatedColors);
+  };
+
+  const updateSizeQuantity = (colorIndex, sizeIndex, quantity) => {
+    const updatedColors = [...colors];
+    updatedColors[colorIndex].sizes[sizeIndex].quantity = quantity;
+    setColors(updatedColors);
+  };
 
   const addMaterial = () => {
     if (newMaterial && !materials.includes(newMaterial)) {
@@ -187,7 +199,12 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
     setTechnicalSpecs(updated);
   };
 
+  const totalStockQuantity = colors.reduce((total, color) => {
+    return total + color.sizes.reduce((sum, sizeVariant) => sum + sizeVariant.quantity, 0);
+  }, 0);
+
   const onFormSubmit = (data) => {
+    const allSizes = Array.from(new Set(colors.flatMap(color => color.sizes.map(s => s.size))));
     const productData = {
       id: product?._id,
       name: data.name,
@@ -200,9 +217,9 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       importPrice: data.importPrice,
       discountPercentage: data.discountPercentage,
       discountedPrice,
-      stockQuantity: data.stockQuantity,
+      stockQuantity: totalStockQuantity,
       status: data.status,
-      sizes,
+      sizes : allSizes,
       colors,
       materials,
       technicalSpecs,
@@ -437,14 +454,9 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                   <Controller
                     name="stockQuantity"
                     control={control}
+                    // eslint-disable-next-line no-unused-vars
                     render={({ field }) => (
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        min="0"
-                        onChange={e => field.onChange(Number(e.target.value))}
-                        disabled={readonly}
-                      />
+                      <Input value={totalStockQuantity} disabled className="bg-muted" />
                     )}
                   />
                   {errors.stockQuantity && <p className="text-sm text-destructive">{errors.stockQuantity.message}</p>}
@@ -455,45 +467,13 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
             <TabsContent value="variants" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Kích thước</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2 mb-4">
-                    <Input
-                      value={newSize}
-                      onChange={(e) => setNewSize(e.target.value)}
-                      placeholder="Nhập kích thước"
-                      disabled={readonly}
-                    />
-                    <Button type="button" onClick={addSize}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {sizes.map(size => (
-                      <Badge key={size} variant="secondary" className="flex items-center gap-1">
-                        {size}
-                        {!readonly && (
-                          <X
-                            className="w-3 h-3 cursor-pointer"
-                            onClick={() => removeSize(size)}
-                          />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Palette className="w-4 h-4" />
                     Màu sắc
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Button type="button" onClick={addColor} className="mb-4" disabled={readonly}>
+                  <Button type="button" onClick={addColor} className="mb-4">
                     <Plus className="w-4 h-4 mr-2" />
                     Thêm màu
                   </Button>
@@ -505,64 +485,107 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                             value={color.name}
                             onChange={(e) => updateColor(index, 'name', e.target.value)}
                             placeholder="Tên màu"
-                            disabled={readonly}
                           />
                           <Input
                             type="color"
                             value={color.hex}
                             onChange={(e) => updateColor(index, 'hex', e.target.value)}
                             className="w-16"
-                            disabled={readonly}
                           />
-                          {!readonly && (
-                            <Button
-                              type="button"
-                              variant="destructive"
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeColor(index)}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        
+                        {/* Size variants for this color */}
+                        <div className="space-y-2 mb-3">
+                          <Label>Kích thước và số lượng</Label>
+                          
+                          {/* Add new size input */}
+                          <div className="flex gap-2 mb-2">
+                            <Input
+                              value={newSizeInputs[index] || ''}
+                              onChange={(e) => setNewSizeInputs({ ...newSizeInputs, [index]: e.target.value })}
+                              placeholder="Nhập size (VD: M, 40, XL)"
+                              className="flex-1"
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addSizeToColor(index);
+                                }
+                              }}
+                            />
+                            <Button 
+                              type="button" 
+                              onClick={() => addSizeToColor(index)}
                               size="sm"
-                              onClick={() => removeColor(index)}
                             >
-                              <X className="w-4 h-4" />
+                              <Plus className="w-4 h-4" />
                             </Button>
+                          </div>
+
+                          {/* Existing sizes */}
+                          {!color.sizes || color.sizes.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Chưa có size nào. Thêm size bằng ô nhập bên trên.</p>
+                          ) : (
+                            <div className="space-y-2 border rounded-md p-3 bg-muted/20">
+                              {color.sizes.map((sizeVariant, sizeIndex) => (
+                                <div key={sizeIndex} className="flex items-center gap-2">
+                                  <div className="w-20">
+                                    <Badge variant="outline" className="w-full justify-center">
+                                      {sizeVariant.size}
+                                    </Badge>
+                                  </div>
+                                  <Input
+                                    type="number"
+                                    value={sizeVariant.quantity}
+                                    onChange={(e) => updateSizeQuantity(index, sizeIndex, Number(e.target.value))}
+                                    placeholder="Số lượng"
+                                    className="flex-1"
+                                  />
+                                  <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => removeSizeFromColor(index, sizeIndex)}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-                         <div className="space-y-2">
+
+                        <div className="space-y-2">
                            <Label>Hình ảnh</Label>
                            <div className="flex gap-2">
                              <Input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                onChange={(e) => {
-                                  if (
-                                    !readonly &&
-                                    e.target.files &&
-                                    e.target.files.length > 0
-                                  ) {
-                                    addImagesToColor(index, e.target.files);
-                                    e.target.value = "";
-                                  }
-                                }}
-                                className="cursor-pointer"
-                                disabled={readonly}
+                               type="file"
+                               multiple
+                               accept="image/*"
+                               onChange={(e) => {
+                                 if (e.target.files && e.target.files.length > 0) {
+                                   addImagesToColor(index, e.target.files);
+                                   e.target.value = '';
+                                 }
+                               }}
+                               className="cursor-pointer"
                              />
                            </div>
                           <div className="flex flex-wrap gap-2">
                             {color.images.map((image, imgIndex) => (
                               <div key={imgIndex} className="relative">
                                 <img src={image} alt="" className="w-16 h-16 object-cover rounded" />
-                                {!readonly && (
-                                  <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="sm"
-                                    className="absolute -top-2 -right-2 w-6 h-6 p-0"
-                                    onClick={() =>
-                                      removeImageFromColor(index, imgIndex)
-                                    }
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                )}
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2 w-6 h-6 p-0"
+                                  onClick={() => removeImageFromColor(index, imgIndex)}
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
                               </div>
                             ))}
                           </div>

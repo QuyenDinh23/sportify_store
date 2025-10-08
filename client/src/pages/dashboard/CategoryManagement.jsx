@@ -20,7 +20,6 @@ const CategoryManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 10;
   const { toast } = useToast();
-  console.log('categoryList', categoryList);
   const genderMap = {
     male: "Nam",
     female: "Nữ",
