@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Label } from "../../components/ui/label";
 import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
-import { brands, sports } from "../../data/mockData";
 import { cn } from "../..//lib/utils";
 
-const FilterSidebar = ({ onFilterChange, className }) => {
-  const [expandedSections, setExpandedSections] = useState(new Set(["brand", "color", "size"]));
+const FilterSidebar = ({ onFilterChange, products, className }) => {
+  const [expandedSections, setExpandedSections] = useState(
+    new Set(["brand", "color", "size", "sport"])
+  );
+  const [staticBrands, setStaticBrands] = useState([]);
   const [filters, setFilters] = useState({
     brands: [],
     colors: [],
@@ -17,17 +19,57 @@ const FilterSidebar = ({ onFilterChange, className }) => {
     priceRange: [0, 10000000],
   });
 
-  const colors = [
-    { name: "Đen", hex: "#000000" },
-    { name: "Trắng", hex: "#FFFFFF" },
-    { name: "Xanh dương", hex: "#0000FF" },
-    { name: "Đỏ", hex: "#FF0000" },
-    { name: "Xám", hex: "#808080" },
-    { name: "Hồng", hex: "#FFC0CB" },
-  ];
-
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL", "39", "40", "41", "42", "43"];
-
+  //Dùng useMemo để tránh tính lại nhiều lần
+  // const uniqueBrands = useMemo(() => {
+  //   const map = new Map();
+  //   products.forEach((p) => {
+  //     if (p.brand && p.brand._id && !map.has(p.brand._id)) {
+  //       map.set(p.brand._id, p.brand.name);
+  //     }
+  //   });
+  //   return Array.from(map, ([id, name]) => ({ id, name }));
+  // }, [products]);
+  useEffect(() => {
+    if (products.length > 0 && staticBrands.length === 0) {
+      const map = new Map();
+      products.forEach((p) => {
+        if (p.brand && p.brand._id && !map.has(p.brand._id)) {
+          map.set(p.brand._id, p.brand.name);
+        }
+      });
+      setStaticBrands(Array.from(map, ([id, name]) => ({ id, name })));
+    }
+  }, [products]);
+  // console.log("uniqueBrands", uniqueBrands);
+  const uniqueSports = useMemo(() => {
+    const map = new Map();
+    products.forEach((p) => {
+      if (p.sport && p.sport._id && !map.has(p.sport._id)) {
+        map.set(p.sport._id, p.sport.name);
+      }
+    });
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [products]);
+  const uniqueColors = useMemo(() => {
+    const colorMap = new Map();
+    products.forEach((p) => {
+      p.colors?.forEach((color) => {
+        if (!colorMap.has(color.name)) {
+          colorMap.set(color.name, color.hex || "#ccc");
+        }
+      });
+    });
+    return Array.from(colorMap, ([name, hex]) => ({ name, hex }));
+  }, [products]);
+  const uniqueSizes = useMemo(() => {
+    const sizeSet = new Set();
+    products.forEach((p) => {
+      p.colors?.forEach((color) => {
+        color.sizes?.forEach((s) => sizeSet.add(s.size));
+      });
+    });
+    return Array.from(sizeSet);
+  }, [products]);
   const toggleSection = (section) => {
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(section)) {
@@ -47,7 +89,7 @@ const FilterSidebar = ({ onFilterChange, className }) => {
     } else {
       newFilters[type] = [...currentArray, value];
     }
-
+    console.log("newFilters", newFilters);
     setFilters(newFilters);
     onFilterChange?.(newFilters);
   };
@@ -104,8 +146,8 @@ const FilterSidebar = ({ onFilterChange, className }) => {
 
       {/* Brand filter */}
       <FilterSection id="brand" title="Thương hiệu">
-        {brands.map((brand) => (
-          <div key={brand} className="flex items-center space-x-2">
+        {staticBrands.map((brand) => (
+          <div key={brand.id} className="flex items-center space-x-2">
             <Checkbox
               id={`brand-${brand}`}
               checked={filters.brands.includes(brand)}
@@ -125,7 +167,7 @@ const FilterSidebar = ({ onFilterChange, className }) => {
 
       {/* Color filter */}
       <FilterSection id="color" title="Màu sắc">
-        {colors.map((color) => (
+        {uniqueColors.map((color) => (
           <div key={color.name} className="flex items-center space-x-2">
             <Checkbox
               id={`color-${color.name}`}
@@ -153,7 +195,7 @@ const FilterSidebar = ({ onFilterChange, className }) => {
       {/* Size filter */}
       <FilterSection id="size" title="Kích thước">
         <div className="grid grid-cols-3 gap-2">
-          {sizes.map((size) => (
+          {uniqueSizes.map((size) => (
             <div key={size} className="flex items-center space-x-2">
               <Checkbox
                 id={`size-${size}`}
@@ -175,7 +217,7 @@ const FilterSidebar = ({ onFilterChange, className }) => {
 
       {/* Sport filter */}
       <FilterSection id="sport" title="Môn thể thao">
-        {sports.map((sport) => (
+        {uniqueSports.map((sport) => (
           <div key={sport} className="flex items-center space-x-2">
             <Checkbox
               id={`sport-${sport}`}

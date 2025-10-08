@@ -24,19 +24,15 @@ const Products = () => {
   const [searchParams] = useSearchParams();
   const categoryId = searchParams.get("category");
   const subcategoryId = searchParams.get("sub");
-  console.log("categoryId + subcategoryId", categoryId, subcategoryId);
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        console.log("da chay vao day fetchProducts");
         const res = await getProductsByFilter({
           category: categoryId || "all",
           subcategory: subcategoryId || "all",
-          brand: filters.brands.join(",") || "all",
-          sport: filters.sports.join(",") || "all",
+          brand: filters.brands.map((b) => (typeof b === "object" ? b.id : b)).join(",") ||"all",
+          sport: filters.sports.map((s) => (typeof s === "object" ? s.id : s)).join(",") ||"all",
         });
-                console.log("products", res.products);
-
         setProducts(res.products);
       } catch (err) {
         console.error(err);
@@ -50,13 +46,13 @@ const Products = () => {
         <Header title="Sản phẩm" />
         <MainNavigation />
         <div className="container mx-auto px-4 py-8">
-            {/* Header */}
-
-            <div className="flex gap-8">
+          <div className="flex gap-8">
             {/* Desktop Filter Sidebar */}
             <aside className="hidden lg:block w-64 flex-shrink-0">
                 <div className="sticky top-24">
-                <FilterSidebar onFilterChange={setFilters} />
+                <FilterSidebar
+                  onFilterChange={setFilters}
+                  products={products} />
                 </div>
             </aside>
 
@@ -92,7 +88,7 @@ const Products = () => {
                 </div>
                 )}
             </div>
-            </div>
+          </div>
       </div>
       <Footer />
     </div>
