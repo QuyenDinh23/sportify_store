@@ -24,10 +24,12 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState("");
+  const [availableStock, setAvailableStock] = useState(0);
 
     const fetchProduct = useCallback(async () => {
       try {
         const data = await getProductById(id); 
+        console.log("data in product detail", data);
         setProduct(data);
       } catch (error) {
         toast({
@@ -57,6 +59,14 @@ const ProductDetail = () => {
         </div>
         );
     }
+  const handleSelectSize = (size) => {
+    setSelectedSize(size);
+    // tìm trong color hiện tại xem size này có bao nhiêu tồn kho
+    const currentColor = product.colors[selectedColor];
+    const sizeObj = currentColor.sizes.find((s) => s.size === size);
+
+    setAvailableStock(sizeObj ? sizeObj.quantity : 0);
+  };
 
   const hasDiscount = product.discountPercentage > 0;
 
@@ -230,18 +240,18 @@ const ProductDetail = () => {
             <div>
               <h3 className="font-semibold text-foreground mb-3">Kích thước</h3>
               <div className="grid grid-cols-5 gap-2">
-                {product.sizes.map((size) => (
+                {product.colors[selectedColor].sizes.map((s, index) => (
                   <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
+                    key={index}
+                    onClick={() => handleSelectSize(s.size)}
                     className={cn(
                       "py-3 rounded-lg border-2 font-medium transition-all hover:border-primary",
-                      selectedSize === size
+                      selectedSize === s.size
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border text-foreground"
                     )}
                   >
-                    {size}
+                    {s.size}
                   </button>
                 ))}
               </div>
@@ -257,6 +267,7 @@ const ProductDetail = () => {
                     size="icon"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="rounded-r-none"
+                    disabled={!selectedSize}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
@@ -264,13 +275,24 @@ const ProductDetail = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() =>
+                      setQuantity((prev) =>
+                        selectedSize
+                          ? Math.min(prev + 1, availableStock || 1)
+                          : prev
+                      )
+                    }
                     className="rounded-l-none"
+                    disabled={!selectedSize}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                <span className="text-sm text-muted-foreground">{product.stockQuantity} sản phẩm có sẵn</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedSize
+                    ? `${availableStock} sản phẩm có sẵn`
+                    : "Vui lòng chọn kích thước"}
+                </span>
               </div>
             </div>
 

@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import Product from "../../models/product/Product.js";
 
-// Tạo sản phẩm mới
 export const createProduct = async (req, res) => {
   try {
     const {
@@ -15,18 +14,45 @@ export const createProduct = async (req, res) => {
       importPrice,
       price,
       discountPercentage,
-      stockQuantity,
       sizes,
       colors,
       materials,
       technicalSpecs,
     } = req.body;
 
-    // kiểm tra trùng tên sản phẩm (nếu cần)
     const existing = await Product.findOne({ name });
     if (existing) {
       return res.status(400).json({ message: "Sản phẩm đã tồn tại" });
     }
+
+    //Chuẩn hóa dữ liệu colors (đảm bảo mỗi color có mảng sizes và quantity)
+    const normalizedColors = (colors || []).map((color) => ({
+      name: color.name,
+      hex: color.hex,
+      images: color.images || [],
+      sizes: (color.sizes || []).map((s) => ({
+        size: s.size,
+        quantity: Number(s.quantity) || 0,
+      })),
+    }));
+
+    const totalStock = normalizedColors.reduce((sum, color) => {
+      const colorTotal = color.sizes.reduce(
+        (acc, s) => acc + (s.quantity || 0),
+        0
+      );
+      return sum + colorTotal;
+    }, 0);
+
+    const discountedPrice =
+      discountPercentage > 0
+        ? price - (price * discountPercentage) / 100
+        : price;
+
+    const mainImage =
+      normalizedColors.length > 0 && normalizedColors[0].images.length > 0
+        ? normalizedColors[0].images[0]
+        : "";
 
     const product = new Product({
       name,
@@ -39,17 +65,31 @@ export const createProduct = async (req, res) => {
       importPrice,
       price,
       discountPercentage,
-      stockQuantity,
-      sizes,
-      colors,
+      discountedPrice,
+      stockQuantity: totalStock,
+      sizes: [
+        ...new Set(
+          normalizedColors.flatMap((color) =>
+            color.sizes.map((s) => s.size)
+          )
+        ),
+      ], // tổng hợp tất cả size có trong sản phẩm
+      colors: normalizedColors,
       materials,
       technicalSpecs,
+      image: mainImage,
+      isNew: true,
+      isOnSale: discountPercentage > 0,
     });
 
     const savedProduct = await product.save();
-    res.status(201).json(savedProduct);
+
+    res.status(201).json({
+      message: "Tạo sản phẩm thành công",
+      product: savedProduct,
+    });
   } catch (error) {
-    console.error("Error create product:", error);
+    console.error("Lỗi khi tạo sản phẩm:", error);
     res.status(500).json({ message: "Server error khi tạo sản phẩm" });
   }
 };
