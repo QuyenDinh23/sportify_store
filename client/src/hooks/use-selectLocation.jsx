@@ -59,8 +59,5 @@ export const useAddress = () => {
     setSelectedProvince,
     setSelectedDistrict,
     setSelectedWard,
-    setDistricts, // ✅ Bạn phải return ra nếu muốn dùng ở ngoài
-    setWards, 
-    setProvinces
   };
 };

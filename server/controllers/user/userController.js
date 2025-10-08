@@ -19,13 +19,14 @@ const userController = {
   updateUserInfo: async (req, res) => {
     try {
       const updatedData = { ...req.body };
-
+      
+      
       const updatedUser = await User.findByIdAndUpdate(
-        updatedData._id,
+        req.user.id,
         { $set: updatedData },
         { new: true }
       ).select("-password");
-
+      console.log(updatedUser);
       res.status(200).json(updatedUser);
     } catch (error) {
       res.status(500).json(error);
@@ -40,9 +41,11 @@ const userController = {
       if (!user) {
         return res.status(404).json("User not found");
       }
-      const isMatch = await bcrypt.compare(currentPassword, user.password);
-      if (!isMatch) {
-        return res.status(400).json("Current password is incorrect");
+      if (user.password) {
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+          return res.status(400).json("Current password is incorrect");
+        }
       }
       const salt = await bcrypt.genSalt(10);
       const hashed = await bcrypt.hash(newPassword, salt);

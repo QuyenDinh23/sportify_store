@@ -20,6 +20,12 @@ import Checkout from "./pages/checkout/Checkout";
 import OrderSuccess from "./pages/checkout/OrderSuccess";
 import UserProfile from "./pages/AccountManage/UserProfile";
 import AddressManage from "./pages/AccountManage/AddressManagement";
+import AddEditAddress from "./pages/AccountManage/AddressAddEdit";
+import OrderHistory from "./pages/AccountManage/OrderHistory";
+import SecurityMain from "./pages/AccountManage/SecurityManagement";
+import ChangePassword from "./pages/AccountManage/ChangePassword";
+import PermissopnAccess from "./pages/AccountManage/PermissionAccessManagement";
+import VoucherManagement from "./pages/dashboard/VoucherManagement";
 import Products from "./pages/product/Products";
 
 
@@ -54,11 +60,27 @@ const App = () => {
                 />
                 <Route path="brands" element={<BrandManagement />} />
                 <Route path="sports" element={<SportManagement />} />
+                <Route path="vouchers" element={<VoucherManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["user"]} />}>
               <Route path="/account/profile" element={<UserProfile />} />
               <Route path="/account/address" element={<AddressManage />} />
+              <Route path="/account/address/add" element={<AddEditAddress />} />
+              <Route
+                path="/account/address/edit/:id"
+                element={<AddEditAddress />}
+              />
+              <Route path="/account/order" element={<OrderHistory />} />
+              <Route path="/account/security" element={<SecurityMain />} />
+              <Route
+                path="/account/security/password"
+                element={<ChangePassword />}
+              />
+              <Route
+                path="/account/security/permissions"
+                element={<PermissopnAccess />}
+              />
             </Route>
           </Routes>
         </BrowserRouter>
