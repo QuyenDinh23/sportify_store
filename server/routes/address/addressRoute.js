@@ -7,7 +7,12 @@ const addressRouter = Router();
 addressRouter.get(
   "/",
   middlewareController.verifyToken,
-  addressController.getAdress
+  addressController.getAddress
+);
+addressRouter.get(
+  "/:id",
+  middlewareController.verifyToken,
+  addressController.getAddressById
 );
 addressRouter.post(
   "/add",

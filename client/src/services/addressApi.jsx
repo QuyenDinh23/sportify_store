@@ -10,7 +10,15 @@ export const addressApi = {
       throw error.response.data.error;
     }
   },
-
+  getAddressById: async (id) => {
+    try {
+      const res = await api.get(`/address/${id}`);
+      return res.data;
+    } catch (error) {
+      console.error("Get Address failed:", error.response.data);
+      throw error.response.data.error;
+    }
+  },
   addAddress: async (data) => {
     try {
       const res = await api.post("/address/add", data);
@@ -20,6 +28,7 @@ export const addressApi = {
       throw error.response.data.error;
     }
   },
+
   deleteAddress: async (id) => {
     try {
       const res = await api.delete("address/delete/" + id);

@@ -1,6 +1,11 @@
 import express from "express";
-import { checkSportName, createSport, getSports, getSportsByPage, updateSport } from "../../controllers/sport/sportController.js";
-
+import {
+  checkSportName,
+  createSport,
+  getSports,
+  getSportsByPage,
+  updateSport,
+} from "../../controllers/sport/sportController.js";
 
 const router = express.Router();
 
