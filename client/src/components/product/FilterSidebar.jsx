@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Label } from "../../components/ui/label";
@@ -11,6 +11,9 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
     new Set(["brand", "color", "size", "sport"])
   );
   const [staticBrands, setStaticBrands] = useState([]);
+  const [staticSports, setStaticSports] = useState([]);
+  const [staticColors, setStaticColors] = useState([]);
+  const [staticSizes, setStaticSizes] = useState([]);
   const [filters, setFilters] = useState({
     brands: [],
     colors: [],
@@ -18,58 +21,38 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
     sports: [],
     priceRange: [0, 10000000],
   });
-
-  //Dùng useMemo để tránh tính lại nhiều lần
-  // const uniqueBrands = useMemo(() => {
-  //   const map = new Map();
-  //   products.forEach((p) => {
-  //     if (p.brand && p.brand._id && !map.has(p.brand._id)) {
-  //       map.set(p.brand._id, p.brand.name);
-  //     }
-  //   });
-  //   return Array.from(map, ([id, name]) => ({ id, name }));
-  // }, [products]);
   useEffect(() => {
-    if (products.length > 0 && staticBrands.length === 0) {
-      const map = new Map();
+    if (products.length > 0) {
+      const brandMap = new Map();
+      const sportMap = new Map();
+      const colorMap = new Map();
+      const sizeMap = new Map();
       products.forEach((p) => {
-        if (p.brand && p.brand._id && !map.has(p.brand._id)) {
-          map.set(p.brand._id, p.brand.name);
+        if (p.brand && p.brand._id && !brandMap.has(p.brand._id)) {
+          brandMap.set(p.brand._id, p.brand.name);
         }
+        if (p.sport && p.sport._id && !sportMap.has(p.sport._id)) {
+          sportMap.set(p.sport._id, p.sport.name);
+        }
+        p.colors?.forEach((c) => {
+          if (c.name && !colorMap.has(c.name)) {
+            colorMap.set(c.name, c.hex || "#ccc");
+          }
+          c.sizes?.forEach((s) => {
+            if (s.size && !sizeMap.has(s.size)) {
+              sizeMap.set(s.size, s.size);
+            }
+          });
+        });
       });
-      setStaticBrands(Array.from(map, ([id, name]) => ({ id, name })));
+
+      setStaticBrands(Array.from(brandMap, ([id, name]) => ({ id, name })));
+      setStaticSports(Array.from(sportMap, ([id, name]) => ({ id, name })));
+      setStaticColors(Array.from(colorMap, ([name, hex]) => ({ id: name, name, hex })));
+      setStaticSizes(Array.from(sizeMap, ([id, name]) => ({ id, name })));
     }
   }, [products]);
-  // console.log("uniqueBrands", uniqueBrands);
-  const uniqueSports = useMemo(() => {
-    const map = new Map();
-    products.forEach((p) => {
-      if (p.sport && p.sport._id && !map.has(p.sport._id)) {
-        map.set(p.sport._id, p.sport.name);
-      }
-    });
-    return Array.from(map, ([id, name]) => ({ id, name }));
-  }, [products]);
-  const uniqueColors = useMemo(() => {
-    const colorMap = new Map();
-    products.forEach((p) => {
-      p.colors?.forEach((color) => {
-        if (!colorMap.has(color.name)) {
-          colorMap.set(color.name, color.hex || "#ccc");
-        }
-      });
-    });
-    return Array.from(colorMap, ([name, hex]) => ({ name, hex }));
-  }, [products]);
-  const uniqueSizes = useMemo(() => {
-    const sizeSet = new Set();
-    products.forEach((p) => {
-      p.colors?.forEach((color) => {
-        color.sizes?.forEach((s) => sizeSet.add(s.size));
-      });
-    });
-    return Array.from(sizeSet);
-  }, [products]);
+
   const toggleSection = (section) => {
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(section)) {
@@ -149,12 +132,12 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
         {staticBrands.map((brand) => (
           <div key={brand.id} className="flex items-center space-x-2">
             <Checkbox
-              id={`brand-${brand}`}
-              checked={filters.brands.includes(brand)}
-              onCheckedChange={() => handleFilterChange("brands", brand)}
+              id={`brand-${brand.id}`}
+              checked={filters.brands.includes(brand.id)}
+              onCheckedChange={() => handleFilterChange("brands", brand.id)}
             />
             <Label
-              htmlFor={`brand-${brand}`}
+              htmlFor={`brand-${brand.id}`}
               className="text-sm text-muted-foreground cursor-pointer hover:text-foreground"
             >
               {brand.name}
@@ -167,7 +150,7 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
 
       {/* Color filter */}
       <FilterSection id="color" title="Màu sắc">
-        {uniqueColors.map((color) => (
+        {staticColors.map((color) => (
           <div key={color.name} className="flex items-center space-x-2">
             <Checkbox
               id={`color-${color.name}`}
@@ -195,18 +178,18 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
       {/* Size filter */}
       <FilterSection id="size" title="Kích thước">
         <div className="grid grid-cols-3 gap-2">
-          {uniqueSizes.map((size) => (
-            <div key={size} className="flex items-center space-x-2">
+          {staticSizes.map((size) => (
+            <div key={size.id} className="flex items-center space-x-2">
               <Checkbox
-                id={`size-${size}`}
-                checked={filters.sizes.includes(size)}
-                onCheckedChange={() => handleFilterChange("sizes", size)}
+                id={`size-${size.id}`}
+                checked={filters.sizes.includes(size.id)}
+                onCheckedChange={() => handleFilterChange("sizes", size.id)}
               />
               <Label
-                htmlFor={`size-${size}`}
+                htmlFor={`size-${size.id}`}
                 className="text-sm text-muted-foreground cursor-pointer hover:text-foreground"
               >
-                {size}
+                {size.name}
               </Label>
             </div>
           ))}
@@ -217,15 +200,15 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
 
       {/* Sport filter */}
       <FilterSection id="sport" title="Môn thể thao">
-        {uniqueSports.map((sport) => (
-          <div key={sport} className="flex items-center space-x-2">
+        {staticSports.map((sport) => (
+          <div key={sport.id} className="flex items-center space-x-2">
             <Checkbox
-              id={`sport-${sport}`}
-              checked={filters.sports.includes(sport)}
-              onCheckedChange={() => handleFilterChange("sports", sport)}
+              id={`sport-${sport.id}`}
+              checked={filters.sports.includes(sport.id)}
+              onCheckedChange={() => handleFilterChange("sports", sport.id)}
             />
             <Label
-              htmlFor={`sport-${sport}`}
+              htmlFor={`sport-${sport.id}`}
               className="text-sm text-muted-foreground cursor-pointer hover:text-foreground"
             >
               {sport.name}

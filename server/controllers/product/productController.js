@@ -78,8 +78,6 @@ export const createProduct = async (req, res) => {
       materials,
       technicalSpecs,
       image: mainImage,
-      isNew: true,
-      isOnSale: discountPercentage > 0,
     });
 
     const savedProduct = await product.save();
@@ -177,7 +175,7 @@ export const getProductsByFilter = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    const { category, subcategory, brand, sport, search } = req.query;
+    const { category, subcategory, brand, sport, color, size, search } = req.query;
 
     const skip = (page - 1) * limit;
 
@@ -199,7 +197,30 @@ export const getProductsByFilter = async (req, res) => {
     if (search && search.trim() !== "") {
       query.name = { $regex: search, $options: "i" };
     }
+    const colorArr = color && color !== "all" ? color.split(",") : [];
+    const sizeArr = size && size !== "all" ? size.split(",") : [];
 
+    if (colorArr.length > 0 || sizeArr.length > 0) {
+      query.$and = [];
+      // Nếu có color
+      if (colorArr.length > 0) {
+        query.$and.push({
+          "colors.name": { $in: colorArr }
+        });
+      }
+      // Nếu có size
+      if (sizeArr.length > 0) {
+        // Có thể xuất hiện ở 2 cấp:
+        // - Mảng sizes (tổng hợp)
+        // - Hoặc trong từng colors.sizes.size
+        query.$and.push({
+          $or: [
+            { sizes: { $in: sizeArr } },
+            { "colors.sizes.size": { $in: sizeArr } }
+          ]
+        });
+      }
+    }
     // Count total
     const total = await Product.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
