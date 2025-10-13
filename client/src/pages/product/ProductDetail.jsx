@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ChevronRight, ShoppingCart, Heart, Share2, Minus, Plus, Star } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -18,6 +18,7 @@ import { addToCart } from "../../store/cartSlice";
 const ProductDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
   
   const [product, setProduct] = useState(null);
   const [selectedColor, setSelectedColor] = useState(0);
@@ -67,8 +68,7 @@ const ProductDetail = () => {
     }
     
     // Check if user is logged in
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!user) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
       return;
     }

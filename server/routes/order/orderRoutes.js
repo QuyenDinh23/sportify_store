@@ -1,24 +1,24 @@
-import express from 'express';
-import {
-  createOrder,
-  getUserOrders,
-  getOrderById,
-  cancelOrder,
-  getAllOrders,
-  updateOrderStatus
-} from '../../controllers/order/orderController.js';
-import middlewareController from '../../middlewares/middlewareController.js';
+import express from "express";
+import { 
+  createOrder, 
+  getUserOrders, 
+  getOrderDetail, 
+  cancelOrder 
+} from "../../controllers/order/orderController.js";
+import middlewareController from "../../middlewares/middlewareController.js";
 
 const router = express.Router();
 
-// Routes cho user
-router.post('/', middlewareController.verifyToken, createOrder);
-router.get('/my-orders', middlewareController.verifyToken, getUserOrders);
-router.get('/:orderId', middlewareController.verifyToken, getOrderById);
-router.patch('/:orderId/cancel', middlewareController.verifyToken, cancelOrder);
+// Tạo đơn hàng mới (cần authentication)
+router.post("/", middlewareController.verifyToken, createOrder);
 
-// Routes cho admin (cần thêm middleware check admin role)
-router.get('/admin/all', middlewareController.verifyToken, getAllOrders);
-router.patch('/admin/:orderId/status', middlewareController.verifyToken, updateOrderStatus);
+// Lấy danh sách đơn hàng của user (cần authentication)
+router.get("/", middlewareController.verifyToken, getUserOrders);
+
+// Lấy chi tiết đơn hàng (cần authentication)
+router.get("/:orderId", middlewareController.verifyToken, getOrderDetail);
+
+// Hủy đơn hàng (cần authentication)
+router.put("/:orderId/cancel", middlewareController.verifyToken, cancelOrder);
 
 export default router;

@@ -149,7 +149,7 @@ const Header = () => {
             <Button variant="ghost" size="icon" className="relative" asChild>
               <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
-                {totalQuantity > 0 && (
+                {user && totalQuantity > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent">
                     {totalQuantity}
                   </Badge>
