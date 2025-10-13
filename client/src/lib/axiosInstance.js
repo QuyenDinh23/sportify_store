@@ -1,4 +1,6 @@
 import axios from "axios";
+import { store } from "../store/index.jsx";
+import { logout, setToken } from "../store/authSlice";
 
 const axiosInstance = axios.create({
     baseURL : "http://localhost:3000/api",
@@ -10,11 +12,10 @@ const axiosInstance = axios.create({
 
 //Tự động thêm Authorization header nếu có token
 axiosInstance.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token");
+    const token = store.getState().auth.accessToken;
     console.log("=== AXIOS REQUEST DEBUG ===");
     console.log("URL:", config.url);
-    console.log("Token from localStorage:", token ? "Token exists" : "No token");
-    console.log("Full token:", token);
+    console.log("Token from Redux:", token ? "Token exists" : "No token");
     
     if(token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -28,13 +29,13 @@ axiosInstance.interceptors.request.use((config) => {
     return Promise.reject(error);
 })
 
-// Response interceptor để xử lý lỗi 403 và refresh token
+// Response interceptor để xử lý lỗi 401 và refresh token
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     
-    if (error.response?.status === 403 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
       console.log("=== TOKEN REFRESH ATTEMPT ===");
@@ -44,7 +45,7 @@ axiosInstance.interceptors.response.use(
         });
         
         const newToken = refreshResponse.data.accessToken;
-        localStorage.setItem("token", newToken);
+        store.dispatch(setToken({ accessToken: newToken }));
         
         console.log("Token refreshed successfully");
         
@@ -54,7 +55,7 @@ axiosInstance.interceptors.response.use(
         
       } catch (refreshError) {
         console.log("Token refresh failed, redirecting to login");
-        localStorage.removeItem("token");
+        store.dispatch(logout());
         window.location.href = "/login";
         return Promise.reject(refreshError);
       }

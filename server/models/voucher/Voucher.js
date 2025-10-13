@@ -11,7 +11,8 @@ const voucherSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      default: "",
+      required: true,
+      trim: true,
     },
 
     // Loại giảm giá: phần trăm hoặc số tiền cố định
@@ -25,24 +26,29 @@ const voucherSchema = new mongoose.Schema(
     discountValue: {
       type: Number,
       required: true,
-      min: 1,
+      min: 0,
     },
 
     // Giá trị đơn hàng tối thiểu để áp dụng
     minOrderAmount: {
       type: Number,
+      required: true,
+      min: 0,
       default: 0,
     },
 
     // Giới hạn sử dụng toàn hệ thống (VD: chỉ 1000 lượt)
     usageLimit: {
       type: Number,
-      default: 0, // 0 = không giới hạn
+      required: true,
+      min: 1,
     },
 
     // Mỗi user được dùng bao nhiêu lần
     usagePerUser: {
       type: Number,
+      required: true,
+      min: 1,
       default: 1,
     },
 
@@ -50,6 +56,7 @@ const voucherSchema = new mongoose.Schema(
     usedCount: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
     // Giới hạn theo thời gian
@@ -74,7 +81,7 @@ const voucherSchema = new mongoose.Schema(
     // Loại người dùng (tùy chọn)
     targetUserGroup: {
       type: String,
-      enum: ["all", "new", "vip"],
+      enum: ["all", "new_customers", "vip_customers"],
       default: "all",
     },
   },
@@ -85,7 +92,7 @@ const voucherSchema = new mongoose.Schema(
 
 // 🧠 Index để tăng tốc tra cứu voucher theo mã
 voucherSchema.index({ code: 1 });
-voucherSchema.index({ startDate: 1, endDate: 1 });
+voucherSchema.index({ isActive: 1, startDate: 1, endDate: 1 });
 
 voucherSchema.pre("save", function (next) {
   const now = new Date();
@@ -112,5 +119,7 @@ voucherSchema.statics.deactivateExpiredVouchers = async function () {
   );
   return result.modifiedCount;
 };
+
 const Voucher = mongoose.model("Voucher", voucherSchema);
+
 export default Voucher;
