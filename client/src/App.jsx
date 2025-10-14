@@ -19,6 +19,7 @@ import Cart from "./pages/cart/Cart";
 import Checkout from "./pages/checkout/Checkout";
 import OrderSuccess from "./pages/checkout/OrderSuccess";
 import OrderDetail from "./pages/order/OrderDetail";
+import Orders from "./pages/order/Orders";
 import UserProfile from "./pages/AccountManage/UserProfile";
 import AddressManage from "./pages/AccountManage/AddressManagement";
 
@@ -42,6 +43,7 @@ const App = () => {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             <Route path="/order-detail/:orderId" element={<OrderDetail />} />
+            <Route path="/orders" element={<Orders />} />
             {/* route dashboard */}
             <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>
