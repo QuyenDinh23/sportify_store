@@ -61,8 +61,8 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   const discountedPrice = watchedPrice - (watchedPrice * watchedDiscount / 100);
 
   const getDefaultSizes = (category) => {
-    if (category === 'shoes') return ['37','38','39','40','41','42','43','44','45'];
-    if (category === 'clothing') return ['XS','S','M','L','XL','XXL'];
+    if (category.includes('giày') || category.includes('shoes')) return ['37','38','39','40','41','42','43','44','45'];
+    if (category.includes('áo') || category.includes('quần') || category.includes('clothing')) return ['XS','S','M','L','XL','XXL'];
     return ['One Size'];
   };
 
@@ -114,7 +114,21 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   }, [isOpen, product]);
 
   const addColor = () => {
-    const newColor = { name: 'Màu mới', hex: '#000000', images: [], sizes: [] };
+    // Lấy sizes mặc định dựa trên category hiện tại
+    const categoryObj = categories.find(cat => cat._id === selectedCategory);
+    const categoryName = categoryObj?.name?.toLowerCase() || '';
+    const defaultSizes = getDefaultSizes(categoryName);
+    const defaultSizesWithQuantity = defaultSizes.map(size => ({
+      size: size,
+      quantity: 0
+    }));
+    
+    const newColor = { 
+      name: 'Màu mới', 
+      hex: '#000000', 
+      images: [], 
+      sizes: defaultSizesWithQuantity 
+    };
     setColors([...colors, newColor]);
   };
 
@@ -306,6 +320,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                         console.log("value", value);
                         field.onChange(value);        
                         onCategoryChange(value);
+                        setSelectedCategory(value);
                       }}>
                         <SelectTrigger disabled={readonly}>
                           <SelectValue placeholder="Chọn danh mục" />

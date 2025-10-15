@@ -31,6 +31,11 @@ const ProductDetail = () => {
       try {
         const data = await getProductById(id); 
         console.log("data in product detail", data);
+        console.log("product sizes:", data.sizes);
+        console.log("colors data:", data.colors);
+        if (data.colors && data.colors.length > 0) {
+          console.log("first color sizes:", data.colors[0].sizes);
+        }
         setProduct(data);
       } catch (error) {
         toast({
@@ -61,12 +66,11 @@ const ProductDetail = () => {
         );
     }
   const handleSelectSize = (size) => {
+    console.log("Selected size:", size);
     setSelectedSize(size);
-    // tìm trong color hiện tại xem size này có bao nhiêu tồn kho
-    const currentColor = product.colors[selectedColor];
-    const sizeObj = currentColor.sizes.find((s) => s.size === size);
-
-    setAvailableStock(sizeObj ? sizeObj.quantity : 0);
+    // Set available stock = 10 cho tất cả sizes (tạm thời)
+    setAvailableStock(10);
+    console.log("Available stock set to:", 10);
   };
 
   const hasDiscount = product.discountPercentage > 0;
@@ -239,22 +243,28 @@ const ProductDetail = () => {
             {/* Size selection */}
             <div>
               <h3 className="font-semibold text-foreground mb-3">Kích thước</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {product.colors[selectedColor].sizes.map((s, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSelectSize(s.size)}
-                    className={cn(
-                      "py-3 rounded-lg border-2 font-medium transition-all hover:border-primary",
-                      selectedSize === s.size
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border text-foreground"
-                    )}
-                  >
-                    {s.size}
-                  </button>
-                ))}
-              </div>
+              {product.sizes && product.sizes.length > 0 ? (
+                <div className="grid grid-cols-5 gap-2">
+                  {product.sizes.map((size, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSelectSize(size)}
+                      className={cn(
+                        "py-3 rounded-lg border-2 font-medium transition-all hover:border-primary",
+                        selectedSize === size
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border text-foreground"
+                      )}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm">
+                  Không có kích thước nào có sẵn
+                </div>
+              )}
             </div>
 
             {/* Quantity */}
@@ -265,7 +275,10 @@ const ProductDetail = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    onClick={() => {
+                      console.log("Minus clicked, current quantity:", quantity);
+                      setQuantity(Math.max(1, quantity - 1));
+                    }}
                     className="rounded-r-none"
                     disabled={!selectedSize}
                   >
@@ -275,13 +288,14 @@ const ProductDetail = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() =>
+                    onClick={() => {
+                      console.log("Plus clicked, current quantity:", quantity, "availableStock:", availableStock, "selectedSize:", selectedSize);
                       setQuantity((prev) =>
                         selectedSize
-                          ? Math.min(prev + 1, availableStock || 1)
+                          ? Math.min(prev + 1, availableStock)
                           : prev
-                      )
-                    }
+                      );
+                    }}
                     className="rounded-l-none"
                     disabled={!selectedSize}
                   >

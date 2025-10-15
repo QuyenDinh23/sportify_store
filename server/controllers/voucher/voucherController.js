@@ -145,7 +145,9 @@ const voucherController = {
   // Lấy danh sách voucher khả dụng
   getAvailableVouchers: async (req, res) => {
     try {
+      console.log("=== GET AVAILABLE VOUCHERS ===");
       const currentDate = new Date();
+      console.log("Current date:", currentDate);
       
       const vouchers = await Voucher.find({
         isActive: true,
@@ -153,6 +155,8 @@ const voucherController = {
         endDate: { $gte: currentDate },
         $expr: { $lt: ["$usedCount", "$usageLimit"] }
       }).select('-__v');
+
+      console.log("Found vouchers:", vouchers.length);
 
       res.status(200).json({
         success: true,
