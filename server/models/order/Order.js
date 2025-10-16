@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema({
   productId: {
@@ -10,104 +10,108 @@ const orderItemSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  selectedColor: {
-    type: Object,
-    required: true
-  },
-  selectedSize: {
-    type: String,
-    required: true
+  price: {
+    type: Number,
+    required: true,
+    min: 0
   },
   quantity: {
     type: Number,
     required: true,
     min: 1
   },
-  priceAtOrder: {
-    type: Number,
+  selectedColor: {
+    type: String,
     required: true
   },
-  subtotal: {
-    type: Number,
+  selectedSize: {
+    type: String,
     required: true
   },
-  images: [{
-    type: String
-  }]
+  image: {
+    type: String,
+    default: null
+  }
+});
+
+const shippingAddressSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true
+  },
+  street: {
+    type: String,
+    required: true
+  },
+  city: {
+    code: String,
+    name: String
+  },
+  district: {
+    code: String,
+    name: String
+  },
+  ward: {
+    code: String,
+    name: String
+  },
+  note: {
+    type: String,
+    default: ''
+  }
 });
 
 const orderSchema = new mongoose.Schema({
+  orderNumber: {
+    type: String,
+    unique: true,
+    required: false // Will be set in pre-save hook
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  orderNumber: {
-    type: String,
-    required: true,
-    unique: true
-  },
   items: [orderItemSchema],
-  totalQuantity: {
-    type: Number,
-    required: true
-  },
-  subtotal: {
-    type: Number,
-    required: true
-  },
-  shippingFee: {
-    type: Number,
-    default: 0
-  },
-  totalAmount: {
-    type: Number,
+  shippingAddress: shippingAddressSchema,
+  paymentMethod: {
+    type: String,
+    enum: ['cod', 'bank_transfer', 'credit_card'],
     required: true
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'],
+    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'],
     default: 'pending'
   },
-  paymentStatus: {
-    type: String,
-    enum: ['pending', 'paid', 'failed', 'refunded'],
-    default: 'pending'
+  subtotal: {
+    type: Number,
+    required: true,
+    min: 0
   },
-  paymentMethod: {
-    type: String,
-    enum: ['cod', 'bank_transfer', 'credit_card'],
-    default: 'cod'
+  shippingFee: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0
   },
-  shippingAddress: {
-    fullName: {
-      type: String,
-      required: true
-    },
-    phone: {
-      type: String,
-      required: true
-    },
-    address: {
-      type: String,
-      required: true
-    },
-    city: {
-      type: String,
-      required: true
-    },
-    district: {
-      type: String,
-      required: true
-    },
-    ward: {
-      type: String,
-      required: true
-    },
-    note: {
-      type: String,
-      default: ''
-    }
+  voucherCode: {
+    type: String,
+    default: null
+  },
+  voucherDiscount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  totalAmount: {
+    type: Number,
+    required: true,
+    min: 0
   },
   notes: {
     type: String,
@@ -115,22 +119,63 @@ const orderSchema = new mongoose.Schema({
   },
   trackingNumber: {
     type: String,
-    default: ''
+    default: null
   },
   estimatedDelivery: {
-    type: Date
+    type: Date,
+    default: null
+  },
+  deliveredAt: {
+    type: Date,
+    default: null
+  },
+  cancelledAt: {
+    type: Date,
+    default: null
+  },
+  cancelReason: {
+    type: String,
+    default: null
   }
 }, {
   timestamps: true
 });
 
-// Middleware để tự động tạo order number
+// Index for better performance
+orderSchema.index({ orderNumber: 1 });
+orderSchema.index({ userId: 1 });
+orderSchema.index({ status: 1 });
+orderSchema.index({ createdAt: -1 });
+
+// Generate order number before saving
 orderSchema.pre('save', async function(next) {
-  if (this.isNew) {
-    const count = await mongoose.model('Order').countDocuments();
-    this.orderNumber = `ORD${String(count + 1).padStart(6, '0')}`;
+  console.log("=== ORDER PRE-SAVE HOOK ===");
+  console.log("isNew:", this.isNew);
+  console.log("orderNumber:", this.orderNumber);
+  
+  if (this.isNew && !this.orderNumber) {
+    try {
+      console.log("Generating order number...");
+      const count = await this.constructor.countDocuments();
+      this.orderNumber = `ORD${String(count + 1).padStart(6, '0')}`;
+      console.log("Generated order number:", this.orderNumber);
+    } catch (error) {
+      console.error("Error generating order number:", error);
+      // Fallback to timestamp-based order number
+      this.orderNumber = `ORD${Date.now()}`;
+      console.log("Fallback order number:", this.orderNumber);
+    }
   }
+  
+  // Ensure orderNumber is set
+  if (!this.orderNumber) {
+    this.orderNumber = `ORD${Date.now()}`;
+    console.log("Final fallback order number:", this.orderNumber);
+  }
+  
   next();
 });
 
-export default mongoose.model('Order', orderSchema);
+const Order = mongoose.model('Order', orderSchema);
+
+export default Order;
