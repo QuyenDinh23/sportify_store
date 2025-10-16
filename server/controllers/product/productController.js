@@ -19,7 +19,7 @@ export const createProduct = async (req, res) => {
       materials,
       technicalSpecs,
     } = req.body;
-
+    console.log("Sport", sport);
     const existing = await Product.findOne({ name });
     if (existing) {
       return res.status(400).json({ message: "Sản phẩm đã tồn tại" });

@@ -40,6 +40,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   const [selectedCategory, setSelectedCategory] = useState('');
   const [newSizeInputs, setNewSizeInputs] = useState({});
   const { control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm({
+    mode: 'onChange',
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
@@ -57,12 +58,14 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   });
 
   const watchedPrice = watch('price');
+  const importPrice = Number(watch("importPrice")) || 0;
   const watchedDiscount = watch('discountPercentage');
   const discountedPrice = watchedPrice - (watchedPrice * watchedDiscount / 100);
 
   const getDefaultSizes = (category) => {
-    if (category.includes('giày') || category.includes('shoes')) return ['37','38','39','40','41','42','43','44','45'];
-    if (category.includes('áo') || category.includes('quần') || category.includes('clothing')) return ['XS','S','M','L','XL','XXL'];
+    console.log(" category default size", category);
+    if (category.includes('giày') || category.includes('shoes')) return ['37', '38', '39', '40', '41', '42', '43', '44', '45'];
+    if (category.includes('áo') || category.includes('quần') || category.includes('clothing')) return ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
     return ['One Size'];
   };
 
@@ -122,12 +125,12 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       size: size,
       quantity: 0
     }));
-    
-    const newColor = { 
-      name: 'Màu mới', 
-      hex: '#000000', 
-      images: [], 
-      sizes: defaultSizesWithQuantity 
+
+    const newColor = {
+      name: 'Màu mới',
+      hex: '#000000',
+      images: [],
+      sizes: defaultSizesWithQuantity
     };
     setColors([...colors, newColor]);
   };
@@ -167,7 +170,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   const addSizeToColor = (colorIndex) => {
     const size = newSizeInputs[colorIndex]?.trim();
     if (!size) return;
-    
+
     const updatedColors = [...colors];
     if (!updatedColors[colorIndex].sizes.find(s => s.size === size)) {
       updatedColors[colorIndex].sizes.push({ size, quantity: 0 });
@@ -233,7 +236,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       discountedPrice,
       stockQuantity: totalStockQuantity,
       status: data.status,
-      sizes : allSizes,
+      sizes: allSizes,
       colors,
       materials,
       technicalSpecs,
@@ -249,7 +252,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
     onClose();
   };
 
- return (
+  return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -318,7 +321,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={(value) => {
                         console.log("value", value);
-                        field.onChange(value);        
+                        field.onChange(value);
                         onCategoryChange(value);
                         setSelectedCategory(value);
                       }}>
@@ -412,10 +415,20 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     name="importPrice"
                     control={control}
                     render={({ field }) => (
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        onChange={e => field.onChange(Number(e.target.value))}
+                      <Input
+                        // {...field} 
+                        // type="number" 
+                        value={
+                          field.value
+                            ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, "");
+                          const numberValue = rawValue ? parseInt(rawValue, 10) : "";
+                          field.onChange(numberValue);
+                        }}
+                        inputMode="numeric"
                         disabled={readonly}
                       />
                     )}
@@ -425,19 +438,69 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
 
                 <div>
                   <Label htmlFor="price">Giá bán</Label>
-                  <Controller
+                  {/* <Controller
                     name="price"
                     control={control}
+                    rules={{
+                      validate: (value) =>
+                        !importPrice || Number(value) > importPrice || "Giá bán phải lớn hơn giá nhập",
+                    }}
                     render={({ field }) => (
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        onChange={e => field.onChange(Number(e.target.value))}
+                      <Input
+                        // {...field} 
+                        // type="number" 
+                        // onChange={e => field.onChange(Number(e.target.value))}
+                        value={
+                          field.value
+                            ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, "");
+                          const numberValue = rawValue ? parseInt(rawValue, 10) : "";
+                          field.onChange(numberValue);
+                        }}
+                        inputMode="numeric"
                         disabled={readonly}
                       />
                     )}
+                  /> */}
+                  <Controller
+                    name="price"
+                    control={control}
+                    render={({ field }) => {
+                      const importPrice = Number(watch("importPrice")) || 0; // 👈 đặt bên trong
+                      const value = Number(field.value) || 0;
+                      const isValid = !importPrice || value > importPrice;
+
+                      console.log("importPrice:", importPrice, "price:", value, "valid:", isValid);
+
+                      return (
+                        <>
+                          <Input
+                            value={
+                              field.value
+                                ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const rawValue = e.target.value.replace(/\D/g, "");
+                              const numberValue = rawValue ? parseInt(rawValue, 10) : "";
+                              field.onChange(numberValue);
+                            }}
+                            inputMode="numeric"
+                            disabled={readonly}
+                          />
+                          {!isValid && (
+                            <p className="text-sm text-destructive">
+                              Giá bán phải lớn hơn giá nhập
+                            </p>
+                          )}
+                        </>
+                      );
+                    }}
                   />
-                  {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
+                  {/* {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>} */}
                 </div>
 
                 <div>
@@ -446,12 +509,20 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     name="discountPercentage"
                     control={control}
                     render={({ field }) => (
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        min="0" 
-                        max="100"
-                        onChange={e => field.onChange(Number(e.target.value))}
+                      <Input
+                        {...field}
+                        // type="number" 
+                        // min="0" 
+                        // max="100"
+                        // onChange={e => field.onChange(Number(e.target.value))}
+                        value={field.value === 0 ? "" : field.value} // không hiển thị 0 khi trống
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/^0+/, "");
+                          const num = raw === "" ? "" : Math.min(100, parseInt(raw, 10));
+                          field.onChange(num);
+                        }}
+                        inputMode="numeric"
+                        placeholder="Nhập % giảm"
                         disabled={readonly}
                       />
                     )}
@@ -511,11 +582,11 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
-                        
+
                         {/* Size variants for this color */}
                         <div className="space-y-2 mb-3">
                           <Label>Kích thước và số lượng</Label>
-                          
+
                           {/* Add new size input */}
                           <div className="flex gap-2 mb-2">
                             <Input
@@ -530,8 +601,8 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                                 }
                               }}
                             />
-                            <Button 
-                              type="button" 
+                            <Button
+                              type="button"
                               onClick={() => addSizeToColor(index)}
                               size="sm"
                             >
@@ -553,14 +624,17 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                                   </div>
                                   <Input
                                     type="number"
-                                    value={sizeVariant.quantity}
-                                    onChange={(e) => updateSizeQuantity(index, sizeIndex, Number(e.target.value))}
+                                    value={sizeVariant.quantity === 0 ? "" : sizeVariant.quantity}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      updateSizeQuantity(index, sizeIndex, value === "" ? 0 : Number(value));
+                                    }}
                                     placeholder="Số lượng"
                                     className="flex-1"
                                   />
-                                  <Button 
-                                    type="button" 
-                                    variant="ghost" 
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
                                     size="sm"
                                     onClick={() => removeSizeFromColor(index, sizeIndex)}
                                   >
@@ -573,21 +647,21 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                         </div>
 
                         <div className="space-y-2">
-                           <Label>Hình ảnh</Label>
-                           <div className="flex gap-2">
-                             <Input
-                               type="file"
-                               multiple
-                               accept="image/*"
-                               onChange={(e) => {
-                                 if (e.target.files && e.target.files.length > 0) {
-                                   addImagesToColor(index, e.target.files);
-                                   e.target.value = '';
-                                 }
-                               }}
-                               className="cursor-pointer"
-                             />
-                           </div>
+                          <Label>Hình ảnh</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                  addImagesToColor(index, e.target.files);
+                                  e.target.value = '';
+                                }
+                              }}
+                              className="cursor-pointer"
+                            />
+                          </div>
                           <div className="flex flex-wrap gap-2">
                             {color.images.map((image, imgIndex) => (
                               <div key={imgIndex} className="relative">
@@ -633,7 +707,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     {materials.map(material => (
                       <Badge key={material} variant="secondary" className="flex items-center gap-1">
                         {material}
-                         {!readonly && (
+                        {!readonly && (
                           <X
                             className="w-3 h-3 cursor-pointer"
                             onClick={() => removeMaterial(material)}
@@ -699,7 +773,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
               <Button type="submit">
                 {product ? 'Cập nhật' : 'Thêm mới'}
               </Button>
-            )}        
+            )}
           </div>
         </form>
       </DialogContent>
