@@ -20,7 +20,7 @@ const productSchema = z.object({
   category: z.string().min(1, 'Vui lòng chọn danh mục'),
   subcategory: z.string().min(1, 'Vui lòng chọn danh mục con'),
   brand: z.string().min(1, 'Vui lòng chọn thương hiệu'),
-  // sport: z.string().min(1, 'Vui lòng chọn môn thể thao'),
+  sport: z.string().optional(),
   price: z.number().min(1, 'Giá phải lớn hơn 0'),
   importPrice: z.number().min(1, 'Giá nhập phải lớn hơn 0'),
   discountPercentage: z.number().min(0).max(100, 'Phần trăm giảm giá từ 0-100'),
@@ -56,7 +56,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       status: 'active',
     }
   });
-
+  console.log("sports", sports);
   const watchedPrice = watch('price');
   const importPrice = Number(watch("importPrice")) || 0;
   const watchedDiscount = watch('discountPercentage');
@@ -71,6 +71,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
 
   useEffect(() => {
     if (product) {
+      console.log("Sport value:", product.sport);
       reset({
         name: product.name,
         description: product.description,
@@ -221,6 +222,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   }, 0);
 
   const onFormSubmit = (data) => {
+    console.log("data", data);
     const allSizes = Array.from(new Set(colors.flatMap(color => color.sizes.map(s => s.size))));
     const productData = {
       id: product?._id,
@@ -320,7 +322,6 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={(value) => {
-                        console.log("value", value);
                         field.onChange(value);
                         onCategoryChange(value);
                         setSelectedCategory(value);
@@ -392,7 +393,10 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     name="sport"
                     control={control}
                     render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select value={field.value} onValueChange={(value) => {
+                        console.log("Selected sport:", value);
+                        field.onChange(value);
+                      }}>
                         <SelectTrigger disabled={readonly}>
                           <SelectValue placeholder="Chọn môn thể thao" />
                         </SelectTrigger>
