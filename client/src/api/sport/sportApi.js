@@ -57,4 +57,14 @@ export const checkSportNameExist = async (name, id = null) => {
   }
 };
 
+// Xóa sport
+export const deleteSportById = async (id) => {
+  try {
+    const res = await axiosInstance.delete(`/sports/${id}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+
 
