@@ -19,7 +19,7 @@ export const createProduct = async (req, res) => {
       materials,
       technicalSpecs,
     } = req.body;
-
+    console.log("Sport", sport);
     const existing = await Product.findOne({ name });
     if (existing) {
       return res.status(400).json({ message: "Sản phẩm đã tồn tại" });
@@ -78,10 +78,7 @@ export const createProduct = async (req, res) => {
       materials,
       technicalSpecs,
       image: mainImage,
-      isNew: true,
-      isOnSale: discountPercentage > 0,
     });
-
     const savedProduct = await product.save();
 
     res.status(201).json({
@@ -177,7 +174,7 @@ export const getProductsByFilter = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    const { category, subcategory, brand, sport, search } = req.query;
+    const { category, subcategory, brand, sport, color, size, search } = req.query;
 
     const skip = (page - 1) * limit;
 
@@ -199,7 +196,30 @@ export const getProductsByFilter = async (req, res) => {
     if (search && search.trim() !== "") {
       query.name = { $regex: search, $options: "i" };
     }
+    const colorArr = color && color !== "all" ? color.split(",") : [];
+    const sizeArr = size && size !== "all" ? size.split(",") : [];
 
+    if (colorArr.length > 0 || sizeArr.length > 0) {
+      query.$and = [];
+      // Nếu có color
+      if (colorArr.length > 0) {
+        query.$and.push({
+          "colors.name": { $in: colorArr }
+        });
+      }
+      // Nếu có size
+      if (sizeArr.length > 0) {
+        // Có thể xuất hiện ở 2 cấp:
+        // - Mảng sizes (tổng hợp)
+        // - Hoặc trong từng colors.sizes.size
+        query.$and.push({
+          $or: [
+            { sizes: { $in: sizeArr } },
+            { "colors.sizes.size": { $in: sizeArr } }
+          ]
+        });
+      }
+    }
     // Count total
     const total = await Product.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
@@ -218,5 +238,30 @@ export const getProductsByFilter = async (req, res) => {
   } catch (error) {
     console.error("Error filter products:", error);
     res.status(500).json({ message: "Lỗi server khi filter sản phẩm" });
+  }
+};
+
+// Kiểm tra tên sản phẩm đã tồn tại hay chưa
+export const checkProductName = async (req, res) => {
+  try {
+    const { name, id } = req.query;
+
+    if (!name) {
+      return res.status(400).json({ message: "Tên sản phẩm là bắt buộc" });
+    }
+
+    let query = { name };
+
+    // Nếu id hợp lệ (update) thì loại bỏ sản phẩm hiện tại
+    if (id && mongoose.Types.ObjectId.isValid(id)) {
+      query._id = { $ne: id };
+    }
+
+    const existingProduct = await Product.findOne(query);
+
+    res.status(200).json({ exists: !!existingProduct });
+  } catch (error) {
+    console.error("Lỗi check product name:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

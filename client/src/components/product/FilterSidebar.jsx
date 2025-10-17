@@ -1,14 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Label } from "../../components/ui/label";
 import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
-import { brands, sports } from "../../data/mockData";
 import { cn } from "../..//lib/utils";
 
-const FilterSidebar = ({ onFilterChange, className }) => {
-  const [expandedSections, setExpandedSections] = useState(new Set(["brand", "color", "size"]));
+const FilterSidebar = ({ onFilterChange, products, className }) => {
+  const [expandedSections, setExpandedSections] = useState(
+    new Set(["brand", "color", "size", "sport"])
+  );
+  const [staticBrands, setStaticBrands] = useState([]);
+  const [staticSports, setStaticSports] = useState([]);
+  const [staticColors, setStaticColors] = useState([]);
+  const [staticSizes, setStaticSizes] = useState([]);
   const [filters, setFilters] = useState({
     brands: [],
     colors: [],
@@ -16,17 +21,37 @@ const FilterSidebar = ({ onFilterChange, className }) => {
     sports: [],
     priceRange: [0, 10000000],
   });
+  useEffect(() => {
+    if (products.length > 0) {
+      const brandMap = new Map();
+      const sportMap = new Map();
+      const colorMap = new Map();
+      const sizeMap = new Map();
+      products.forEach((p) => {
+        if (p.brand && p.brand._id && !brandMap.has(p.brand._id)) {
+          brandMap.set(p.brand._id, p.brand.name);
+        }
+        if (p.sport && p.sport._id && !sportMap.has(p.sport._id)) {
+          sportMap.set(p.sport._id, p.sport.name);
+        }
+        p.colors?.forEach((c) => {
+          if (c.name && !colorMap.has(c.name)) {
+            colorMap.set(c.name, c.hex || "#ccc");
+          }
+          c.sizes?.forEach((s) => {
+            if (s.size && !sizeMap.has(s.size)) {
+              sizeMap.set(s.size, s.size);
+            }
+          });
+        });
+      });
 
-  const colors = [
-    { name: "Đen", hex: "#000000" },
-    { name: "Trắng", hex: "#FFFFFF" },
-    { name: "Xanh dương", hex: "#0000FF" },
-    { name: "Đỏ", hex: "#FF0000" },
-    { name: "Xám", hex: "#808080" },
-    { name: "Hồng", hex: "#FFC0CB" },
-  ];
-
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL", "39", "40", "41", "42", "43"];
+      setStaticBrands(Array.from(brandMap, ([id, name]) => ({ id, name })));
+      setStaticSports(Array.from(sportMap, ([id, name]) => ({ id, name })));
+      setStaticColors(Array.from(colorMap, ([name, hex]) => ({ id: name, name, hex })));
+      setStaticSizes(Array.from(sizeMap, ([id, name]) => ({ id, name })));
+    }
+  }, [products]);
 
   const toggleSection = (section) => {
     const newExpanded = new Set(expandedSections);
@@ -47,7 +72,7 @@ const FilterSidebar = ({ onFilterChange, className }) => {
     } else {
       newFilters[type] = [...currentArray, value];
     }
-
+    console.log("newFilters", newFilters);
     setFilters(newFilters);
     onFilterChange?.(newFilters);
   };
@@ -104,15 +129,15 @@ const FilterSidebar = ({ onFilterChange, className }) => {
 
       {/* Brand filter */}
       <FilterSection id="brand" title="Thương hiệu">
-        {brands.map((brand) => (
-          <div key={brand} className="flex items-center space-x-2">
+        {staticBrands.map((brand) => (
+          <div key={brand.id} className="flex items-center space-x-2">
             <Checkbox
-              id={`brand-${brand}`}
-              checked={filters.brands.includes(brand)}
-              onCheckedChange={() => handleFilterChange("brands", brand)}
+              id={`brand-${brand.id}`}
+              checked={filters.brands.includes(brand.id)}
+              onCheckedChange={() => handleFilterChange("brands", brand.id)}
             />
             <Label
-              htmlFor={`brand-${brand}`}
+              htmlFor={`brand-${brand.id}`}
               className="text-sm text-muted-foreground cursor-pointer hover:text-foreground"
             >
               {brand.name}
@@ -125,7 +150,7 @@ const FilterSidebar = ({ onFilterChange, className }) => {
 
       {/* Color filter */}
       <FilterSection id="color" title="Màu sắc">
-        {colors.map((color) => (
+        {staticColors.map((color) => (
           <div key={color.name} className="flex items-center space-x-2">
             <Checkbox
               id={`color-${color.name}`}
@@ -153,18 +178,18 @@ const FilterSidebar = ({ onFilterChange, className }) => {
       {/* Size filter */}
       <FilterSection id="size" title="Kích thước">
         <div className="grid grid-cols-3 gap-2">
-          {sizes.map((size) => (
-            <div key={size} className="flex items-center space-x-2">
+          {staticSizes.map((size) => (
+            <div key={size.id} className="flex items-center space-x-2">
               <Checkbox
-                id={`size-${size}`}
-                checked={filters.sizes.includes(size)}
-                onCheckedChange={() => handleFilterChange("sizes", size)}
+                id={`size-${size.id}`}
+                checked={filters.sizes.includes(size.id)}
+                onCheckedChange={() => handleFilterChange("sizes", size.id)}
               />
               <Label
-                htmlFor={`size-${size}`}
+                htmlFor={`size-${size.id}`}
                 className="text-sm text-muted-foreground cursor-pointer hover:text-foreground"
               >
-                {size}
+                {size.name}
               </Label>
             </div>
           ))}
@@ -175,15 +200,15 @@ const FilterSidebar = ({ onFilterChange, className }) => {
 
       {/* Sport filter */}
       <FilterSection id="sport" title="Môn thể thao">
-        {sports.map((sport) => (
-          <div key={sport} className="flex items-center space-x-2">
+        {staticSports.map((sport) => (
+          <div key={sport.id} className="flex items-center space-x-2">
             <Checkbox
-              id={`sport-${sport}`}
-              checked={filters.sports.includes(sport)}
-              onCheckedChange={() => handleFilterChange("sports", sport)}
+              id={`sport-${sport.id}`}
+              checked={filters.sports.includes(sport.id)}
+              onCheckedChange={() => handleFilterChange("sports", sport.id)}
             />
             <Label
-              htmlFor={`sport-${sport}`}
+              htmlFor={`sport-${sport.id}`}
               className="text-sm text-muted-foreground cursor-pointer hover:text-foreground"
             >
               {sport.name}

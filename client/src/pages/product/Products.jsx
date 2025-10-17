@@ -9,9 +9,10 @@ import { getProductsByFilter } from "../../api/product/productApi";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { MainNavigation } from "../../components/MainNavigation";
+import Pagination from '../../components/pagination/Pagination';
+
 
 const Products = () => {
-    console.log("da chay vao day Products");
   const [filters, setFilters] = useState({
     brands: [],
     colors: [],
@@ -21,42 +22,59 @@ const Products = () => {
   });
 
   const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [searchParams] = useSearchParams();
   const categoryId = searchParams.get("category");
   const subcategoryId = searchParams.get("sub");
-  console.log("categoryId + subcategoryId", categoryId, subcategoryId);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 20;
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        console.log("da chay vao day fetchProducts");
         const res = await getProductsByFilter({
           category: categoryId || "all",
           subcategory: subcategoryId || "all",
-          brand: filters.brands.join(",") || "all",
-          sport: filters.sports.join(",") || "all",
         });
-                console.log("products", res.products);
-
-        setProducts(res.products);
+        setAllProducts(res.products); // lưu sản phẩm gốc
+        setProducts(res.products);    // hiển thị ban đầu
       } catch (err) {
         console.error(err);
       }
     };
     fetchProducts();
-  }, [categoryId, subcategoryId, filters]);
+  }, [categoryId, subcategoryId]);
 
+  useEffect(() => {
+    const filtered = allProducts.filter((p) => {
+      const brandMatch = filters.brands.length === 0 || filters.brands.includes(p.brand?._id);
+      const sportMatch = filters.sports.length === 0 || filters.sports.includes(p.sport?._id);
+      const colorMatch = filters.colors.length === 0 || p.colors?.some((c) => filters.colors.includes(c.name));
+      const sizeMatch = filters.sizes.length === 0 || p.colors?.some((c) => c.sizes?.some((s) => filters.sizes.includes(s.size)));
+      return brandMatch && sportMatch && colorMatch && sizeMatch;
+    });
+    
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage));
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    setProducts(filtered.slice(startIndex, endIndex));
+  }, [filters, allProducts, currentPage]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
   return (
     <div className="min-h-screen bg-background">
         <Header title="Sản phẩm" />
         <MainNavigation />
         <div className="container mx-auto px-4 py-8">
-            {/* Header */}
-
-            <div className="flex gap-8">
+          <div className="flex gap-8">
             {/* Desktop Filter Sidebar */}
             <aside className="hidden lg:block w-64 flex-shrink-0">
                 <div className="sticky top-24">
-                <FilterSidebar onFilterChange={setFilters} />
+                <FilterSidebar
+                  onFilterChange={setFilters}
+                  products={allProducts} />
                 </div>
             </aside>
 
@@ -92,8 +110,13 @@ const Products = () => {
                 </div>
                 )}
             </div>
-            </div>
-      </div>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
       <Footer />
     </div>
   );

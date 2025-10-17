@@ -33,7 +33,7 @@ import { checkCategoryNameExists } from '../../api/category/categoryApi';
 const categorySchema = z.object({
   name: z.string().min(1, 'Tên danh mục là bắt buộc'),
   icon: z.string().min(1, 'Icon là bắt buộc'),
-  gender: z.enum(['male', 'female', 'kids'], {
+  gender: z.enum(['male', 'female', 'boy', 'girl'], {
     required_error: "Giới tính là bắt buộc",
   }),
   type: z.enum(['clothing', 'shoes', 'accessories'], {
@@ -52,7 +52,7 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
       name: category?.name || '',
       icon: category?.icon || '',
       gender: category?.gender || '',
-      type : category?.type || '',
+      type: category?.type || '',
     },
   });
 
@@ -96,8 +96,8 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
       id: category?._id,
       name: values.name,
       icon: values.icon,
-      gender : values.gender,
-      type : values.type,
+      gender: values.gender,
+      type: values.type,
       subcategories,
     };
     onSubmit(categoryData);
@@ -116,13 +116,13 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
         <DialogHeader>
           <DialogTitle>
             {readonly
-                ? 'Xem chi tiết danh mục'
-                : category
+              ? 'Xem chi tiết danh mục'
+              : category
                 ? 'Chỉnh sửa danh mục'
                 : 'Thêm danh mục mới'}
           </DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
@@ -132,13 +132,13 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
                 <FormItem>
                   <FormLabel>Tên danh mục</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ví dụ: Đồ bơi nam" {...field} disabled={readonly}/>
+                    <Input placeholder="Ví dụ: Đồ bơi nam" {...field} disabled={readonly} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="icon"
@@ -241,31 +241,31 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
                   </Button>
                 </div>
               )}
-              
+
               {subcategories.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {subcategories.map((sub, index) => {
                     // const label = readonly ? sub.name : sub;
-                    const label = (readonly || editing) 
-                    ? (typeof sub === 'object' && sub !== null ? sub.name : sub) 
-                    : sub;
+                    const label = (readonly || editing)
+                      ? (typeof sub === 'object' && sub !== null ? sub.name : sub)
+                      : sub;
                     return (
-                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                      {label}
-                      {!readonly && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-4 w-4 p-0"
-                          onClick={() => handleRemoveSubcategory(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </Badge>
-                  );
-                })}
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        {label}
+                        {!readonly && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0"
+                            onClick={() => handleRemoveSubcategory(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </Badge>
+                    );
+                  })}
                 </div>
               )}
             </div>
