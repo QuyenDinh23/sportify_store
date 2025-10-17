@@ -1,9 +1,9 @@
 import express from "express";
-import { createProduct, getProductById, getProducts, getProductsByFilter, updateProduct } from "../../controllers/product/productController.js";
+import { checkProductName, createProduct, getProductById, getProducts, getProductsByFilter, updateProduct } from "../../controllers/product/productController.js";
 
 const router = express.Router();
 
-
+router.get("/check-name", checkProductName);
 router.post("/", createProduct);
 router.get("/paging", getProductsByFilter);
 router.get("/", getProducts);

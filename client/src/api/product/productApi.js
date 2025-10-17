@@ -49,3 +49,17 @@ export const getProductsByFilter = async (params) => {
     throw err.response?.data || err;
   }
 };
+
+// Kiểm tra tên sản phẩm đã tồn tại hay chưa
+export const checkProductName = async (name, id = null) => {
+  try {
+    const params = { name };
+    if (id) params.id = id;
+
+    const res = await axiosInstance.get("/products/check-name", { params });
+    return res.data.exists; // trả về true/false
+  } catch (err) {
+    console.error("Lỗi check product name:", err);
+    throw err.response?.data || err;
+  }
+};

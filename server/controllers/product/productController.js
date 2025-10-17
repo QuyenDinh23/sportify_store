@@ -79,7 +79,6 @@ export const createProduct = async (req, res) => {
       technicalSpecs,
       image: mainImage,
     });
-
     const savedProduct = await product.save();
 
     res.status(201).json({
@@ -239,5 +238,30 @@ export const getProductsByFilter = async (req, res) => {
   } catch (error) {
     console.error("Error filter products:", error);
     res.status(500).json({ message: "Lỗi server khi filter sản phẩm" });
+  }
+};
+
+// Kiểm tra tên sản phẩm đã tồn tại hay chưa
+export const checkProductName = async (req, res) => {
+  try {
+    const { name, id } = req.query;
+
+    if (!name) {
+      return res.status(400).json({ message: "Tên sản phẩm là bắt buộc" });
+    }
+
+    let query = { name };
+
+    // Nếu id hợp lệ (update) thì loại bỏ sản phẩm hiện tại
+    if (id && mongoose.Types.ObjectId.isValid(id)) {
+      query._id = { $ne: id };
+    }
+
+    const existingProduct = await Product.findOne(query);
+
+    res.status(200).json({ exists: !!existingProduct });
+  } catch (error) {
+    console.error("Lỗi check product name:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

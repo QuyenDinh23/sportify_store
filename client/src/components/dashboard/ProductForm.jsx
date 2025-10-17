@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { X, Plus, Palette } from 'lucide-react';
 import { uploadToBackend } from '../../api/image/uploadImageApi';
+import { checkProductName } from '../../api/product/productApi';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Tên sản phẩm không được để trống'),
@@ -39,7 +40,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   const [newSpecValue, setNewSpecValue] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [newSizeInputs, setNewSizeInputs] = useState({});
-  const { control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm({
+  const { control, handleSubmit, watch, setError, reset, formState: { errors } } = useForm({
     mode: 'onChange',
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -221,37 +222,45 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
     return total + color.sizes.reduce((sum, sizeVariant) => sum + sizeVariant.quantity, 0);
   }, 0);
 
-  const onFormSubmit = (data) => {
-    console.log("data", data);
-    const allSizes = Array.from(new Set(colors.flatMap(color => color.sizes.map(s => s.size))));
-    const productData = {
-      id: product?._id,
-      name: data.name,
-      description: data.description,
-      category: data.category,
-      subcategory: data.subcategory,
-      brand: data.brand,
-      sport: data.sport,
-      price: data.price,
-      importPrice: data.importPrice,
-      discountPercentage: data.discountPercentage,
-      discountedPrice,
-      stockQuantity: totalStockQuantity,
-      status: data.status,
-      sizes: allSizes,
-      colors,
-      materials,
-      technicalSpecs,
-      originalPrice: data.discountPercentage > 0 ? data.price : undefined,
-      image: colors[0]?.images[0] || '',
-      rating: product?.rating || 0,
-      reviewCount: product?.reviewCount || 0,
-      isNew: !product,
-      isOnSale: data.discountPercentage > 0,
-    };
-    console.log("Product data", productData);
-    onSubmit(productData);
-    onClose();
+  const onFormSubmit = async (data) => {
+    try {
+      const exists = await checkProductName(data.name, product?._id);
+      if (exists) {
+        console.log("Product name already exists");
+        setError("name", { type: "manual", message: "Tên sản phẩm đã tồn tại" });
+        return;
+      }
+      const allSizes = Array.from(new Set(colors.flatMap(color => color.sizes.map(s => s.size))));
+      const productData = {
+        id: product?._id,
+        name: data.name,
+        description: data.description,
+        category: data.category,
+        subcategory: data.subcategory,
+        brand: data.brand,
+        sport: data.sport || null,
+        price: data.price,
+        importPrice: data.importPrice,
+        discountPercentage: data.discountPercentage,
+        discountedPrice,
+        stockQuantity: totalStockQuantity,
+        status: data.status,
+        sizes: allSizes,
+        colors,
+        materials,
+        technicalSpecs,
+        originalPrice: data.discountPercentage > 0 ? data.price : undefined,
+        image: colors[0]?.images[0] || '',
+        rating: product?.rating || 0,
+        reviewCount: product?.reviewCount || 0,
+        isNew: !product,
+        isOnSale: data.discountPercentage > 0,
+      };
+      onSubmit(productData);
+      onClose();
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra tên sản phẩm:", error);
+    }
   };
 
   return (
