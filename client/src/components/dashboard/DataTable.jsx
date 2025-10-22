@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronUp, ChevronDown, Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search, Plus, Edit, Trash2, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -20,6 +20,7 @@ export function DataTable({
   onEdit,
   onDelete,
   onView,
+  onToggleStatus,
   searchPlaceholder = "Tìm kiếm...",
   searchTerm,
   onSearch,
@@ -80,8 +81,8 @@ export function DataTable({
                       >
                         {column.label}
                         {sortColumn === column.key && (
-                          sortDirection === 'asc' ? 
-                            <ChevronUp className="ml-2 h-4 w-4" /> : 
+                          sortDirection === 'asc' ?
+                            <ChevronUp className="ml-2 h-4 w-4" /> :
                             <ChevronDown className="ml-2 h-4 w-4" />
                         )}
                       </Button>
@@ -90,7 +91,7 @@ export function DataTable({
                     )}
                   </TableHead>
                 ))}
-                {(onEdit || onDelete || onView) && (
+                {(onEdit || onDelete || onView || onToggleStatus) && (
                   <TableHead>Thao tác</TableHead>
                 )}
               </TableRow>
@@ -107,13 +108,13 @@ export function DataTable({
                   <TableRow key={item.id}>
                     {columns.map((column) => (
                       <TableCell key={column.key}>
-                        {column.render ? 
-                          column.render(item[column.key], item) : 
+                        {column.render ?
+                          column.render(item[column.key], item) :
                           item[column.key]?.toString()
                         }
                       </TableCell>
                     ))}
-                    {(onEdit || onDelete || onView) && (
+                    {(onEdit || onDelete || onView || onToggleStatus) && (
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {onView && (
@@ -132,6 +133,20 @@ export function DataTable({
                               onClick={() => onEdit(item)}
                             >
                               <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {onToggleStatus && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onToggleStatus(item)}
+                              title={item.status === 'active' ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                            >
+                              {item.status === 'active' ? (
+                                <ToggleRight className="h-6 w-6 text-green-600" />
+                              ) : (
+                                <ToggleLeft className="h-6 w-6 text-muted-foreground" />
+                              )}
                             </Button>
                           )}
                           {onDelete && (

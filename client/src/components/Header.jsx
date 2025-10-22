@@ -31,8 +31,8 @@ import {
 import { authApi } from "../services/authApi";
 
 const Header = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { totalQuantity } = useSelector((state) => state.cart);
   const user = useSelector((state) => state.auth.user);
 
@@ -117,16 +117,18 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden md:flex"
-              asChild
-            >
-              <Link to="/dashboard">
-                <Settings className="h-5 w-5" />
-              </Link>
-            </Button>
+            {user && (user.role === "admin" || user.role === "staff") && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden md:flex"
+                asChild
+              >
+                <Link to="/dashboard">
+                  <Settings className="h-5 w-5" />
+                </Link>
+              </Button>
+            )}
 
             <DropdownMenuHover>
               <DropdownMenuTrigger asChild>
@@ -182,6 +184,8 @@ const Header = () => {
                 ""
               )}
             </DropdownMenuHover>
+
+            {/* Cart Button */}
 
             <Button variant="ghost" size="icon" className="relative" asChild>
               <Link to="/cart">

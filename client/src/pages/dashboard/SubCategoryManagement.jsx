@@ -8,13 +8,23 @@ import { Button } from '../../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Plus } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
-import { fetchSubcategoriesByPage, updateSubcategory } from '../../api/category/subCategoryApi';
+import { deleteSubcategoryApi, fetchSubcategoriesByPage, updateSubcategory } from '../../api/category/subCategoryApi';
 import { getBrands } from '../../api/brand/brandApi';
 import { fetchAllCategories } from '../../api/category/categoryApi';
 import Pagination from '../../components/pagination/Pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '../../components/ui/alert-dialog';
 
 const SubcategoryManagement = () => {
-  const [subcategoryList, setSubcategoryList] = useState(subcategories);
+  const [subcategoryList, setSubcategoryList] = useState([]);
   // eslint-disable-next-line no-unused-vars
   const [categoryList, setCategoryList] = useState([]);
   const [brandList, setBrandList] = useState([]);
@@ -26,6 +36,8 @@ const SubcategoryManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [subcategoryToDelete, setSubcategoryToDelete] = useState(null);
   const itemsPerPage = 10;
   const { toast } = useToast();
 
@@ -74,7 +86,7 @@ const SubcategoryManagement = () => {
 
   const loadBrands = async () => {
     try {
-      const res = await getBrands(); 
+      const res = await getBrands();
       setBrandList(res);
     } catch (error) {
       toast({
@@ -86,9 +98,9 @@ const SubcategoryManagement = () => {
   }
   const loadCategories = async () => {
     try {
-      const res = await fetchAllCategories(); 
+      const res = await fetchAllCategories();
       setCategoryList(res);
-      console.log("category list" , categoryList);
+      console.log("category list", categoryList);
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -138,19 +150,39 @@ const SubcategoryManagement = () => {
   };
 
   const handleDelete = (subcategory) => {
-    setSubcategoryList(subcategoryList.filter((sc) => sc.id !== subcategory.id));
+    setSubcategoryToDelete(subcategory);
+    setDeleteDialogOpen(true);
+  };
 
-    // Remove subcategoryId from brands
-    setBrandList(
-      brandList.map((brand) =>
-        brand.subcategoryId === subcategory.id ? { ...brand, subcategoryId: '' } : brand
-      )
-    );
+  const confirmDelete = async () => {
+    if (!subcategoryToDelete) return;
 
-    toast({
-      title: 'Đã xóa danh mục con',
-      description: `${subcategory.name} đã được xóa khỏi danh sách`,
-    });
+    try {
+      await deleteSubcategoryApi(subcategoryToDelete._id);
+      loadSubcategories();
+      toast({
+        title: "Đã xóa danh mục con",
+        description: `${subcategoryToDelete.name} đã được xóa khỏi danh sách`,
+      });
+      setDeleteDialogOpen(false);
+      setSubcategoryToDelete(null);
+    } catch (error) {
+      if (error?.response?.status === 400 || error?.response?.status === 409) {
+        toast({
+          title: "Không thể xóa danh mục con",
+          description: `${subcategoryToDelete.name} đang được sử dụng trong sản phẩm, không thể xóa`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Lỗi khi xóa danh mục con",
+          description: error.message || "Có lỗi xảy ra, vui lòng thử lại",
+          variant: "destructive",
+        });
+      }
+      setDeleteDialogOpen(false);
+      setSubcategoryToDelete(null);
+    }
   };
 
   const handleView = (subcategory) => {
@@ -211,11 +243,27 @@ const SubcategoryManagement = () => {
         onSubmit={handleFormSubmit}
       />
 
-       <Pagination
+      <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa danh mục con</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa danh mục con "{subcategoryToDelete?.name}"?
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Xác nhận xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

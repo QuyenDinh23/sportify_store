@@ -1,5 +1,6 @@
 import Category from "../../models/category/Category.js";
 import SubCategory from "../../models/category/SubCategory.js";
+import Product from "../../models/product/Product.js";
 import mongoose from 'mongoose';
 
 //tạo subCategory
@@ -105,3 +106,68 @@ export const getSubcategoriesByPage = async (req, res) => {
     res.status(500).json({ message: "Lỗi server khi lấy subcategories" });
   }
 };
+
+// Xóa subcategory (chỉ khi chưa được gán vào product)
+export const deleteSubcategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra id hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID subcategory không hợp lệ" });
+    }
+
+    // Kiểm tra subcategory có đang được gán vào product không
+    const linkedProduct = await Product.findOne({ subcategory: id });
+
+    if (linkedProduct) {
+      return res.status(400).json({
+        message: "Danh mục sản phẩm con đang được sử dụng trong sản phẩm, không thể xóa",
+      });
+    }
+
+    const deletedSubcategory = await SubCategory.findByIdAndDelete(id);
+
+    if (!deletedSubcategory) {
+      return res.status(404).json({ message: "Không tìm thấy subcategory" });
+    }
+
+    res.status(200).json({
+      message: `Đã xóa subcategory "${deletedSubcategory.name}" thành công`,
+    });
+  } catch (error) {
+    console.error("Lỗi khi xóa subcategory:", error);
+    res.status(500).json({ message: "Lỗi server khi xóa subcategory" });
+  }
+};
+
+// Kiểm tra xem subcategory có đang được sử dụng trong Product hay không
+export const checkSubcategoryUsage = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra ID hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID subcategory không hợp lệ" });
+    }
+
+    // Tìm xem có sản phẩm nào đang dùng subcategory này không
+    const productExists = await Product.exists({ subcategory: id });
+
+    if (productExists) {
+      return res.json({
+        inUse: true,
+        message: "Danh mục con này đang được sử dụng trong sản phẩm.",
+      });
+    }
+
+    res.json({
+      inUse: false,
+      message: "Subcategory này chưa được sử dụng trong sản phẩm.",
+    });
+  } catch (error) {
+    console.error("Lỗi khi kiểm tra subcategory:", error);
+    res.status(500).json({ message: "Lỗi server khi kiểm tra subcategory" });
+  }
+};
+

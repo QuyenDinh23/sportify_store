@@ -1,5 +1,6 @@
 import Category from "../../models/category/Category.js";
 import Subcategory from "../../models/category/SubCategory.js";
+import Product from "../../models/product/Product.js";
 import mongoose from 'mongoose';
 
 // Lấy tất cả categories + subcategories
@@ -181,6 +182,44 @@ export const getCategoriesByPage = async (req, res) => {
     res.json({ categories, totalPages });
   } catch (error) {
     res.status(500).json({ message: "Lỗi server khi lấy danh mục" });
+  }
+};
+
+// Xóa category (chỉ khi chưa được gán vào product), kèm xóa các subcategory
+export const deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra id hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID category không hợp lệ" });
+    }
+
+    // Kiểm tra category có đang được gán vào product không
+    const linkedProduct = await Product.findOne({ category: id });
+
+    if (linkedProduct) {
+      return res.status(400).json({
+        message: "Danh mục đang được sử dụng trong sản phẩm, không thể xóa",
+      });
+    }
+
+    // Xóa tất cả subcategory liên quan
+    await Subcategory.deleteMany({ category: id });
+
+    // Xóa category
+    const deletedCategory = await Category.findByIdAndDelete(id);
+
+    if (!deletedCategory) {
+      return res.status(404).json({ message: "Không tìm thấy category" });
+    }
+
+    res.status(200).json({
+      message: "Xóa category thành công, các subcategory liên quan cũng đã bị xóa",
+    });
+  } catch (error) {
+    console.error("Lỗi khi xóa category:", error);
+    res.status(500).json({ message: "Lỗi server khi xóa category" });
   }
 };
 

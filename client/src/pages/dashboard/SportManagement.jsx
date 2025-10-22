@@ -2,8 +2,18 @@ import { useEffect, useState } from 'react';
 import { DataTable } from '../../components/dashboard/DataTable';
 import { SportForm } from '../../components/dashboard/SportForm';
 import { useToast } from '../../hooks/use-toast';
-import { createSport, fetchSportsByPage, updateSport } from '../../api/sport/sportApi';
+import { createSport, deleteSportById, fetchSportsByPage, updateSport } from '../../api/sport/sportApi';
 import Pagination from '../../components/pagination/Pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '../../components/ui/alert-dialog';
 
 const SportManagement = () => {
   const [sports, setSports] = useState([]);
@@ -14,6 +24,8 @@ const SportManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sportToDelete, setSportToDelete] = useState(null);
   const itemsPerPage = 10;
   const { toast } = useToast();
 
@@ -62,14 +74,40 @@ const SportManagement = () => {
   };
 
   const handleDelete = (sport) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa môn thể thao "${sport.name}"?`)) {
-      setSports(sports.filter((s) => s.id !== sport.id));
-      toast({
-        title: 'Đã xóa môn thể thao',
-        description: `${sport.name} đã được xóa khỏi danh sách`,
-      });
-    }
+    setSportToDelete(sport);
+    setDeleteDialogOpen(true);
   };
+
+  const confirmDelete = async () => {
+    if (!sportToDelete) return;
+
+    try {
+      await deleteSportById(sportToDelete._id);
+      loadSports();
+      toast({
+        title: "Đã xóa môn thể thao",
+        description: `${sportToDelete.name} đã được xóa khỏi danh sách`,
+      });
+      setDeleteDialogOpen(false);
+      setSportToDelete(null);
+    } catch (error) {
+      // Nếu lỗi do sport đang được gán vào product
+      if (error?.response?.status === 400 || error?.response?.status === 409) {
+        toast({
+          title: "Không thể xóa môn thể thao",
+          description: `${sportToDelete.name} đang được gán vào sản phẩm, không thể xóa`,
+          variant: "destructive",
+        });
+      } else {
+        // Các lỗi khác
+        toast({
+          title: "Lỗi khi xóa môn thể thao",
+          description: error.message || "Có lỗi xảy ra, vui lòng thử lại",
+          variant: "destructive",
+        });
+      }
+    }
+  }
 
   const handleView = (sport) => {
     setEditingSport(sport);
@@ -102,11 +140,11 @@ const SportManagement = () => {
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: `${error}` ,
+        description: `${error}`,
         variant: "destructive",
       });
     }
-    
+
   };
 
   const handleFormClose = () => {
@@ -148,6 +186,22 @@ const SportManagement = () => {
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa môn thể thao</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa môn thể thao "{sportToDelete?.name}"?
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Xác nhận xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

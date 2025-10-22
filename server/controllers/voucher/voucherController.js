@@ -137,6 +137,7 @@ const voucherController = {
     }
   },
 
+
   getVoucherById: async (req, res) => {
     try {
       const voucher = await Voucher.findById(req.params.id);

@@ -94,7 +94,7 @@ export const createProduct = async (req, res) => {
 // Lấy danh sách sản phẩm (có populate)
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find()
+    const products = await Product.find({status : "active"})
       .populate("category", "name")
       .populate("subcategory", "name")
       .populate("brand", "name logo")
@@ -263,5 +263,32 @@ export const checkProductName = async (req, res) => {
   } catch (error) {
     console.error("Lỗi check product name:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Cập nhật trạng thái sản phẩm (active <-> inactive)
+export const toggleProductStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID sản phẩm không hợp lệ" });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Sản phẩm không tồn tại" });
+    }
+
+    product.status = product.status === "active" ? "inactive" : "active";
+    product.updatedAt = new Date();
+    await product.save();
+
+    res.status(200).json({
+      message: `Trạng thái sản phẩm đã được chuyển thành ${product.status}`,
+      product,
+    });
+  } catch (error) {
+    console.error("Lỗi khi toggle trạng thái sản phẩm:", error);
+    res.status(500).json({ message: "Server error khi cập nhật trạng thái sản phẩm" });
   }
 };
