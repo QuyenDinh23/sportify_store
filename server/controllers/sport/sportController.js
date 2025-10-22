@@ -1,4 +1,5 @@
 import Sport from "../../models/sport/Sport.js";
+import Product from "../../models/product/Product.js";
 import mongoose from "mongoose";
 
 // Lấy danh sách
@@ -93,5 +94,34 @@ export const checkSportName = async (req, res) => {
   } catch (error) {
     console.error("Lỗi check sport name:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Xóa sport (chỉ khi chưa được gán vào sản phẩm)
+export const deleteSport = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID môn thể thao không hợp lệ" });
+    }
+
+    // Kiểm tra sport có đang được gán vào product nào không
+    const linkedProduct = await Product.findOne({ sport: id });
+
+    if (linkedProduct) {
+      return res.status(400).json({ message: "Môn thể thao đang được sử dụng trong sản phẩm, không thể xóa" });
+    }
+
+    const deletedSport = await Sport.findByIdAndDelete(id);
+
+    if (!deletedSport) {
+      return res.status(404).json({ message: "Không tìm thấy môn thể thao" });
+    }
+
+    res.status(200).json({ message: "Xóa môn thể thao thành công" });
+  } catch (error) {
+    console.error("Lỗi khi xóa môn thể thao:", error);
+    res.status(500).json({ message: "Lỗi server khi xóa môn thể thao" });
   }
 };

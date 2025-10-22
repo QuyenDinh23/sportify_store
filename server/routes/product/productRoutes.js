@@ -1,5 +1,5 @@
 import express from "express";
-import { checkProductName, createProduct, getProductById, getProducts, getProductsByFilter, updateProduct } from "../../controllers/product/productController.js";
+import { checkProductName, createProduct, getProductById, getProducts, getProductsByFilter, toggleProductStatus, updateProduct } from "../../controllers/product/productController.js";
 
 const router = express.Router();
 
@@ -8,5 +8,6 @@ router.post("/", createProduct);
 router.get("/paging", getProductsByFilter);
 router.get("/", getProducts);
 router.get("/:id", getProductById);
-router.put("/:id", updateProduct);  
+router.put("/:id", updateProduct); 
+router.patch("/:id/toggle-status", toggleProductStatus); 
 export default router;

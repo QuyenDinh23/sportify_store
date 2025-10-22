@@ -3,8 +3,18 @@ import { DataTable } from '../../components/dashboard/DataTable';
 import { BrandForm } from '../../components/dashboard/BrandForm';
 import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../hooks/use-toast';
-import { createBrand, fetchBrandsByPage, updateBrand } from '../../api/brand/brandApi';
+import { createBrand, deleteBrandApi, fetchBrandsByPage, updateBrand } from '../../api/brand/brandApi';
 import Pagination from '../../components/pagination/Pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '../../components/ui/alert-dialog';
 
 const BrandManagement = () => {
   const [brandList, setBrandList] = useState([]);
@@ -15,6 +25,8 @@ const BrandManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [brandToDelete, setBrandToDelete] = useState(null);
   const itemsPerPage = 10;
   const { toast } = useToast();
 
@@ -63,9 +75,9 @@ const BrandManagement = () => {
     }
   }
   useEffect(() => {
-      loadBrands();
+    loadBrands();
   }, [currentPage, searchTerm, toast]);
-  
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -109,20 +121,52 @@ const BrandManagement = () => {
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: `${error}` ,
+        description: `${error}`,
         variant: "destructive",
       });
     }
-    
+
   };
 
   const handleDelete = (brand) => {
-    setBrandList(brandList.filter((b) => b.id !== brand.id));
-    toast({
-      title: 'Đã xóa thương hiệu',
-      description: `${brand.name} đã được xóa khỏi danh sách`,
-    });
+    setBrandToDelete(brand);
+    setDeleteDialogOpen(true);
   };
+
+  const confirmDelete = async () => {
+    if (!brandToDelete) return;
+
+    try {
+      await deleteBrandApi(brandToDelete._id);
+      loadBrands();
+      toast({
+        title: "Đã xóa thương hiệu",
+        description: `${brandToDelete.name} đã được xóa khỏi danh sách`,
+      });
+      setDeleteDialogOpen(false);
+      setBrandToDelete(null);
+    } catch (error) {
+      // Nếu lỗi do brand đang được gán vào sản phẩm
+      if (error?.response?.status === 400 || error?.response?.status === 409) {
+        toast({
+          title: "Không thể xóa thương hiệu",
+          description: `${brandToDelete.name} đang được gán vào sản phẩm, không thể xóa`,
+          variant: "destructive",
+        });
+      } else {
+        // Các lỗi khác
+        toast({
+          title: "Lỗi khi xóa thương hiệu",
+          description: error.message || "Có lỗi xảy ra, vui lòng thử lại",
+          variant: "destructive",
+        });
+      }
+
+      setDeleteDialogOpen(false);
+      setBrandToDelete(null);
+    }
+  };
+
 
   const handleView = (brand) => {
     setEditingBrand(brand);
@@ -167,6 +211,22 @@ const BrandManagement = () => {
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa thương hiệu</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa thương hiệu "{brandToDelete?.name}"?
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Xác nhận xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

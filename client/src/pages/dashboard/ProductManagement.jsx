@@ -5,10 +5,20 @@ import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { useToast } from '../../hooks/use-toast';
-import { createProduct, getProductsByFilter, updateProduct } from '../../api/product/productApi';
+import { createProduct, getProductsByFilter, toggleProductStatusApi, updateProduct } from '../../api/product/productApi';
 import { fetchAllCategories } from '../../api/category/categoryApi';
 import { getSports } from '../../api/sport/sportApi';
 import Pagination from '../../components/pagination/Pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '../../components/ui/alert-dialog';
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
@@ -27,6 +37,8 @@ const ProductManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isReadOnly, setIsReadOnly] = useState(false);
   const itemsPerPage = 10;
+  const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
+  const [productToToggle, setProductToToggle] = useState(null);
   const { toast } = useToast();
 
   const formatPrice = (price) => {
@@ -119,9 +131,9 @@ const ProductManagement = () => {
 
   const loadCategories = async () => {
     try {
-      const res = await fetchAllCategories(); 
+      const res = await fetchAllCategories();
       setCategories(res);
-      console.log("category list" , res);
+      console.log("category list", res);
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -132,8 +144,8 @@ const ProductManagement = () => {
   };
 
   const loadSports = async () => {
-    try { 
-      const res = await getSports(); 
+    try {
+      const res = await getSports();
       setSports(res);
     } catch (error) {
       toast({
@@ -176,9 +188,9 @@ const ProductManagement = () => {
   }
 
   const handleSubcategoryChange = (subcategoryId) => {
-  const sub = subcategories.find(s => s._id === subcategoryId);
-  setBrands(sub?.brands || []);
-};
+    const sub = subcategories.find(s => s._id === subcategoryId);
+    setBrands(sub?.brands || []);
+  };
 
   useEffect(() => {
     loadCategories();
@@ -187,7 +199,7 @@ const ProductManagement = () => {
   }, [selectedCategory, selectedSubcategory, selectedBrand, selectedSport, searchTerm, currentPage]);
 
   useEffect(() => {
-  
+
   }, [subcategories, brands]);
 
   const handlePageChange = (page) => {
@@ -206,15 +218,36 @@ const ProductManagement = () => {
     setIsReadOnly(false);
   };
 
-  const handleDelete = (product) => {
-    const updatedProducts = products.map(p => 
-      p.id === product.id ? { ...p, status: 'inactive' } : p
-    );
-    setProducts(updatedProducts);
-    toast({
-      title: "Đã vô hiệu hóa sản phẩm",
-      description: `${product.name} đã được vô hiệu hóa`,
-    });
+  const handleToggleStatus = (product) => {
+    setProductToToggle(product);
+    setToggleDialogOpen(true);
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!productToToggle) return;
+
+    try {
+      const res = await toggleProductStatusApi(productToToggle._id);
+      const updatedProduct = res.product;
+
+      setProducts((prev) =>
+        prev.map((p) => (p._id === updatedProduct._id ? updatedProduct : p))
+      );
+
+      toast({
+        title: "Thành công",
+        description: res.message,
+      });
+
+      setToggleDialogOpen(false);
+      setProductToToggle(null);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể cập nhật trạng thái sản phẩm",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleFormSubmit = async (productData) => {
@@ -240,7 +273,7 @@ const ProductManagement = () => {
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: `${error}` ,
+        description: `${error}`,
         variant: "destructive",
       });
     }
@@ -343,7 +376,7 @@ const ProductManagement = () => {
         columns={columns}
         onAdd={handleAdd}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onToggleStatus={handleToggleStatus}
         onView={handleView}
         searchPlaceholder="Tìm kiếm sản phẩm..."
         searchTerm={searchTerm}
@@ -372,6 +405,26 @@ const ProductManagement = () => {
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
+
+      <AlertDialog open={toggleDialogOpen} onOpenChange={setToggleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Xác nhận {productToToggle?.status === 'active' ? 'vô hiệu hóa' : 'kích hoạt'} sản phẩm
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn {productToToggle?.status === 'active' ? 'vô hiệu hóa' : 'kích hoạt'} sản phẩm "{productToToggle?.name}"?
+              {productToToggle?.status === 'active'
+                ? ' Sản phẩm sẽ chuyển sang trạng thái không hoạt động và không hiển thị cho khách hàng.'
+                : ' Sản phẩm sẽ được kích hoạt và hiển thị cho khách hàng.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmToggleStatus}>Xác nhận</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -26,9 +26,11 @@ import {
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { X, Plus, Shirt, Waves, Footprints, Watch, Glasses, Backpack, Trophy, Target, Dumbbell, Bike, Users, Calendar, MapPin } from 'lucide-react';
+import { X, Trash2, Plus, Shirt, Waves, Footprints, Watch, Glasses, Backpack, Trophy, Target, Dumbbell, Bike, Users, Calendar, MapPin } from 'lucide-react';
 import { availableIcons } from '../../data/icons';
 import { checkCategoryNameExists } from '../../api/category/categoryApi';
+import { checkSubcategoryUsageApi, deleteSubcategoryApi } from '../../api/category/subCategoryApi';
+import { useToast } from '../../hooks/use-toast';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Tên danh mục là bắt buộc'),
@@ -45,7 +47,9 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
   const [subcategories, setSubcategories] = useState(category?.subcategories || []);
   const [newSubcategory, setNewSubcategory] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(category?.icon || '');
-
+  const selectedIconData = availableIcons.find(icon => icon.name === selectedIcon);
+  const [removedSubcategories, setRemovedSubcategories] = useState([]);
+  const { toast } = useToast();
   const form = useForm({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -75,8 +79,29 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
     }
   };
 
-  const handleRemoveSubcategory = (index) => {
-    setSubcategories(subcategories.filter((_, i) => i !== index));
+  const handleRemoveSubcategory = async (index) => {
+    try {
+      const sub = subcategories[index];
+      const subId = typeof sub === "object" ? sub._id : sub;
+      setRemovedSubcategories([...removedSubcategories, subId]);
+      const { inUse, message } = await checkSubcategoryUsageApi(subId);
+
+      if (inUse) {
+        toast({
+          title: "Không thể xóa",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
+      setSubcategories(subcategories.filter((_, i) => i !== index));
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể kiểm tra subcategory.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleIconSelect = (iconName) => {
@@ -90,6 +115,12 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
     if (res) {
       form.setError("name", { type: "manual", message: "Tên danh mục đã tồn tại" });
       return;
+    }
+    for (const subId of removedSubcategories) {
+      const { inUse } = await checkSubcategoryUsageApi(subId);
+      if (!inUse) {
+        await deleteSubcategoryApi(subId);
+      }
     }
     const categoryData = {
       // ...(category?.id && { id: category.id }),
@@ -107,9 +138,6 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
     setNewSubcategory('');
     setSelectedIcon('');
   };
-
-  const selectedIconData = availableIcons.find(icon => icon.name === selectedIcon);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -245,7 +273,6 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
               {subcategories.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {subcategories.map((sub, index) => {
-                    // const label = readonly ? sub.name : sub;
                     const label = (readonly || editing)
                       ? (typeof sub === 'object' && sub !== null ? sub.name : sub)
                       : sub;

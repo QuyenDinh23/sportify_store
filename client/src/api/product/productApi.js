@@ -63,3 +63,13 @@ export const checkProductName = async (name, id = null) => {
     throw err.response?.data || err;
   }
 };
+
+// API toggle status
+export const toggleProductStatusApi = async (id) => {
+  try {
+    const res = await axiosInstance.patch(`/products/${id}/toggle-status`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
