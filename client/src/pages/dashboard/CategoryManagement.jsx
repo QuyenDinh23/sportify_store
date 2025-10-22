@@ -5,9 +5,19 @@ import { CategoryForm } from '../../components/dashboard/CategoryForm';
 import { Badge } from '../../components/ui/badge';
 import { useToast } from '../../hooks/use-toast';
 // eslint-disable-next-line no-unused-vars
-import { createCategory, createCategoryWithSubcategories, fetchAllCategories, fetchCategoriesByPage, fetchCategoryById, updateCategory } from '../../api/category/categoryApi';
+import { createCategory, createCategoryWithSubcategories, deleteCategoryById, fetchAllCategories, fetchCategoriesByPage, fetchCategoryById, updateCategory } from '../../api/category/categoryApi';
 import { availableIcons } from '../../data/icons';
 import Pagination from '../../components/pagination/Pagination';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '../../components/ui/alert-dialog';
 
 const CategoryManagement = () => {
   const [categoryList, setCategoryList] = useState([]);
@@ -18,6 +28,8 @@ const CategoryManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
   const itemsPerPage = 10;
   const { toast } = useToast();
   const genderMap = {
@@ -44,15 +56,15 @@ const CategoryManagement = () => {
       },
     },
     { key: 'name', label: 'Tên danh mục', sortable: true },
-    { 
-      key: 'gender', 
-      label: 'Giới tính', 
+    {
+      key: 'gender',
+      label: 'Giới tính',
       sortable: true,
       render: (value) => genderMap[value] || value, // map DB value sang label
     },
-    { 
-      key: 'type', 
-      label: 'Loại sản phẩm', 
+    {
+      key: 'type',
+      label: 'Loại sản phẩm',
       sortable: true,
       render: (value) => typeMap[value] || value, // map DB value sang label
     },
@@ -82,7 +94,7 @@ const CategoryManagement = () => {
       const res = await fetchCategoriesByPage(currentPage, itemsPerPage, searchTerm);
       setCategoryList(res.categories);
       setTotalPages(res.totalPages);
-    // eslint-disable-next-line no-unused-vars
+      // eslint-disable-next-line no-unused-vars
     } catch (err) {
       toast({
         title: "Lỗi",
@@ -94,9 +106,9 @@ const CategoryManagement = () => {
   useEffect(() => {
     loadCategories();
   }, [currentPage, searchTerm, toast]);
-const handlePageChange = (page) => {
-  setCurrentPage(page);
-};
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
 
   const handleAdd = () => {
@@ -116,13 +128,13 @@ const handlePageChange = (page) => {
   const handleFormSubmit = async (categoryData) => {
     try {
       if (categoryData.id) {
-        const updatedCategory = await updateCategory(categoryData.id, categoryData);     
+        const updatedCategory = await updateCategory(categoryData.id, categoryData);
         // Cập nhật lại state categoryList
         setCategoryList((prev) =>
           prev.map((cat) =>
             cat._id === updatedCategory._id ? updatedCategory : cat
           )
-        ); 
+        );
         toast({
           title: "Đã cập nhật",
           description: `${updatedCategory.name} đã được cập nhật thành công`,
@@ -136,23 +148,51 @@ const handlePageChange = (page) => {
         });
       }
       loadCategories();
-    // eslint-disable-next-line no-unused-vars
+      // eslint-disable-next-line no-unused-vars
     } catch (error) {
       console.log('error', error);
       toast({
         title: "Lỗi",
-        description: `${error}` ,
+        description: `${error}`,
         variant: "destructive",
       });
     }
   };
 
   const handleDelete = (category) => {
-    setCategoryList(categoryList.filter((c) => c.id !== category.id));
-    toast({
-      title: 'Đã xóa danh mục',
-      description: `${category.name} đã được xóa khỏi danh sách`,
-    });
+    setCategoryToDelete(category);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      await deleteCategoryById(categoryToDelete._id);
+      loadCategories();
+      toast({
+        title: "Đã xóa danh mục",
+        description: `${categoryToDelete.name} đã được xóa khỏi danh sách`,
+      });
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+    } catch (error) {
+      if (error?.response?.status === 400 || error?.response?.status === 409) {
+        toast({
+          title: "Không thể xóa danh mục",
+          description: `${categoryToDelete.name} đang được sử dụng trong sản phẩm, không thể xóa`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Lỗi khi xóa danh mục",
+          description: error.message || "Có lỗi xảy ra, vui lòng thử lại",
+          variant: "destructive",
+        });
+      }
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+    }
   };
 
   const handleView = async (category) => {
@@ -190,12 +230,29 @@ const handlePageChange = (page) => {
         category={editingCategory}
         onSubmit={handleFormSubmit}
       />
+
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
-    </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa danh mục</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa danh mục "{categoryToDelete?.name}"?
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Xác nhận xóa</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div >
   );
 };
 

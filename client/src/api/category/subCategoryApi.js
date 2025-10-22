@@ -56,3 +56,24 @@ export const fetchSubcategoriesByPage = async (page, limit, search, categoryId) 
     throw err;
   }
 };
+
+// Gọi API xóa subcategory theo ID
+export const deleteSubcategoryApi = async (id) => {
+  try {
+    const res = await axiosInstance.delete(`/subcategories/${id}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+
+// Kiểm tra xem subcategory có đang được sử dụng trong sản phẩm không
+export const checkSubcategoryUsageApi = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/subcategories/check/${id}`);
+    return response.data; // { inUse: true/false, message: "..." }
+  } catch (err) {
+    console.error("Lỗi khi gọi API kiểm tra subcategory:", err);
+    throw err.response?.data || err;
+  }
+};
