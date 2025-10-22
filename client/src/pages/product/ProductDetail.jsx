@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ChevronRight, ShoppingCart, Heart, Share2, Minus, Plus, Star } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -18,45 +18,60 @@ import { addToCart } from "../../store/cartSlice";
 const ProductDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
-  
+  const { user } = useSelector((state) => state.auth);
+
   const [product, setProduct] = useState(null);
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState("");
+  const [availableStock, setAvailableStock] = useState(0);
 
-    const fetchProduct = useCallback(async () => {
-      try {
-        const data = await getProductById(id); 
-        setProduct(data);
-      } catch (error) {
-        toast({
-            title: "Lỗi",
-            description: `${error}`,
-            variant: "destructive",
-        });
+  const fetchProduct = useCallback(async () => {
+    try {
+      const data = await getProductById(id);
+      console.log("data in product detail", data);
+      console.log("product sizes:", data.sizes);
+      console.log("colors data:", data.colors);
+      if (data.colors && data.colors.length > 0) {
+        console.log("first color sizes:", data.colors[0].sizes);
       }
-    }, [id]);
-    useEffect(() => {
-      fetchProduct();
-    }, [id, fetchProduct]);
-
-    useEffect(() => {
-        if (product && product.colors && product.colors[selectedColor]) {
-            const firstImage = product.colors[selectedColor].images?.[0];
-            setMainImage(firstImage && firstImage.trim() !== "" ? firstImage : "/logo.png");
-        }
-    }, [product, selectedColor]);
-    if (!product) {
-        return (
-        <div className="container mx-auto px-4 py-16 text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Không tìm thấy sản phẩm</h1>
-            <Link to="/products" className="text-primary hover:underline">
-            Quay lại trang sản phẩm
-            </Link>
-        </div>
-        );
+      setProduct(data);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: `${error}`,
+        variant: "destructive",
+      });
     }
+  }, [id]);
+  useEffect(() => {
+    fetchProduct();
+  }, [id, fetchProduct]);
+
+  useEffect(() => {
+    if (product && product.colors && product.colors[selectedColor]) {
+      const firstImage = product.colors[selectedColor].images?.[0];
+      setMainImage(firstImage && firstImage.trim() !== "" ? firstImage : "/logo.png");
+    }
+  }, [product, selectedColor]);
+  if (!product) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Không tìm thấy sản phẩm</h1>
+        <Link to="/products" className="text-primary hover:underline">
+          Quay lại trang sản phẩm
+        </Link>
+      </div>
+    );
+  }
+  const handleSelectSize = (variant) => {
+    console.log("Selected size variant:", variant);
+    setSelectedSize(variant);
+    setAvailableStock(variant.quantity || 0);
+    console.log("Available stock set to:", variant.quantity);
+    setQuantity(1);
+  };
 
   const hasDiscount = product.discountPercentage > 0;
 
@@ -65,14 +80,13 @@ const ProductDetail = () => {
       toast.error("Vui lòng chọn kích thước");
       return;
     }
-    
+
     // Check if user is logged in
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!user) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
       return;
     }
-    
+
     try {
       // Dispatch async action để thêm vào giỏ hàng
       await dispatch(addToCart({
@@ -81,7 +95,7 @@ const ProductDetail = () => {
         selectedSize,
         quantity
       })).unwrap();
-      
+
       toast.success("Đã thêm vào giỏ hàng!");
     } catch (error) {
       toast.error(error || "Có lỗi xảy ra khi thêm vào giỏ hàng");
@@ -89,10 +103,10 @@ const ProductDetail = () => {
   };
 
   return (
-    
+
     <div className="min-h-screen bg-background">
-        <Header />
-        <MainNavigation /> 
+      <Header />
+      <MainNavigation />
       {/* Breadcrumb */}
       <div className="border-b border-border">
         <div className="container mx-auto px-4 py-4">
@@ -112,34 +126,34 @@ const ProductDetail = () => {
           <div className="space-y-4">
             {/* Main image */}
             <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-                {mainImage && mainImage.trim() !== "" ? (
-                    <img
-                        src={mainImage}
-                        alt={`${product.name} - ${product.colors[selectedColor]?.name || 'Product'}`}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <span>No image available</span>
-                    </div>
-                )}
+              {mainImage && mainImage.trim() !== "" ? (
+                <img
+                  src={mainImage}
+                  alt={`${product.name} - ${product.colors[selectedColor]?.name || 'Product'}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <span>No image available</span>
+                </div>
+              )}
             </div>
             {/* Thumbnail images */}
             <div className="flex gap-2 overflow-x-auto mt-2">
-                {product.colors[selectedColor].images.map((img, index) => (
-                    img && img.trim() !== "" ? (
-                        <img
-                            key={index}
-                            src={img}
-                            alt={`${product.name} thumbnail ${index + 1}`}
-                            className={cn(
-                                "w-20 h-20 object-cover rounded-lg border cursor-pointer",
-                                mainImage === img ? "border-primary" : "border-border"
-                            )}
-                            onClick={() => setMainImage(img)} // click thumbnail thay đổi ảnh chính
-                        />
-                    ) : null
-                ))}
+              {product.colors[selectedColor].images.map((img, index) => (
+                img && img.trim() !== "" ? (
+                  <img
+                    key={index}
+                    src={img}
+                    alt={`${product.name} thumbnail ${index + 1}`}
+                    className={cn(
+                      "w-20 h-20 object-cover rounded-lg border cursor-pointer",
+                      mainImage === img ? "border-primary" : "border-border"
+                    )}
+                    onClick={() => setMainImage(img)} // click thumbnail thay đổi ảnh chính
+                  />
+                ) : null
+              ))}
             </div>
           </div>
 
@@ -186,19 +200,19 @@ const ProductDetail = () => {
             </div> */}
             {/* Price */}
             <div className="flex items-baseline gap-3">
-                <span
-                    className={cn(
-                    "text-3xl font-extrabold text-foreground",
-                    hasDiscount && "text-red-600"
-                    )}
-                >
-                    {product.discountedPrice.toLocaleString("vi-VN")}đ
-                </span>
-                {hasDiscount && (
-                    <span className="text-lg text-muted-foreground line-through relative top-1">
-                    {product.price.toLocaleString("vi-VN")}đ
-                    </span>
+              <span
+                className={cn(
+                  "text-3xl font-extrabold text-foreground",
+                  hasDiscount && "text-red-600"
                 )}
+              >
+                {product.discountedPrice.toLocaleString("vi-VN")}đ
+              </span>
+              {hasDiscount && (
+                <span className="text-lg text-muted-foreground line-through relative top-1">
+                  {product.price.toLocaleString("vi-VN")}đ
+                </span>
+              )}
             </div>
 
             <Separator />
@@ -229,22 +243,28 @@ const ProductDetail = () => {
             {/* Size selection */}
             <div>
               <h3 className="font-semibold text-foreground mb-3">Kích thước</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={cn(
-                      "py-3 rounded-lg border-2 font-medium transition-all hover:border-primary",
-                      selectedSize === size
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border text-foreground"
-                    )}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
+              {product.colors[selectedColor]?.sizes?.length > 0 ? (
+                <div className="grid grid-cols-5 gap-2">
+                  {product.colors[selectedColor].sizes.map((variant, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSelectSize(variant)}
+                      className={cn(
+                        "py-3 rounded-lg border-2 font-medium transition-all hover:border-primary",
+                        selectedSize?.size === variant.size
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border text-foreground"
+                      )}
+                    >
+                      {variant.size}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-muted-foreground text-sm">
+                  Không có kích thước nào có sẵn
+                </div>
+              )}
             </div>
 
             {/* Quantity */}
@@ -255,8 +275,12 @@ const ProductDetail = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    onClick={() => {
+                      console.log("Minus clicked, current quantity:", quantity);
+                      setQuantity(Math.max(1, quantity - 1));
+                    }}
                     className="rounded-r-none"
+                    disabled={!selectedSize}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
@@ -264,13 +288,25 @@ const ProductDetail = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() => {
+                      console.log("Plus clicked, current quantity:", quantity, "availableStock:", availableStock, "selectedSize:", selectedSize);
+                      setQuantity((prev) =>
+                        selectedSize
+                          ? Math.min(prev + 1, availableStock)
+                          : prev
+                      );
+                    }}
                     className="rounded-l-none"
+                    disabled={!selectedSize}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                <span className="text-sm text-muted-foreground">{product.stockQuantity} sản phẩm có sẵn</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedSize
+                    ? `${availableStock} sản phẩm có sẵn`
+                    : "Vui lòng chọn kích thước"}
+                </span>
               </div>
             </div>
 
@@ -352,7 +388,7 @@ const ProductDetail = () => {
           </Tabs>
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };

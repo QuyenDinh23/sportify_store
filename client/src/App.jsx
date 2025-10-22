@@ -18,6 +18,8 @@ import ProductDetail from "./pages/product/ProductDetail";
 import Cart from "./pages/cart/Cart";
 import Checkout from "./pages/checkout/Checkout";
 import OrderSuccess from "./pages/checkout/OrderSuccess";
+import OrderDetail from "./pages/order/OrderDetail";
+import Orders from "./pages/order/Orders";
 import UserProfile from "./pages/AccountManage/UserProfile";
 import AddressManage from "./pages/AccountManage/AddressManagement";
 import AddEditAddress from "./pages/AccountManage/AddressAddEdit";
@@ -26,6 +28,12 @@ import SecurityMain from "./pages/AccountManage/SecurityManagement";
 import ChangePassword from "./pages/AccountManage/ChangePassword";
 import PermissopnAccess from "./pages/AccountManage/PermissionAccessManagement";
 import VoucherManagement from "./pages/dashboard/VoucherManagement";
+import Products from "./pages/product/Products";
+import BlogList from "./pages/blog/BlogList";
+import BlogDetail from "./pages/blog/BlogDetail";
+import BlogManagement from "./pages/dashboard/BlogManagement";
+import BlogPostForm from "./pages/dashboard/BlogPostForm";
+import BlogCategoryManagement from "./pages/dashboard/BlogCategoryManagement";
 
 
 const queryClient = new QueryClient();
@@ -42,10 +50,15 @@ const App = () => {
             {/* route login */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<Home />} />
+            <Route path="products" element={<Products />} />
             <Route path="product/:id" element={<ProductDetail />} />
+            <Route path="/blog" element={<BlogList />} />
+            <Route path="/blog/:slug" element={<BlogDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
+            <Route path="/order-detail/:orderId" element={<OrderDetail />} />
+            <Route path="/orders" element={<Orders />} />
             {/* route dashboard */}
             <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>
@@ -59,6 +72,10 @@ const App = () => {
                 <Route path="brands" element={<BrandManagement />} />
                 <Route path="sports" element={<SportManagement />} />
                 <Route path="vouchers" element={<VoucherManagement />} />
+                <Route path="blog" element={<BlogManagement />} />
+                <Route path="blog/create" element={<BlogPostForm />} />
+                <Route path="blog/edit/:id" element={<BlogPostForm />} />
+                <Route path="blog/categories" element={<BlogCategoryManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["user"]} />}>

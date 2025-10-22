@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/ca
 import Header from '../../components/Header';
 import { MainNavigation } from '../../components/MainNavigation';
 import Footer from '../../components/Footer';
-import { getOrderById } from "../../api/order/orderApi";
+import { getOrderDetail } from "../../api/order/orderApi";
 
 const OrderSuccess = () => {
   const { orderId } = useParams();
@@ -16,7 +16,7 @@ const OrderSuccess = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const response = await getOrderById(orderId);
+        const response = await getOrderDetail(orderId);
         setOrder(response.data);
       } catch (error) {
         console.error('Error fetching order:', error);

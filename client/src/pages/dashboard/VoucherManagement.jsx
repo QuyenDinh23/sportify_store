@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { DataTable } from "../../components/dashboard/DataTable";
 import { VoucherForm } from "../../components/dashboard/VoucherForm";
 import { Badge } from "../../components/ui/badge";
@@ -16,13 +16,8 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { useToast } from "../../hooks/use-toast";
-// import {
-//   createVoucher,
-//   updateVoucher,
-//   deleteVoucher,
-//   getAllVouchers,
-// } from "../../api/voucher/voucherApi";
 import { voucherApi } from "../../services/voucherApi";
+import Pagination from "../../components/pagination/Pagination";
 
 const VoucherManagement = () => {
   const [vouchers, setVouchers] = useState([]);
@@ -30,18 +25,29 @@ const VoucherManagement = () => {
   const [editingVoucher, setEditingVoucher] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDiscountType, setSelectedDiscountType] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 10;
   const { toast } = useToast();
 
+  // Định dạng tiền tệ
   const formatCurrency = (value) =>
     new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
     }).format(value);
 
-  const loadVouchers = async () => {
+  // Load danh sách voucher theo trang
+  const loadVouchers = useCallback(async () => {
     try {
-      const res = await voucherApi.getAll();
-      setVouchers(res);
+      const res = await voucherApi.getByPage(
+        currentPage,
+        itemsPerPage,
+        searchTerm
+      );
+      setVouchers(res.vouchers);
+      setTotalPages(res.totalPages);
     } catch (error) {
       toast({
         title: "Lỗi tải voucher",
@@ -49,26 +55,30 @@ const VoucherManagement = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [currentPage, itemsPerPage, searchTerm, toast]);
 
   useEffect(() => {
     loadVouchers();
-  }, []);
+  }, [loadVouchers]);
 
+  // ✅ Khi thêm mới: đảm bảo reset form (xoá dữ liệu voucher cũ)
   const handleAdd = () => {
     setEditingVoucher(null);
-    setIsFormOpen(true);
+    // mở form sau 1 tick để VoucherForm nhận props mới (tránh render cũ)
+    setTimeout(() => setIsFormOpen(true), 0);
   };
 
+  // Sửa voucher
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
     setIsFormOpen(true);
   };
 
+  // Xóa voucher
   const handleDelete = async (voucher) => {
     try {
       await voucherApi.delete(voucher._id);
-      setVouchers(vouchers.filter((v) => v._id !== voucher._id));
+      setVouchers((prev) => prev.filter((v) => v._id !== voucher._id));
       toast({
         title: "Đã xóa voucher",
         description: `${voucher.code} đã được xóa thành công.`,
@@ -82,36 +92,40 @@ const VoucherManagement = () => {
     }
   };
 
+  // Submit form
   const handleFormSubmit = async (data) => {
     try {
       if (editingVoucher) {
         const updated = await voucherApi.update(editingVoucher._id, data);
-        setVouchers((prev) =>
-          prev.map((v) => (v._id === updated._id ? updated : v))
-        );
         toast({
           title: "Cập nhật voucher thành công",
-          description: `${updated.code} đã được cập nhật.`,
+          description: `${updated.voucher.code} đã được cập nhật.`,
         });
       } else {
-        console.log("he");
-        
         const created = await voucherApi.create(data);
-        setVouchers([...vouchers, created]);
         toast({
           title: "Tạo voucher thành công",
-          description: `${created.code} đã được thêm.`,
+          description: `${created.voucher.code} đã được thêm.`,
         });
       }
+      loadVouchers();
+      // ✅ Đóng form và reset lại sau khi xử lý
+      setIsFormOpen(false);
+      setEditingVoucher(null);
     } catch (error) {
       toast({
         title: "Lỗi xử lý",
-        // description: error.message,
+        description: error.message || "Có lỗi xảy ra",
         variant: "destructive",
       });
     }
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  // Lọc theo trạng thái + loại giảm giá
   const filteredVouchers = vouchers.filter((v) => {
     const statusMatch =
       selectedStatus === "all" ||
@@ -122,6 +136,7 @@ const VoucherManagement = () => {
     return statusMatch && discountMatch;
   });
 
+  // Cấu hình cột bảng
   const columns = [
     { key: "code", label: "Mã Voucher", sortable: true },
     {
@@ -151,17 +166,15 @@ const VoucherManagement = () => {
       label: "Thời gian áp dụng",
       render: (value, item) => (
         <div>
-          <div>
-            {new Date(item.startDate).toLocaleDateString("vi-VN")} →{" "}
-            {new Date(item.endDate).toLocaleDateString("vi-VN")}
-          </div>
+          {new Date(item.startDate).toLocaleDateString("vi-VN")} →{" "}
+          {new Date(item.endDate).toLocaleDateString("vi-VN")}
         </div>
       ),
     },
     {
       key: "isActive",
       label: "Trạng thái",
-      render: (value, item) => (
+      render: (value) => (
         <Badge variant={value ? "default" : "secondary"}>
           {value ? "Hoạt động" : "Hết hạn / Vô hiệu"}
         </Badge>
@@ -230,17 +243,26 @@ const VoucherManagement = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         searchPlaceholder="Tìm kiếm mã giảm giá..."
+        searchTerm={searchTerm}
+        onSearch={setSearchTerm}
       />
 
       {/* Form tạo / sửa */}
       <VoucherForm
+        key={editingVoucher ? editingVoucher._id : "new"} // ✅ ép React remount form khi đổi mode
         isOpen={isFormOpen}
         onClose={() => {
           setIsFormOpen(false);
           setEditingVoucher(null);
         }}
         onSubmit={handleFormSubmit}
-        // voucher={editingVoucher}
+        voucher={editingVoucher}
+      />
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
       />
     </div>
   );

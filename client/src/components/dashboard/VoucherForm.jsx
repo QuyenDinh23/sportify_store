@@ -21,21 +21,79 @@ import {
 } from "../../components/ui/select";
 
 // ✅ Schema xác thực cho voucher
-const voucherSchema = z.object({
-  code: z.string().min(3, "Mã voucher không được để trống"),
-  description: z.string().optional(),
-  discountType: z.enum(["fixed", "percentage"], {
-    required_error: "Vui lòng chọn loại giảm giá",
-  }),
-  discountValue: z.number().min(1, "Giá trị giảm phải lớn hơn 0"),
-  minOrderAmount: z.number().min(0, "Giá trị đơn hàng tối thiểu không hợp lệ"),
-  usageLimit: z.number().min(0, "Giới hạn sử dụng không hợp lệ"),
-  usagePerUser: z.number().min(1, "Phải >= 1 lần cho mỗi người dùng"),
-  startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
-  endDate: z.string().min(1, "Vui lòng chọn ngày kết thúc"),
-  targetUserGroup: z.enum(["all", "new", "vip"]).default("all"),
-  isActive: z.boolean().default(true),
-});
+const voucherSchema = z
+  .object({
+    code: z.string().min(3, "Mã voucher phải có ít nhất 3 ký tự").trim(),
+
+    description: z.string().optional(),
+
+    discountType: z.enum(["fixed", "percentage"], {
+      required_error: "Vui lòng chọn loại giảm giá",
+    }),
+
+    discountValue: z
+      .number({ invalid_type_error: "Giá trị giảm phải là số" })
+      .min(1, "Giá trị giảm phải lớn hơn 0"),
+
+    minOrderAmount: z
+      .number({ invalid_type_error: "Giá trị đơn hàng tối thiểu phải là số" })
+      .min(0, "Giá trị đơn hàng tối thiểu không hợp lệ"),
+
+    usageLimit: z
+      .number({ invalid_type_error: "Giới hạn sử dụng phải là số" })
+      .min(0, "Giới hạn sử dụng không hợp lệ"),
+
+    usagePerUser: z
+      .number({ invalid_type_error: "Số lần sử dụng mỗi người phải là số" })
+      .min(1, "Phải >= 1 lần cho mỗi người dùng"),
+
+    startDate: z.string().min(1, "Vui lòng chọn ngày bắt đầu"),
+    endDate: z.string().min(1, "Vui lòng chọn ngày kết thúc"),
+
+    targetUserGroup: z.enum(["all", "new", "vip"]).default("all"),
+    isActive: z.boolean().default(true),
+  })
+
+  // ✅ Rule 1: Ngày bắt đầu ≥ hôm nay
+  .refine(
+    (data) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const start = new Date(data.startDate);
+      return start >= today;
+    },
+    {
+      path: ["startDate"],
+      message: "Ngày bắt đầu phải từ hôm nay trở đi",
+    }
+  )
+
+  // ✅ Rule 2: Ngày kết thúc ≥ ngày bắt đầu
+  .refine(
+    (data) => {
+      const start = new Date(data.startDate);
+      const end = new Date(data.endDate);
+      return end >= start;
+    },
+    {
+      path: ["endDate"],
+      message: "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu",
+    }
+  )
+
+  // ✅ Rule 3: Nếu discountType = 'percentage' thì discountValue ≤ 100
+  .refine(
+    (data) => {
+      if (data.discountType === "percentage") {
+        return data.discountValue <= 100;
+      }
+      return true;
+    },
+    {
+      path: ["discountValue"],
+      message: "Giá trị giảm phần trăm không được vượt quá 100%",
+    }
+  );
 
 export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
   const {
@@ -108,10 +166,14 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
               <Controller
                 name="code"
                 control={control}
-                render={({ field }) => <Input {...field} placeholder="VD: SUMMER10" />}
+                render={({ field }) => (
+                  <Input {...field} placeholder="VD: SUMMER10" />
+                )}
               />
               {errors.code && (
-                <p className="text-sm text-destructive">{errors.code.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.code.message}
+                </p>
               )}
             </div>
 
@@ -145,7 +207,10 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
               name="description"
               control={control}
               render={({ field }) => (
-                <Textarea {...field} placeholder="VD: Giảm 10% cho đơn hàng trên 500k" />
+                <Textarea
+                  {...field}
+                  placeholder="VD: Giảm 10% cho đơn hàng trên 500k"
+                />
               )}
             />
           </div>
@@ -164,7 +229,9 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="fixed">Giảm theo số tiền</SelectItem>
-                      <SelectItem value="percentage">Giảm theo phần trăm</SelectItem>
+                      <SelectItem value="percentage">
+                        Giảm theo phần trăm
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -249,6 +316,7 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
           </div>
 
           {/* Thời gian áp dụng */}
+          {/* Thời gian áp dụng */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Ngày bắt đầu</Label>
@@ -256,9 +324,18 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
                 name="startDate"
                 control={control}
                 render={({ field }) => (
-                  <Input {...field} type="date" placeholder="Chọn ngày bắt đầu" />
+                  <Input
+                    {...field}
+                    type="date"
+                    placeholder="Chọn ngày bắt đầu"
+                  />
                 )}
               />
+              {errors.startDate && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.startDate.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -267,9 +344,18 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
                 name="endDate"
                 control={control}
                 render={({ field }) => (
-                  <Input {...field} type="date" placeholder="Chọn ngày kết thúc" />
+                  <Input
+                    {...field}
+                    type="date"
+                    placeholder="Chọn ngày kết thúc"
+                  />
                 )}
               />
+              {errors.endDate && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.endDate.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -299,9 +385,7 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
             <Button type="button" variant="outline" onClick={onClose}>
               Hủy
             </Button>
-            <Button type="submit">
-              {voucher ? "Cập nhật" : "Thêm mới"}
-            </Button>
+            <Button type="submit">{voucher ? "Cập nhật" : "Thêm mới"}</Button>
           </div>
         </form>
       </DialogContent>

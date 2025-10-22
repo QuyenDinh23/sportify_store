@@ -10,6 +10,17 @@ export const voucherApi = {
       throw error.response.data.error;
     }
   },
+  getByPage: async (page, limit, search) => {
+    try {
+      const res = await api.get("/vouchers/paging", {
+        params: { page, limit, search }
+      });
+      return res.data;
+    } catch (error) {
+      console.error("Get vouchers by page failed:", error.response.data);
+      throw error.response.data.error;
+    }
+  },
   getById: async (id) => {
     try {
       const res = await api.get(`/vouchers/${id}`);

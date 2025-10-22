@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { X, Plus, Palette } from 'lucide-react';
 import { uploadToBackend } from '../../api/image/uploadImageApi';
+import { checkProductName } from '../../api/product/productApi';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Tên sản phẩm không được để trống'),
@@ -20,7 +21,7 @@ const productSchema = z.object({
   category: z.string().min(1, 'Vui lòng chọn danh mục'),
   subcategory: z.string().min(1, 'Vui lòng chọn danh mục con'),
   brand: z.string().min(1, 'Vui lòng chọn thương hiệu'),
-  // sport: z.string().min(1, 'Vui lòng chọn môn thể thao'),
+  sport: z.string().optional(),
   price: z.number().min(1, 'Giá phải lớn hơn 0'),
   importPrice: z.number().min(1, 'Giá nhập phải lớn hơn 0'),
   discountPercentage: z.number().min(0).max(100, 'Phần trăm giảm giá từ 0-100'),
@@ -38,7 +39,9 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
   const [newSpecKey, setNewSpecKey] = useState('');
   const [newSpecValue, setNewSpecValue] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const { control, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm({
+  const [newSizeInputs, setNewSizeInputs] = useState({});
+  const { control, handleSubmit, watch, setError, reset, formState: { errors } } = useForm({
+    mode: 'onChange',
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
@@ -54,19 +57,22 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       status: 'active',
     }
   });
-
+  console.log("sports", sports);
   const watchedPrice = watch('price');
+  const importPrice = Number(watch("importPrice")) || 0;
   const watchedDiscount = watch('discountPercentage');
   const discountedPrice = watchedPrice - (watchedPrice * watchedDiscount / 100);
 
   const getDefaultSizes = (category) => {
-    if (category === 'shoes') return ['37','38','39','40','41','42','43','44','45'];
-    if (category === 'clothing') return ['XS','S','M','L','XL','XXL'];
+    console.log(" category default size", category);
+    if (category.includes('giày') || category.includes('shoes')) return ['37', '38', '39', '40', '41', '42', '43', '44', '45'];
+    if (category.includes('áo') || category.includes('quần') || category.includes('clothing')) return ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
     return ['One Size'];
   };
 
   useEffect(() => {
     if (product) {
+      console.log("Sport value:", product.sport);
       reset({
         name: product.name,
         description: product.description,
@@ -110,21 +116,24 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
       setMaterials([]);
       setTechnicalSpecs({});
     }
-  }, [brands, product, reset]);
-
-  const addSize = () => {
-    if (newSize && !sizes.includes(newSize)) {
-      setSizes([...sizes, newSize]);
-      setNewSize('');
-    }
-  };
-
-  const removeSize = (size) => {
-    setSizes(sizes.filter(s => s !== size));
-  };
+  }, [isOpen, product]);
 
   const addColor = () => {
-    const newColor = { name: 'Màu mới', hex: '#000000', images: [] };
+    // Lấy sizes mặc định dựa trên category hiện tại
+    const categoryObj = categories.find(cat => cat._id === selectedCategory);
+    const categoryName = categoryObj?.name?.toLowerCase() || '';
+    const defaultSizes = getDefaultSizes(categoryName);
+    const defaultSizesWithQuantity = defaultSizes.map(size => ({
+      size: size,
+      quantity: 0
+    }));
+
+    const newColor = {
+      name: 'Màu mới',
+      hex: '#000000',
+      images: [],
+      sizes: defaultSizesWithQuantity
+    };
     setColors([...colors, newColor]);
   };
 
@@ -156,11 +165,33 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
 
 
   const removeImageFromColor = (colorIndex, imageIndex) => {
-  const updatedColors = [...colors];
-  updatedColors[colorIndex].images.splice(imageIndex, 1);
-  setColors(updatedColors);
-};
+    const updatedColors = [...colors];
+    updatedColors[colorIndex].images.splice(imageIndex, 1);
+    setColors(updatedColors);
+  };
+  const addSizeToColor = (colorIndex) => {
+    const size = newSizeInputs[colorIndex]?.trim();
+    if (!size) return;
 
+    const updatedColors = [...colors];
+    if (!updatedColors[colorIndex].sizes.find(s => s.size === size)) {
+      updatedColors[colorIndex].sizes.push({ size, quantity: 0 });
+      setColors(updatedColors);
+      setNewSizeInputs({ ...newSizeInputs, [colorIndex]: '' });
+    }
+  };
+
+  const removeSizeFromColor = (colorIndex, sizeIndex) => {
+    const updatedColors = [...colors];
+    updatedColors[colorIndex].sizes.splice(sizeIndex, 1);
+    setColors(updatedColors);
+  };
+
+  const updateSizeQuantity = (colorIndex, sizeIndex, quantity) => {
+    const updatedColors = [...colors];
+    updatedColors[colorIndex].sizes[sizeIndex].quantity = quantity;
+    setColors(updatedColors);
+  };
 
   const addMaterial = () => {
     if (newMaterial && !materials.includes(newMaterial)) {
@@ -187,38 +218,52 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
     setTechnicalSpecs(updated);
   };
 
-  const onFormSubmit = (data) => {
-    const productData = {
-      id: product?._id,
-      name: data.name,
-      description: data.description,
-      category: data.category,
-      subcategory: data.subcategory,
-      brand: data.brand,
-      sport: data.sport,
-      price: data.price,
-      importPrice: data.importPrice,
-      discountPercentage: data.discountPercentage,
-      discountedPrice,
-      stockQuantity: data.stockQuantity,
-      status: data.status,
-      sizes,
-      colors,
-      materials,
-      technicalSpecs,
-      originalPrice: data.discountPercentage > 0 ? data.price : undefined,
-      image: colors[0]?.images[0] || '',
-      rating: product?.rating || 0,
-      reviewCount: product?.reviewCount || 0,
-      isNew: !product,
-      isOnSale: data.discountPercentage > 0,
-    };
-    console.log("Product data", productData);
-    onSubmit(productData);
-    onClose();
+  const totalStockQuantity = colors.reduce((total, color) => {
+    return total + color.sizes.reduce((sum, sizeVariant) => sum + sizeVariant.quantity, 0);
+  }, 0);
+
+  const onFormSubmit = async (data) => {
+    try {
+      const exists = await checkProductName(data.name, product?._id);
+      if (exists) {
+        console.log("Product name already exists");
+        setError("name", { type: "manual", message: "Tên sản phẩm đã tồn tại" });
+        return;
+      }
+      const allSizes = Array.from(new Set(colors.flatMap(color => color.sizes.map(s => s.size))));
+      const productData = {
+        id: product?._id,
+        name: data.name,
+        description: data.description,
+        category: data.category,
+        subcategory: data.subcategory,
+        brand: data.brand,
+        sport: data.sport || null,
+        price: data.price,
+        importPrice: data.importPrice,
+        discountPercentage: data.discountPercentage,
+        discountedPrice,
+        stockQuantity: totalStockQuantity,
+        status: data.status,
+        sizes: allSizes,
+        colors,
+        materials,
+        technicalSpecs,
+        originalPrice: data.discountPercentage > 0 ? data.price : undefined,
+        image: colors[0]?.images[0] || '',
+        rating: product?.rating || 0,
+        reviewCount: product?.reviewCount || 0,
+        isNew: !product,
+        isOnSale: data.discountPercentage > 0,
+      };
+      onSubmit(productData);
+      onClose();
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra tên sản phẩm:", error);
+    }
   };
 
- return (
+  return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -286,9 +331,9 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={(value) => {
-                        console.log("value", value);
-                        field.onChange(value);        
+                        field.onChange(value);
                         onCategoryChange(value);
+                        setSelectedCategory(value);
                       }}>
                         <SelectTrigger disabled={readonly}>
                           <SelectValue placeholder="Chọn danh mục" />
@@ -357,7 +402,10 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     name="sport"
                     control={control}
                     render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select value={field.value} onValueChange={(value) => {
+                        console.log("Selected sport:", value);
+                        field.onChange(value);
+                      }}>
                         <SelectTrigger disabled={readonly}>
                           <SelectValue placeholder="Chọn môn thể thao" />
                         </SelectTrigger>
@@ -380,10 +428,20 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     name="importPrice"
                     control={control}
                     render={({ field }) => (
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        onChange={e => field.onChange(Number(e.target.value))}
+                      <Input
+                        // {...field} 
+                        // type="number" 
+                        value={
+                          field.value
+                            ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, "");
+                          const numberValue = rawValue ? parseInt(rawValue, 10) : "";
+                          field.onChange(numberValue);
+                        }}
+                        inputMode="numeric"
                         disabled={readonly}
                       />
                     )}
@@ -393,19 +451,69 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
 
                 <div>
                   <Label htmlFor="price">Giá bán</Label>
-                  <Controller
+                  {/* <Controller
                     name="price"
                     control={control}
+                    rules={{
+                      validate: (value) =>
+                        !importPrice || Number(value) > importPrice || "Giá bán phải lớn hơn giá nhập",
+                    }}
                     render={({ field }) => (
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        onChange={e => field.onChange(Number(e.target.value))}
+                      <Input
+                        // {...field} 
+                        // type="number" 
+                        // onChange={e => field.onChange(Number(e.target.value))}
+                        value={
+                          field.value
+                            ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                            : ""
+                        }
+                        onChange={(e) => {
+                          const rawValue = e.target.value.replace(/\D/g, "");
+                          const numberValue = rawValue ? parseInt(rawValue, 10) : "";
+                          field.onChange(numberValue);
+                        }}
+                        inputMode="numeric"
                         disabled={readonly}
                       />
                     )}
+                  /> */}
+                  <Controller
+                    name="price"
+                    control={control}
+                    render={({ field }) => {
+                      const importPrice = Number(watch("importPrice")) || 0; // 👈 đặt bên trong
+                      const value = Number(field.value) || 0;
+                      const isValid = !importPrice || value > importPrice;
+
+                      console.log("importPrice:", importPrice, "price:", value, "valid:", isValid);
+
+                      return (
+                        <>
+                          <Input
+                            value={
+                              field.value
+                                ? field.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const rawValue = e.target.value.replace(/\D/g, "");
+                              const numberValue = rawValue ? parseInt(rawValue, 10) : "";
+                              field.onChange(numberValue);
+                            }}
+                            inputMode="numeric"
+                            disabled={readonly}
+                          />
+                          {!isValid && (
+                            <p className="text-sm text-destructive">
+                              Giá bán phải lớn hơn giá nhập
+                            </p>
+                          )}
+                        </>
+                      );
+                    }}
                   />
-                  {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
+                  {/* {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>} */}
                 </div>
 
                 <div>
@@ -414,12 +522,20 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     name="discountPercentage"
                     control={control}
                     render={({ field }) => (
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        min="0" 
-                        max="100"
-                        onChange={e => field.onChange(Number(e.target.value))}
+                      <Input
+                        {...field}
+                        // type="number" 
+                        // min="0" 
+                        // max="100"
+                        // onChange={e => field.onChange(Number(e.target.value))}
+                        value={field.value === 0 ? "" : field.value} // không hiển thị 0 khi trống
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/^0+/, "");
+                          const num = raw === "" ? "" : Math.min(100, parseInt(raw, 10));
+                          field.onChange(num);
+                        }}
+                        inputMode="numeric"
+                        placeholder="Nhập % giảm"
                         disabled={readonly}
                       />
                     )}
@@ -437,14 +553,9 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                   <Controller
                     name="stockQuantity"
                     control={control}
+                    // eslint-disable-next-line no-unused-vars
                     render={({ field }) => (
-                      <Input 
-                        {...field} 
-                        type="number" 
-                        min="0"
-                        onChange={e => field.onChange(Number(e.target.value))}
-                        disabled={readonly}
-                      />
+                      <Input value={totalStockQuantity} disabled className="bg-muted" />
                     )}
                   />
                   {errors.stockQuantity && <p className="text-sm text-destructive">{errors.stockQuantity.message}</p>}
@@ -455,45 +566,13 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
             <TabsContent value="variants" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Kích thước</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2 mb-4">
-                    <Input
-                      value={newSize}
-                      onChange={(e) => setNewSize(e.target.value)}
-                      placeholder="Nhập kích thước"
-                      disabled={readonly}
-                    />
-                    <Button type="button" onClick={addSize}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {sizes.map(size => (
-                      <Badge key={size} variant="secondary" className="flex items-center gap-1">
-                        {size}
-                        {!readonly && (
-                          <X
-                            className="w-3 h-3 cursor-pointer"
-                            onClick={() => removeSize(size)}
-                          />
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Palette className="w-4 h-4" />
                     Màu sắc
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Button type="button" onClick={addColor} className="mb-4" disabled={readonly}>
+                  <Button type="button" onClick={addColor} className="mb-4">
                     <Plus className="w-4 h-4 mr-2" />
                     Thêm màu
                   </Button>
@@ -505,64 +584,110 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                             value={color.name}
                             onChange={(e) => updateColor(index, 'name', e.target.value)}
                             placeholder="Tên màu"
-                            disabled={readonly}
                           />
                           <Input
                             type="color"
                             value={color.hex}
                             onChange={(e) => updateColor(index, 'hex', e.target.value)}
                             className="w-16"
-                            disabled={readonly}
                           />
-                          {!readonly && (
+                          <Button type="button" variant="destructive" size="sm" onClick={() => removeColor(index)}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        {/* Size variants for this color */}
+                        <div className="space-y-2 mb-3">
+                          <Label>Kích thước và số lượng</Label>
+
+                          {/* Add new size input */}
+                          <div className="flex gap-2 mb-2">
+                            <Input
+                              value={newSizeInputs[index] || ''}
+                              onChange={(e) => setNewSizeInputs({ ...newSizeInputs, [index]: e.target.value })}
+                              placeholder="Nhập size (VD: M, 40, XL)"
+                              className="flex-1"
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  addSizeToColor(index);
+                                }
+                              }}
+                            />
                             <Button
                               type="button"
-                              variant="destructive"
+                              onClick={() => addSizeToColor(index)}
                               size="sm"
-                              onClick={() => removeColor(index)}
                             >
-                              <X className="w-4 h-4" />
+                              <Plus className="w-4 h-4" />
                             </Button>
+                          </div>
+
+                          {/* Existing sizes */}
+                          {!color.sizes || color.sizes.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Chưa có size nào. Thêm size bằng ô nhập bên trên.</p>
+                          ) : (
+                            <div className="space-y-2 border rounded-md p-3 bg-muted/20">
+                              {color.sizes.map((sizeVariant, sizeIndex) => (
+                                <div key={sizeIndex} className="flex items-center gap-2">
+                                  <div className="w-20">
+                                    <Badge variant="outline" className="w-full justify-center">
+                                      {sizeVariant.size}
+                                    </Badge>
+                                  </div>
+                                  <Input
+                                    type="number"
+                                    value={sizeVariant.quantity === 0 ? "" : sizeVariant.quantity}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      updateSizeQuantity(index, sizeIndex, value === "" ? 0 : Number(value));
+                                    }}
+                                    placeholder="Số lượng"
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeSizeFromColor(index, sizeIndex)}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
-                         <div className="space-y-2">
-                           <Label>Hình ảnh</Label>
-                           <div className="flex gap-2">
-                             <Input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                onChange={(e) => {
-                                  if (
-                                    !readonly &&
-                                    e.target.files &&
-                                    e.target.files.length > 0
-                                  ) {
-                                    addImagesToColor(index, e.target.files);
-                                    e.target.value = "";
-                                  }
-                                }}
-                                className="cursor-pointer"
-                                disabled={readonly}
-                             />
-                           </div>
+
+                        <div className="space-y-2">
+                          <Label>Hình ảnh</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              type="file"
+                              multiple
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                  addImagesToColor(index, e.target.files);
+                                  e.target.value = '';
+                                }
+                              }}
+                              className="cursor-pointer"
+                            />
+                          </div>
                           <div className="flex flex-wrap gap-2">
                             {color.images.map((image, imgIndex) => (
                               <div key={imgIndex} className="relative">
                                 <img src={image} alt="" className="w-16 h-16 object-cover rounded" />
-                                {!readonly && (
-                                  <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="sm"
-                                    className="absolute -top-2 -right-2 w-6 h-6 p-0"
-                                    onClick={() =>
-                                      removeImageFromColor(index, imgIndex)
-                                    }
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </Button>
-                                )}
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute -top-2 -right-2 w-6 h-6 p-0"
+                                  onClick={() => removeImageFromColor(index, imgIndex)}
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
                               </div>
                             ))}
                           </div>
@@ -595,7 +720,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     {materials.map(material => (
                       <Badge key={material} variant="secondary" className="flex items-center gap-1">
                         {material}
-                         {!readonly && (
+                        {!readonly && (
                           <X
                             className="w-3 h-3 cursor-pointer"
                             onClick={() => removeMaterial(material)}
@@ -661,7 +786,7 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
               <Button type="submit">
                 {product ? 'Cập nhật' : 'Thêm mới'}
               </Button>
-            )}        
+            )}
           </div>
         </form>
       </DialogContent>

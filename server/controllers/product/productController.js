@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import Product from "../../models/product/Product.js";
 
-// Tạo sản phẩm mới
 export const createProduct = async (req, res) => {
   try {
     const {
@@ -15,18 +14,45 @@ export const createProduct = async (req, res) => {
       importPrice,
       price,
       discountPercentage,
-      stockQuantity,
       sizes,
       colors,
       materials,
       technicalSpecs,
     } = req.body;
-
-    // kiểm tra trùng tên sản phẩm (nếu cần)
+    console.log("Sport", sport);
     const existing = await Product.findOne({ name });
     if (existing) {
       return res.status(400).json({ message: "Sản phẩm đã tồn tại" });
     }
+
+    //Chuẩn hóa dữ liệu colors (đảm bảo mỗi color có mảng sizes và quantity)
+    const normalizedColors = (colors || []).map((color) => ({
+      name: color.name,
+      hex: color.hex,
+      images: color.images || [],
+      sizes: (color.sizes || []).map((s) => ({
+        size: s.size,
+        quantity: Number(s.quantity) || 0,
+      })),
+    }));
+
+    const totalStock = normalizedColors.reduce((sum, color) => {
+      const colorTotal = color.sizes.reduce(
+        (acc, s) => acc + (s.quantity || 0),
+        0
+      );
+      return sum + colorTotal;
+    }, 0);
+
+    const discountedPrice =
+      discountPercentage > 0
+        ? price - (price * discountPercentage) / 100
+        : price;
+
+    const mainImage =
+      normalizedColors.length > 0 && normalizedColors[0].images.length > 0
+        ? normalizedColors[0].images[0]
+        : "";
 
     const product = new Product({
       name,
@@ -39,17 +65,28 @@ export const createProduct = async (req, res) => {
       importPrice,
       price,
       discountPercentage,
-      stockQuantity,
-      sizes,
-      colors,
+      discountedPrice,
+      stockQuantity: totalStock,
+      sizes: [
+        ...new Set(
+          normalizedColors.flatMap((color) =>
+            color.sizes.map((s) => s.size)
+          )
+        ),
+      ], // tổng hợp tất cả size có trong sản phẩm
+      colors: normalizedColors,
       materials,
       technicalSpecs,
+      image: mainImage,
     });
-
     const savedProduct = await product.save();
-    res.status(201).json(savedProduct);
+
+    res.status(201).json({
+      message: "Tạo sản phẩm thành công",
+      product: savedProduct,
+    });
   } catch (error) {
-    console.error("Error create product:", error);
+    console.error("Lỗi khi tạo sản phẩm:", error);
     res.status(500).json({ message: "Server error khi tạo sản phẩm" });
   }
 };
@@ -137,7 +174,7 @@ export const getProductsByFilter = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    const { category, subcategory, brand, sport, search } = req.query;
+    const { category, subcategory, brand, sport, color, size, search } = req.query;
 
     const skip = (page - 1) * limit;
 
@@ -159,7 +196,30 @@ export const getProductsByFilter = async (req, res) => {
     if (search && search.trim() !== "") {
       query.name = { $regex: search, $options: "i" };
     }
+    const colorArr = color && color !== "all" ? color.split(",") : [];
+    const sizeArr = size && size !== "all" ? size.split(",") : [];
 
+    if (colorArr.length > 0 || sizeArr.length > 0) {
+      query.$and = [];
+      // Nếu có color
+      if (colorArr.length > 0) {
+        query.$and.push({
+          "colors.name": { $in: colorArr }
+        });
+      }
+      // Nếu có size
+      if (sizeArr.length > 0) {
+        // Có thể xuất hiện ở 2 cấp:
+        // - Mảng sizes (tổng hợp)
+        // - Hoặc trong từng colors.sizes.size
+        query.$and.push({
+          $or: [
+            { sizes: { $in: sizeArr } },
+            { "colors.sizes.size": { $in: sizeArr } }
+          ]
+        });
+      }
+    }
     // Count total
     const total = await Product.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
@@ -178,5 +238,30 @@ export const getProductsByFilter = async (req, res) => {
   } catch (error) {
     console.error("Error filter products:", error);
     res.status(500).json({ message: "Lỗi server khi filter sản phẩm" });
+  }
+};
+
+// Kiểm tra tên sản phẩm đã tồn tại hay chưa
+export const checkProductName = async (req, res) => {
+  try {
+    const { name, id } = req.query;
+
+    if (!name) {
+      return res.status(400).json({ message: "Tên sản phẩm là bắt buộc" });
+    }
+
+    let query = { name };
+
+    // Nếu id hợp lệ (update) thì loại bỏ sản phẩm hiện tại
+    if (id && mongoose.Types.ObjectId.isValid(id)) {
+      query._id = { $ne: id };
+    }
+
+    const existingProduct = await Product.findOne(query);
+
+    res.status(200).json({ exists: !!existingProduct });
+  } catch (error) {
+    console.error("Lỗi check product name:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
