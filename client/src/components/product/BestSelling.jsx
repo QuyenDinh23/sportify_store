@@ -10,7 +10,6 @@ const BestSelling = () => {
     try {
       const product = await getProducts();
       setBestSellers(product);
-      console.log("best seller", product);
     } catch (error) {
       console.error('Error fetching best sellers:', error);
     }

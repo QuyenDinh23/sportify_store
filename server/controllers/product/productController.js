@@ -94,7 +94,7 @@ export const createProduct = async (req, res) => {
 // Lấy danh sách sản phẩm (có populate)
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find()
+    const products = await Product.find({status : "active"})
       .populate("category", "name")
       .populate("subcategory", "name")
       .populate("brand", "name logo")
