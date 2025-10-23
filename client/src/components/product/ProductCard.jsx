@@ -30,17 +30,14 @@ const ProductCard = ({ product }) => {
         )}
 
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-2">
+        <div className="absolute top-2 left-2 flex flex-col gap-2 z-10">
           {hasDiscount && (
-            <Badge className="bg-secondary text-secondary-foreground">
+            <Badge
+              className="bg-gradient-to-r from-red-500 to-orange-400 text-white font-bold shadow-md px-3 py-1 rounded-lg border border-white/30"
+            >
               -{product.discountPercentage}%
             </Badge>
           )}
-          {/* {product.isBestSeller && (
-            <Badge className="bg-primary text-primary-foreground">
-              Bán chạy
-            </Badge>
-          )} */}
         </div>
 
         {/* Wishlist button */}
@@ -56,12 +53,12 @@ const ProductCard = ({ product }) => {
       {/* Product info */}
       <div className="p-4">
         <Link to={`/product/${product._id}`}>
-          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2">
+          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 truncate mb-2">
             {product.name}
           </h3>
         </Link>
 
-        <p className="text-sm text-muted-foreground mb-2">{product.brand.name}</p>
+        <p className="text-sm text-muted-foreground mb-2">{product.brand?.name}</p>
 
         {/* Color options */}
         <div className="flex gap-1 mb-3">

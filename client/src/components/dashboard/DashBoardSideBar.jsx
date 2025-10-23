@@ -7,6 +7,8 @@ import {
   Settings,
   Home,
   LogOut,
+  Ticket,
+  Newspaper,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -25,12 +27,18 @@ import { Button } from "../ui/button";
 import { authApi } from "../../services/authApi";
 
 const menuItems = [
-  { title: "Tổng quan", url: "/", icon: BarChart3 },
+  { title: "Tổng quan", url: "/dashboard", icon: BarChart3 },
   { title: "Quản lý sản phẩm", url: "/dashboard/products", icon: Package },
   { title: "Quản lý danh mục", url: "/dashboard/categories", icon: Grid3X3 },
-  { title: 'Quản lý danh mục con', url: '/dashboard/subcategories', icon: Award },
+  {
+    title: "Quản lý danh mục con",
+    url: "/dashboard/subcategories",
+    icon: Award,
+  },
   { title: "Quản lý thương hiệu", url: "/dashboard/brands", icon: Award },
   { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
+  { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Ticket },
+  { title: "Quản lý blog", url: "/dashboard/blog", icon: Newspaper },
 ];
 
 export function DashboardSidebar() {

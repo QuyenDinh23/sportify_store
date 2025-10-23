@@ -57,3 +57,13 @@ export const checkBrandNameExist = async (name, id = null) => {
     throw err;
   }
 };
+
+// Xóa brand theo id
+export const deleteBrandApi = async (id) => {
+  try {
+    const res = await axiosInstance.delete(`/brands/${id}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};

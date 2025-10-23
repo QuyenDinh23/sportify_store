@@ -26,14 +26,16 @@ import {
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { X, Plus, Shirt, Waves, Footprints, Watch, Glasses, Backpack, Trophy, Target, Dumbbell, Bike, Users, Calendar, MapPin } from 'lucide-react';
+import { X, Trash2, Plus, Shirt, Waves, Footprints, Watch, Glasses, Backpack, Trophy, Target, Dumbbell, Bike, Users, Calendar, MapPin } from 'lucide-react';
 import { availableIcons } from '../../data/icons';
 import { checkCategoryNameExists } from '../../api/category/categoryApi';
+import { checkSubcategoryUsageApi, deleteSubcategoryApi } from '../../api/category/subCategoryApi';
+import { useToast } from '../../hooks/use-toast';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Tên danh mục là bắt buộc'),
   icon: z.string().min(1, 'Icon là bắt buộc'),
-  gender: z.enum(['male', 'female', 'kids'], {
+  gender: z.enum(['male', 'female', 'boy', 'girl'], {
     required_error: "Giới tính là bắt buộc",
   }),
   type: z.enum(['clothing', 'shoes', 'accessories'], {
@@ -45,14 +47,16 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
   const [subcategories, setSubcategories] = useState(category?.subcategories || []);
   const [newSubcategory, setNewSubcategory] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(category?.icon || '');
-
+  const selectedIconData = availableIcons.find(icon => icon.name === selectedIcon);
+  const [removedSubcategories, setRemovedSubcategories] = useState([]);
+  const { toast } = useToast();
   const form = useForm({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: category?.name || '',
       icon: category?.icon || '',
       gender: category?.gender || '',
-      type : category?.type || '',
+      type: category?.type || '',
     },
   });
 
@@ -75,8 +79,29 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
     }
   };
 
-  const handleRemoveSubcategory = (index) => {
-    setSubcategories(subcategories.filter((_, i) => i !== index));
+  const handleRemoveSubcategory = async (index) => {
+    try {
+      const sub = subcategories[index];
+      const subId = typeof sub === "object" ? sub._id : sub;
+      setRemovedSubcategories([...removedSubcategories, subId]);
+      const { inUse, message } = await checkSubcategoryUsageApi(subId);
+
+      if (inUse) {
+        toast({
+          title: "Không thể xóa",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
+      setSubcategories(subcategories.filter((_, i) => i !== index));
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể kiểm tra subcategory.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleIconSelect = (iconName) => {
@@ -91,13 +116,19 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
       form.setError("name", { type: "manual", message: "Tên danh mục đã tồn tại" });
       return;
     }
+    for (const subId of removedSubcategories) {
+      const { inUse } = await checkSubcategoryUsageApi(subId);
+      if (!inUse) {
+        await deleteSubcategoryApi(subId);
+      }
+    }
     const categoryData = {
       // ...(category?.id && { id: category.id }),
       id: category?._id,
       name: values.name,
       icon: values.icon,
-      gender : values.gender,
-      type : values.type,
+      gender: values.gender,
+      type: values.type,
       subcategories,
     };
     onSubmit(categoryData);
@@ -107,22 +138,19 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
     setNewSubcategory('');
     setSelectedIcon('');
   };
-
-  const selectedIconData = availableIcons.find(icon => icon.name === selectedIcon);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
             {readonly
-                ? 'Xem chi tiết danh mục'
-                : category
+              ? 'Xem chi tiết danh mục'
+              : category
                 ? 'Chỉnh sửa danh mục'
                 : 'Thêm danh mục mới'}
           </DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
@@ -132,13 +160,13 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
                 <FormItem>
                   <FormLabel>Tên danh mục</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ví dụ: Đồ bơi nam" {...field} disabled={readonly}/>
+                    <Input placeholder="Ví dụ: Đồ bơi nam" {...field} disabled={readonly} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="icon"
@@ -241,31 +269,30 @@ export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, 
                   </Button>
                 </div>
               )}
-              
+
               {subcategories.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {subcategories.map((sub, index) => {
-                    // const label = readonly ? sub.name : sub;
-                    const label = (readonly || editing) 
-                    ? (typeof sub === 'object' && sub !== null ? sub.name : sub) 
-                    : sub;
+                    const label = (readonly || editing)
+                      ? (typeof sub === 'object' && sub !== null ? sub.name : sub)
+                      : sub;
                     return (
-                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                      {label}
-                      {!readonly && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-4 w-4 p-0"
-                          onClick={() => handleRemoveSubcategory(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </Badge>
-                  );
-                })}
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        {label}
+                        {!readonly && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0"
+                            onClick={() => handleRemoveSubcategory(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </Badge>
+                    );
+                  })}
                 </div>
               )}
             </div>

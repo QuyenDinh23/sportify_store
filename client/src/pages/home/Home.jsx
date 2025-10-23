@@ -4,6 +4,7 @@ import { MainNavigation } from '../../components/MainNavigation';
 import BestSelling from '../../components/product/BestSelling';
 import CategoryGrid from '../../components/product/CategoryGrid';
 import ProductGrid from '../../components/product/ProductGrid';
+import HomeBlogSection from '../../components/blog/HomeBlogSection';
 import Footer from '../../components/Footer';
 
 const Index = () => {
@@ -16,6 +17,7 @@ const Index = () => {
         <BestSelling />
         <CategoryGrid />
         <ProductGrid />
+        <HomeBlogSection />
       </main>
       <Footer />
     </div>

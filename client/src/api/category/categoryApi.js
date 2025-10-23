@@ -69,3 +69,13 @@ export const fetchCategoriesByPage = async (page, limit, search) => {
   return res.data; // { categories: [...], totalPages: n }
 };
 
+// Xóa category theo id
+export const deleteCategoryById = async (id) => {
+  try {
+    const res = await axiosInstance.delete(`/categories/${id}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+

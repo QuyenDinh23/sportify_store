@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Brand from '../../models/brand/Brand.js';
+import Product from '../../models/product/Product.js';
 
 // tạo brand mới
 export const createBrand = async (req, res) => {
@@ -116,5 +117,37 @@ export const checkBrandName = async (req, res) => {
   } catch (error) {
     console.error("Lỗi check brand name:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Xóa brand (chỉ khi chưa được gán vào product)
+export const deleteBrand = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra id hợp lệ
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID thương hiệu không hợp lệ" });
+    }
+
+    // Kiểm tra brand có đang được gán vào product không
+    const linkedProduct = await Product.findOne({ brand: id });
+
+    if (linkedProduct) {
+      return res.status(400).json({
+        message: "Thương hiệu đang được sử dụng trong sản phẩm, không thể xóa",
+      });
+    }
+
+    const deletedBrand = await Brand.findByIdAndDelete(id);
+
+    if (!deletedBrand) {
+      return res.status(404).json({ message: "Không tìm thấy thương hiệu" });
+    }
+
+    res.status(200).json({ message: "Xóa thương hiệu thành công" });
+  } catch (error) {
+    console.error("Lỗi khi xóa thương hiệu:", error);
+    res.status(500).json({ message: "Lỗi server khi xóa thương hiệu" });
   }
 };

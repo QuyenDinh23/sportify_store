@@ -1,33 +1,45 @@
-import { Button } from "../../components/ui/button";
-import AccountManageLayout from "../../components/AccountManageLayout";
 import { useEffect, useState } from "react";
 import { toast } from "../../hooks/use-toast";
 import { addressApi } from "../../services/addressApi";
 import { Trash, Edit } from "lucide-react";
-import { useAddress } from "../../hooks/use-selectLocation";
+import Footer from "../../components/Footer";
+import Header from "../../components/Header";
+import { MainNavigation } from "../../components/MainNavigation";
+import AccountSideBar from "../../components/AccountSideBar";
+import { LoadingAnimation } from "../../components/ui/animation-loading";
+import { Link } from "react-router-dom";
+
 const AddressManage = () => {
-  const overlayStyle = {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#FAFAFA", // ✅ chú ý là backgroundColor chứ không phải background
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 9999,
-  };
-  const spinnerStyle = {
-    border: "6px solid #f3f3f3", // màu nền vòng tròn
-    borderTop: "6px solid #F09342", // màu viền quay
-    borderRadius: "50%",
-    width: "50px",
-    height: "50px",
-    animation: "spin 1s linear infinite",
-  };
-  const [path, setPath] = useState("Quản lý địa chỉ");
+  const [address, setAddress] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [addForm, setAddForm] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [path, setPath] = useState("Quản lý địa chỉ");
+  const [hover, setHover] = useState(false);
+
+  // Form states
+  const [form, setForm] = useState({
+    type: "",
+    country: "Việt Nam",
+    city: "",
+    district: "",
+    ward: "",
+    street: "",
+    note: "",
+    fullName: "",
+    phone: "",
+    isDefault: false,
+  });
+
+  // Location states
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [selectedProvince, setSelectedProvince] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedWard, setSelectedWard] = useState("");
+  const [errors, setErrors] = useState({});
+
   const defaultForm = {
     type: "",
     country: "Việt Nam",
@@ -37,157 +49,132 @@ const AddressManage = () => {
     street: "",
     note: "",
     fullName: "",
-    phone: "+84",
+    phone: "",
     isDefault: false,
   };
-  const MainLayout = () => {
-    const [loading, setLoading] = useState(false);
-    const regexMobileVN =
-      /^(0|\+84)(3[2-9]|5[2689]|7[0-9]|8[1-9]|9[0-9])\d{7}$/;
-    const {
-      provinces,
-      districts,
-      wards,
-      selectedProvince,
-      selectedDistrict,
-      selectedWard,
-      setSelectedProvince,
 
-      setSelectedDistrict,
-      setSelectedWard,
-      setDistricts, // ✅ Bạn phải return ra nếu muốn dùng ở ngoài
-      setWards,
-      setProvinces,
-    } = useAddress();
-    const [form, setForm] = useState({
-      type: "",
-      country: "Việt Nam",
-      city: selectedProvince,
-      district: selectedDistrict,
-      ward: selectedWard,
-      street: "",
-      note: "",
-      fullName: "",
-      phone: "+84",
-      isDefault: false,
-    });
-    const [errors, setErrors] = useState({});
-    useEffect(() => {
-      const loadEditAddress = async () => {
-        if (!editData) return;
-        setLoading(true);
-        // 1️⃣ Load danh sách tỉnh (nếu chưa có)
-        if (provinces.length === 0) {
-          const data = await addressApi.getProvines();
-          setProvinces(data);
-        }
+  const inputStyle = {
+    width: "100%",
+    padding: "8px",
+    marginTop: "5px",
+    border: "1px solid #ccc",
+    borderRadius: "4px",
+  };
 
-        // 2️⃣ Đặt tỉnh
-        setSelectedProvince(editData.city.code);
+  const overlayStyle = {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  };
 
-        // 3️⃣ Load huyện theo tỉnh
-        const allDistricts = await addressApi.getDistricts();
-        const filteredDistricts = allDistricts.filter(
-          (d) => Number(d.province_code) === Number(editData.city.code)
-        );
-        setDistricts(filteredDistricts);
-        setSelectedDistrict(editData.district.code);
+  const spinnerStyle = {
+    width: "20px",
+    height: "20px",
+    border: "2px solid #f3f3f3",
+    borderTop: "2px solid #3498db",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  };
 
-        // 4️⃣ Load phường theo huyện
-        const allWards = await addressApi.getWards();
-        const filteredWards = allWards.filter(
-          (w) => Number(w.district_code) === Number(editData.district.code)
-        );
-        setWards(filteredWards);
-        setSelectedWard(editData.ward.code);
-      };
+  const errorStyle = {
+    color: "red",
+    fontSize: "12px",
+    marginTop: "2px",
+  };
 
-      loadEditAddress();
-    }, [provinces.length, setDistricts, setProvinces, setSelectedDistrict, setSelectedProvince, setSelectedWard, setWards]);
-    useEffect(() => {
-      if (wards.length && editData) {
-        setSelectedWard(editData.ward.code);
-        setLoading(false);
+  const fetchAddress = async () => {
+    try {
+      const res = await addressApi.getAddress();
+      setAddress(res);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleDeleteAddress = async (id) => {
+    try {
+      const res = await addressApi.deleteAddress(id);
+      if (res) {
+        toast({
+          title: "Xóa địa chỉ thành công!",
+          description: "",
+          variant: "default",
+        });
+        await fetchAddress();
+      } else {
+        toast({
+          title: "Xóa địa chỉ thất bại!",
+          description: "",
+          variant: "danger",
+        });
       }
-    }, [wards, setSelectedWard]);
-
-    useEffect(() => {
-      setForm(prevForm => ({
-        ...prevForm,
-        city: selectedProvince,
-        district: selectedDistrict,
-        ward: selectedWard,
-      }));
-    }, [selectedProvince, selectedDistrict, selectedWard]);
-    const handleChange = (e) => {
-      const { name, type, value, checked } = e.target;
-      setForm({
-        ...form,
-        [name]: type === "checkbox" ? checked : value, // ✅ xử lý riêng cho checkbox
+    } catch (err) {
+      console.log(err);
+      toast({
+        title: "Xóa địa chỉ thất bại!",
+        description: "",
+        variant: "danger",
       });
+    }
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    
+    if (!form.city) newErrors.city = "Vui lòng chọn tỉnh/thành phố";
+    if (!form.district) newErrors.district = "Vui lòng chọn quận/huyện";
+    if (!form.ward) newErrors.ward = "Vui lòng chọn phường/xã";
+    if (!form.street) newErrors.street = "Vui lòng nhập địa chỉ";
+    if (!form.fullName) newErrors.fullName = "Vui lòng nhập họ tên";
+    if (!form.phone) newErrors.phone = "Vui lòng nhập số điện thoại";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, type, value, checked } = e.target;
+    setForm({
+      ...form,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) {
+      return;
+    }
+
+    const provinceName = provinces.find((p) => Number(p.code) === Number(selectedProvince))?.name || "";
+    const districtName = districts.find((d) => Number(d.code) === Number(selectedDistrict))?.name || "";
+    const wardName = wards.find((w) => Number(w.code) === Number(selectedWard))?.name || "";
+
+    const data = {
+      ...form,
+      city: {
+        code: selectedProvince,
+        name: provinceName,
+      },
+      district: {
+        code: selectedDistrict,
+        name: districtName,
+      },
+      ward: {
+        code: selectedWard,
+        name: wardName,
+      },
     };
-    const validate = () => {
-      const newErrors = {};
-      if (!form.city) newErrors.city = "Vui lòng chọn Tỉnh / Thành phố";
-      if (!form.district) newErrors.district = "Vui lòng nhập Quận / Huyện";
-      if (!form.ward) newErrors.ward = "Vui lòng nhập Phường / Xã";
-      if (!form.street) newErrors.street = "Vui lòng nhập Địa chỉ nhận hàng";
-      if (!form.fullName.trim()) {
-        newErrors.fullName = "Tên không hợp lệ!";
-      }
-      if (!form.phone.trim() || !regexMobileVN.test(form.phone.trim())) {
-        newErrors.phone = "Số điện thoại không hợp lệ!";
-      }
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    };
-    const inputStyle = {
-      display: "block",
-      width: "100%",
-      padding: "8px",
-      border: "1px solid #ccc",
-      borderRadius: "4px",
-      fontSize: "14px",
-      marginBottom: "10px",
-    };
 
-    const errorStyle = {
-      color: "red",
-      fontSize: "12px",
-      marginTop: "2px",
-    };
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      if (!validate()) {
-        return;
-      }
-      const provinceName =
-        provinces.find((p) => Number(p.code) === Number(selectedProvince))
-          ?.name || "";
-
-      const districtName =
-        districts.find((d) => Number(d.code) === Number(selectedDistrict))
-          ?.name || "";
-
-      const wardName =
-        wards.find((w) => Number(w.code) === Number(selectedWard))?.name || "";
-
-      const data = {
-        ...form,
-        city: {
-          code: selectedProvince,
-          name: provinceName,
-        },
-        district: {
-          code: selectedDistrict,
-          name: districtName,
-        },
-        ward: {
-          code: selectedWard,
-          name: wardName,
-        },
-      };
-
+    try {
       if (!editData) {
         const res = await addressApi.addAddress(data);
         if (res) {
@@ -197,6 +184,8 @@ const AddressManage = () => {
             variant: "default",
           });
           setPath("Quản lý địa chỉ");
+          setAddForm(false);
+          await fetchAddress();
         } else {
           toast({
             title: "Thêm địa chỉ thất bại",
@@ -204,124 +193,170 @@ const AddressManage = () => {
             variant: "danger",
           });
         }
-      } else if (editData) {
-        const res = addressApi.updateAddress(editData._id, data);
+      } else {
+        const res = await addressApi.updateAddress(editData._id, data);
         if (res) {
           toast({
-            title: "Thêm địa chỉ thành công!",
+            title: "Cập nhật địa chỉ thành công!",
             description: "",
             variant: "default",
           });
           setPath("Quản lý địa chỉ");
+          setAddForm(false);
+          await fetchAddress();
         } else {
           toast({
-            title: "Thêm địa chỉ thất bại",
+            title: "Cập nhật địa chỉ thất bại",
             description: "",
             variant: "danger",
           });
         }
       }
-    };
+    } catch (err) {
+      console.log(err);
+      toast({
+        title: "Có lỗi xảy ra",
+        description: "",
+        variant: "danger",
+      });
+    }
+  };
 
-    const handleDeleteAddress = async (id) => {
-      console.log(id);
-
-      const res = await addressApi.deleteAddress(id);
-      if (res) {
-        toast({
-          title: "Xóa địa chỉ thành công!",
-          description: "",
-          variant: "default",
-        });
-        setPath("Quản lý địa chỉ");
+  const openAddAddress = (update) => {
+    if (addForm) {
+      setPath("Quản lý địa chỉ");
+      setAddForm(false);
+    } else {
+      if (!update) {
+        setPath("Thêm địa chỉ");
+        setEditData(null);
+        setForm(defaultForm);
       } else {
-        toast({
-          title: "Xóa địa chỉ thất bại!",
-          description: "",
-          variant: "danger",
-        });
-      }
-    };
-
-    const [hover, setHover] = useState(false);
-    const [addForm, setAddForm] = useState(false);
-    const openAddAddress = (update) => {
-      if (addForm) {
-        setPath("Quản lý địa chỉ");
-      } else if (!addForm) {
-        if (!update) {
-          setPath("Thêm địa chỉ");
-          setEditData(null);
-        } else {
-          console.log(update);
-          setPath("Cập nhật địa chỉ");
-          setEditData(update);
-        }
-      }
-    };
-    useEffect(() => {
-      if (editData) {
+        setPath("Cập nhật địa chỉ");
+        setEditData(update);
         setForm({
           ...defaultForm,
-          ...editData,
-          city: editData.city.code,
-          district: editData.district.code,
-          ward: editData.ward.code,
+          ...update,
+          city: update.city.code,
+          district: update.district.code,
+          ward: update.ward.code,
         });
-      } else {
-        setForm(defaultForm);
       }
-    }, []);
-    useEffect(() => {
-      if (path === "Thêm địa chỉ" || path === "Cập nhật địa chỉ") {
-        setAddForm(true);
-      } else {
-        setAddForm(false);
+      setAddForm(true);
+    }
+  };
+
+  // Load provinces on mount
+  useEffect(() => {
+    const loadProvinces = async () => {
+      try {
+        const res = await addressApi.getProvinces();
+        setProvinces(res);
+      } catch (error) {
+        console.log(error);
       }
-    }, []);
-    const [address, setAddress] = useState([]);
-    useEffect(() => {
-      const fetchAddress = async () => {
+    };
+    loadProvinces();
+  }, []);
+
+  // Load districts when province changes
+  useEffect(() => {
+    if (selectedProvince) {
+      const loadDistricts = async () => {
         try {
-          const res = await addressApi.getAddress();
-          setAddress(res);
+          const allDistricts = await addressApi.getDistricts();
+          const filteredDistricts = allDistricts.filter(
+            (d) => Number(d.province_code) === Number(selectedProvince)
+          );
+          setDistricts(filteredDistricts);
+          setSelectedDistrict("");
+          setSelectedWard("");
+          setWards([]);
         } catch (error) {
           console.log(error);
         }
       };
-      fetchAddress();
-    }, []);
+      loadDistricts();
+    }
+  }, [selectedProvince]);
 
-    return (
-      <>
-        {addForm ? (
-          <div style={{ position: "relative" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "end",
-              }}
-            >
-              <button
-                onMouseEnter={() => setHover(true)}
-                onMouseLeave={() => setHover(false)}
-                style={{
-                  padding: "5px 15px",
-                  border: "1px solid #000",
-                  textTransform: "uppercase",
-                  fontSize: "13px",
-                  fontWeight: "500",
-                  backgroundColor: hover ? "#f0f0f0" : "transparent",
-                }}
-                onClick={() => openAddAddress()}
-              >
-                {" "}
-                quay lại trang quản lý địa chỉ{" "}
-              </button>
-            </div>
-            <div>
+  // Load wards when district changes
+  useEffect(() => {
+    if (selectedDistrict) {
+      const loadWards = async () => {
+        try {
+          const allWards = await addressApi.getWards();
+          const filteredWards = allWards.filter(
+            (w) => Number(w.district_code) === Number(selectedDistrict)
+          );
+          setWards(filteredWards);
+          setSelectedWard("");
+        } catch (error) {
+          console.log(error);
+        }
+      };
+      loadWards();
+    }
+  }, [selectedDistrict]);
+
+  // Update form when location selections change
+  useEffect(() => {
+    setForm(prevForm => ({
+      ...prevForm,
+      city: selectedProvince,
+      district: selectedDistrict,
+      ward: selectedWard,
+    }));
+  }, [selectedProvince, selectedDistrict, selectedWard]);
+
+  // Load address data
+  useEffect(() => {
+    setLoading(true);
+    fetchAddress();
+  }, []);
+
+  // Handle edit data loading
+  useEffect(() => {
+    if (editData) {
+      setSelectedProvince(editData.city.code);
+      setSelectedDistrict(editData.district.code);
+      setSelectedWard(editData.ward.code);
+    }
+  }, [editData]);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <MainNavigation />
+      <main style={{ display: "flex" }}>
+        <AccountSideBar path="address" />
+        <div style={{ flex: 1, padding: "50px 150px" }}>
+          <h1 style={{ fontSize: "25px", fontWeight: "bold" }}>
+            {path}
+          </h1>
+          
+          {addForm ? (
+            <div style={{ position: "relative" }}>
+              <div style={{ display: "flex", justifyContent: "end" }}>
+                <button
+                  onMouseEnter={() => setHover(true)}
+                  onMouseLeave={() => setHover(false)}
+                  style={{
+                    padding: "5px 15px",
+                    border: "1px solid #000",
+                    textTransform: "uppercase",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    backgroundColor: hover ? "#f0f0f0" : "transparent",
+                  }}
+                  onClick={() => openAddAddress()}
+                >
+                  Quay lại trang quản lý địa chỉ
+                </button>
+              </div>
+              
               <form
-                onSubmit={(e) => handleSubmit(e)}
+                onSubmit={handleSubmit}
                 style={{
                   margin: "20px auto",
                   display: "flex",
@@ -329,9 +364,7 @@ const AddressManage = () => {
                 }}
               >
                 {/* Loại địa chỉ */}
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <label style={{ width: "49%" }}>
                     Loại địa chỉ
                     <input
@@ -343,21 +376,18 @@ const AddressManage = () => {
                     />
                   </label>
 
-                  {/* Quốc gia */}
                   <label style={{ width: "49%" }}>
-                    <span style={{ color: "red" }}>*</span> Quốc gia{" "}
+                    <span style={{ color: "red" }}>*</span> Quốc gia
                     {loading ? (
-                      <>
-                        <div style={overlayStyle}>
-                          <div style={spinnerStyle}></div>
-                          <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
-                        </div>
-                      </>
+                      <div style={overlayStyle}>
+                        <div style={spinnerStyle}></div>
+                        <style>{`
+                          @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                          }
+                        `}</style>
+                      </div>
                     ) : (
                       ""
                     )}
@@ -396,7 +426,6 @@ const AddressManage = () => {
                     name="district"
                     value={form.district}
                     onChange={(e) => setSelectedDistrict(e.target.value)}
-                    // disabled={!selectedProvince}
                     style={inputStyle}
                   >
                     <option value="">-- Chọn Quận/Huyện --</option>
@@ -406,9 +435,7 @@ const AddressManage = () => {
                       </option>
                     ))}
                   </select>
-                  {errors.district && (
-                    <p style={errorStyle}>{errors.district}</p>
-                  )}
+                  {errors.district && <p style={errorStyle}>{errors.district}</p>}
                 </label>
 
                 {/* Phường / Xã */}
@@ -418,7 +445,6 @@ const AddressManage = () => {
                     name="ward"
                     value={form.ward}
                     onChange={(e) => setSelectedWard(e.target.value)}
-                    // disabled={!selectedDistrict || !selectedProvince}
                     style={inputStyle}
                   >
                     <option value="">-- Chọn Phường/Xã --</option>
@@ -443,9 +469,9 @@ const AddressManage = () => {
                   />
                   {errors.street && <p style={errorStyle}>{errors.street}</p>}
                 </label>
+
                 <label>
-                  <span style={{ color: "red" }}>*</span> Ghi chú thêm (không
-                  bắt buộc)
+                  <span style={{ color: "red" }}>*</span> Ghi chú thêm (không bắt buộc)
                   <input
                     name="note"
                     placeholder="Tên tòa nhà, số tầng..."
@@ -454,6 +480,7 @@ const AddressManage = () => {
                     style={inputStyle}
                   />
                 </label>
+
                 <label>
                   <span style={{ color: "red" }}>*</span> Họ Tên
                   <input
@@ -463,13 +490,11 @@ const AddressManage = () => {
                     onChange={handleChange}
                     style={inputStyle}
                   />
-                  {errors.fullName && (
-                    <p style={errorStyle}>{errors.fullName}</p>
-                  )}
+                  {errors.fullName && <p style={errorStyle}>{errors.fullName}</p>}
                 </label>
+
                 <label>
-                  <span style={{ color: "red" }}>*</span> Số điện thoại (định
-                  dạng: +84xxxxxxxxx)
+                  <span style={{ color: "red" }}>*</span> Số điện thoại (định dạng: +84xxxxxxxxx)
                   <input
                     name="phone"
                     placeholder="+84XXXXXXXX"
@@ -479,6 +504,7 @@ const AddressManage = () => {
                   />
                   {errors.phone && <p style={errorStyle}>{errors.phone}</p>}
                 </label>
+
                 <label
                   style={{
                     display: "flex",
@@ -495,6 +521,7 @@ const AddressManage = () => {
                   />
                   Chọn làm địa chỉ mặc định
                 </label>
+
                 <button
                   type="submit"
                   style={{
@@ -512,100 +539,115 @@ const AddressManage = () => {
                 </button>
               </form>
             </div>
-          </div>
-        ) : (
-          <>
-            <div style={{ marginTop: "30px" }}>
-              Vui lòng cập nhật chi tiết địa chỉ để lưu lại thông tin giao hàng.
-            </div>
-            <div
-              style={{ display: "flex", flexWrap: "wrap", marginTop: "20px" }}
-            >
-              {address?.map((a) => {
-                return (
-                  <div
-                    key={a._id}
-                    style={{
-                      width: "280px",
-                      height: "180px",
-                      border: "1px solid #ccc",
-                      margin: "3px",
-                      padding: "15px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "end",
-                        height: "35px",
-                        alignItems: "end",
-                      }}
-                    >
-                      <Edit
-                        onClick={() => openAddAddress(a)}
-                        size={20}
-                        color="#60A5FA"
-                        style={{ marginRight: "25px", cursor: "pointer" }}
-                      />
-                      <Trash
-                        style={{ cursor: "pointer" }}
-                        onClick={() => handleDeleteAddress(a._id)}
-                        size={20}
-                        color="#60A5FA"
-                      />
-                    </div>
-                    <div style={{ marginTop: "10px" }}>
-                      <div style={{ fontWeight: "bold" }}>{a?.type}</div>
-                      <div
-                        style={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {a?.note +
-                          " " +
-                          a?.street +
-                          " " +
-                          a?.ward.name +
-                          " " +
-                          a?.district.name +
-                          " " +
-                          a?.city.name}
-                      </div>
-                      <div>{a?.country}</div>
-                      <div style={{ display: "flex", marginTop: "10px" }}>
-                        <p className="bg-primary text-white pl-2 pr-2">
-                          {a?.isDefault ? "Địa chỉ mặc định" : ""}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
+          ) : (
+            <>
+              <div style={{ marginTop: "30px" }}>
+                Vui lòng cập nhật chi tiết địa chỉ để lưu lại thông tin giao hàng.
+              </div>
               <div
-                onClick={() => openAddAddress()}
-                className="text-primary"
                 style={{
-                  width: "280px",
-                  height: "180px",
-                  border: "1px solid #ccc",
-                  margin: "3px",
-                  fontSize: "17px",
                   display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
+                  flexWrap: "wrap",
+                  marginTop: "20px",
+                  position: "relative",
                 }}
               >
-                <button>+ Thêm địa chỉ mới</button>
+                {loading ? (
+                  <LoadingAnimation loading={loading} />
+                ) : (
+                  <>
+                    {address?.map((a) => {
+                      return (
+                        <div
+                          key={a._id}
+                          style={{
+                            width: "400px",
+                            height: "190px",
+                            border: "1px solid #ccc",
+                            margin: "5px",
+                            padding: "15px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "end",
+                              height: "35px",
+                              alignItems: "end",
+                              marginRight: "15px",
+                            }}
+                          >
+                            <button onClick={() => openAddAddress(a)}>
+                              <Edit
+                                size={20}
+                                color="#60A5FA"
+                                style={{ marginRight: "25px", cursor: "pointer" }}
+                              />
+                            </button>
+                            <Trash
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleDeleteAddress(a._id)}
+                              size={20}
+                              color="#60A5FA"
+                            />
+                          </div>
+                          <div style={{ marginTop: "18px" }}>
+                            <div style={{ fontWeight: "bold" }}>{a?.type}</div>
+                            <div
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {a?.note +
+                                " " +
+                                a?.street +
+                                " " +
+                                a?.ward.name +
+                                " " +
+                                a?.district.name +
+                                " " +
+                                a?.city.name}
+                            </div>
+                            <div>{a?.country}</div>
+                            <div style={{ display: "flex", marginTop: "10px" }}>
+                              <p className="bg-primary text-white pl-2 pr-2">
+                                {a?.isDefault ? "Địa chỉ mặc định" : ""}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <div
+                      className="text-primary"
+                      style={{
+                        width: "400px",
+                        height: "190px",
+                        border: "1px solid #ccc",
+                        margin: "5px",
+                        fontSize: "17px",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <button onClick={() => openAddAddress()}>
+                        + Thêm địa chỉ mới
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          </>
-        )}
-      </>
-    );
-  };
-  return <AccountManageLayout path={path} children={<MainLayout />} />;
+            </>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
 };
+
 export default AddressManage;

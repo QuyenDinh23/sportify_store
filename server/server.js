@@ -9,7 +9,7 @@ const PORT_NUM = PORT || 3000;
 const HOST_NAME = HOST || 'localhost';
 const DB_URL = URL || 'mongodb://localhost:27017/';
 const DB_NAME_VAL = DB_NAME || 'sportify_store';
-import authRoute from "./routes/auth.js";
+import authRoute from "./routes/authentication/auth.js";
 import categoryRoutes from "./routes/category/categoryRoutes.js";
 import subcategoryRoutes from "./routes/category/subCategoryRoutes.js";
 import imageRoutes from "./routes/image/imageRoutes.js";
@@ -21,7 +21,8 @@ import orderRoutes from "./routes/order/orderRoutes.js";
 
 import userRoute from "./routes/user/userRoutes.js";
 import addressRouter from "./routes/address/addressRoute.js";
-import voucherRouter from "./routes/voucher/voucherRoute.js";
+import voucherRoute from "./routes/voucher/voucherRoute.js";
+import blogRoutes from "./routes/blog/blogRoutes.js";
 
 //create server
 const server = express();
@@ -48,7 +49,8 @@ server.use("/api/orders", orderRoutes);
 
 server.use("/api/users", userRoute);
 server.use("/api/address", addressRouter);
-server.use("/api/vouchers", voucherRouter);
+server.use("/api/vouchers", voucherRoute);
+server.use("/api/blog", blogRoutes);
 
 //connect tới DB
 mongoose

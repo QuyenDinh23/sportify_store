@@ -101,7 +101,7 @@ export const sportCategories = [
   { id: 'swimming', name: 'Bơi lội', icon: '🏊‍♂️', description: 'Môn thể thao toàn thân tốt nhất cho cơ thể' },
   { id: 'fitness', name: 'Gym & Fitness', icon: '💪', description: 'Tập luyện thể hình và duy trì sức khỏe' }
 ];
-
+export const sports = ["Chạy bộ", "Gym", "Bóng đá", "Bóng rổ", "Tennis", "Yoga"];
 export const mockProducts = [
   {
     id: '1',

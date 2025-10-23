@@ -1,6 +1,7 @@
 import { Facebook, Instagram, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -42,7 +43,7 @@ const Footer = () => {
               <li><a href="#" className="hover:text-accent transition-colors">Chính sách đổi trả</a></li>
               <li><a href="#" className="hover:text-accent transition-colors">Hướng dẫn mua hàng</a></li>
               <li><a href="#" className="hover:text-accent transition-colors">Câu hỏi thường gặp</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Tin tức</a></li>
+              <li><Link to="/blog" className="hover:text-accent transition-colors">Tin tức</Link></li>
             </ul>
           </div>
 
