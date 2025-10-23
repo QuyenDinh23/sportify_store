@@ -7,6 +7,8 @@ import {
   Settings,
   Home,
   LogOut,
+  Ticket,
+  Newspaper,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -35,7 +37,8 @@ const menuItems = [
   },
   { title: "Quản lý thương hiệu", url: "/dashboard/brands", icon: Award },
   { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
-  { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Trophy },
+  { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Ticket },
+  { title: "Quản lý blog", url: "/dashboard/blog", icon: Newspaper },
 ];
 
 export function DashboardSidebar() {

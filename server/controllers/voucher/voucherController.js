@@ -98,6 +98,46 @@ const voucherController = {
     }
   },
 
+  getVouchersByPage: async (req, res) => {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const search = req.query.search || '';
+      
+      // Tạo query object
+      const query = {};
+      if (search) {
+        query.$or = [
+          { code: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ];
+      }
+      
+      // Tính skip
+      const skip = (page - 1) * limit;
+      
+      // Lấy total count và vouchers
+      const total = await Voucher.countDocuments(query);
+      const vouchers = await Voucher.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+      
+      // Tính total pages
+      const totalPages = Math.ceil(total / limit);
+      
+      res.status(200).json({
+        vouchers,
+        totalPages,
+        currentPage: page,
+        totalItems: total
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+
   getVoucherById: async (req, res) => {
     try {
       const voucher = await Voucher.findById(req.params.id);

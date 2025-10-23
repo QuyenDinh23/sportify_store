@@ -29,6 +29,12 @@ import ChangePassword from "./pages/AccountManage/ChangePassword";
 import PermissopnAccess from "./pages/AccountManage/PermissionAccessManagement";
 import VoucherManagement from "./pages/dashboard/VoucherManagement";
 import Products from "./pages/product/Products";
+import BlogList from "./pages/blog/BlogList";
+import BlogDetail from "./pages/blog/BlogDetail";
+import BlogManagement from "./pages/dashboard/BlogManagement";
+import BlogPostForm from "./pages/dashboard/BlogPostForm";
+import BlogCategoryManagement from "./pages/dashboard/BlogCategoryManagement";
+
 
 
 const queryClient = new QueryClient();
@@ -47,6 +53,8 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="products" element={<Products />} />
             <Route path="product/:id" element={<ProductDetail />} />
+            <Route path="/blog" element={<BlogList />} />
+            <Route path="/blog/:slug" element={<BlogDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
@@ -65,6 +73,10 @@ const App = () => {
                 <Route path="brands" element={<BrandManagement />} />
                 <Route path="sports" element={<SportManagement />} />
                 <Route path="vouchers" element={<VoucherManagement />} />
+                <Route path="blog" element={<BlogManagement />} />
+                <Route path="blog/create" element={<BlogPostForm />} />
+                <Route path="blog/edit/:id" element={<BlogPostForm />} />
+                <Route path="blog/categories" element={<BlogCategoryManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["user"]} />}>
