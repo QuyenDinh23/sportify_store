@@ -1,8 +1,28 @@
-import { categories, sportCategories } from '../../data/mockData';
+import { sportCategories } from '../../data/mockData';
 import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import { useState } from 'react';
+import { getSportsShoes } from '../../api/product/productApi';
+import { useEffect } from 'react';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../../components/ui/carousel';
+import ProductCard from './ProductCard';
 
 const CategoryGrid = () => {
+  const [sportShoes, setSportShoes] = useState([]);
+
+  const fetchSportShoes = async () => {
+    try {
+      const product = await getSportsShoes(10);
+      console.log("product in category grid", product);
+      setSportShoes(product);
+    } catch (error) {
+      console.error('Error fetching best sellers:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSportShoes();
+  }, []);
   return (
     <section className="py-16 bg-sport-muted">
       <div className="container mx-auto px-4">
@@ -12,7 +32,7 @@ const CategoryGrid = () => {
             Giày Thể Thao Giá Cực Tốt
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {categories.map((category) => (
               <Card
                 key={category.id}
@@ -34,6 +54,25 @@ const CategoryGrid = () => {
                 </CardContent>
               </Card>
             ))}
+          </div> */}
+          <div className="relative">
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {sportShoes.map((product) => (
+                  <CarouselItem key={product._id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/4">
+                    <ProductCard product={product} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-0" />
+              <CarouselNext className="right-0" />
+            </Carousel>
           </div>
         </div>
 

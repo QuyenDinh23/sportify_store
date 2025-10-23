@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Product from "../../models/product/Product.js";
+import Subcategory from "../../models/category/SubCategory.js"
 
 export const createProduct = async (req, res) => {
   try {
@@ -290,5 +291,50 @@ export const toggleProductStatus = async (req, res) => {
   } catch (error) {
     console.error("Lỗi khi toggle trạng thái sản phẩm:", error);
     res.status(500).json({ message: "Server error khi cập nhật trạng thái sản phẩm" });
+  }
+};
+
+// Lấy sản phẩm có subcategory chứa "Giày thể thao" (limit tuỳ chọn)
+export const getSportsShoes = async (req, res) => {
+  try {
+    const { limit } = req.query;
+
+    const subcategories = await Subcategory.find({
+      name: { $regex: "Giày thể thao", $options: "i" }
+    }).select("_id");
+
+    if (!subcategories.length) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy danh mục có tên chứa 'Giày thể thao'" });
+    }
+
+    const subcategoryIds = subcategories.map((s) => s._id);
+
+    const query = {
+      subcategory: { $in: subcategoryIds },
+      status: "active",
+    };
+
+    let productsQuery = Product.find(query)
+      .populate("category", "name")
+      .populate("subcategory", "name")
+      .populate("brand", "name logo")
+      .populate("sport", "name")
+      .sort({ createdAt: -1 });
+
+    if (limit && limit !== "all") {
+      const parsedLimit = parseInt(limit);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        productsQuery = productsQuery.limit(parsedLimit);
+      }
+    }
+
+    const products = await productsQuery.exec();
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm Giày thể thao:", error);
+    res.status(500).json({ message: "Server error khi lấy sản phẩm Giày thể thao" });
   }
 };

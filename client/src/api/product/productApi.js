@@ -73,3 +73,14 @@ export const toggleProductStatusApi = async (id) => {
     throw err.response?.data || err;
   }
 };
+
+export const getSportsShoes = async (limit = "all") => {
+  try {
+    const res = await axiosInstance.get("/products/sports-shoes", {
+      params: { limit },
+    });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
