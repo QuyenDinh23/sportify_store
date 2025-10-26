@@ -80,7 +80,7 @@ const addToCart = async (req, res) => {
     console.log("Selected color object:", selectedColorObj);
     
     // Kiểm tra size có hợp lệ không - sử dụng product.sizes thay vì color.sizes
-    if (!product.sizes.includes(selectedSize)) {
+    if (!product.sizes.includes(selectedSize.size)) {
       return res.status(400).json({
         success: false,
         message: 'Kích thước không hợp lệ'

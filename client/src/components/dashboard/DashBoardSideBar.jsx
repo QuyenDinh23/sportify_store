@@ -9,6 +9,7 @@ import {
   LogOut,
   Ticket,
   Newspaper,
+  Shield,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -39,6 +40,7 @@ const menuItems = [
   { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
   { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Ticket },
   { title: "Quản lý blog", url: "/dashboard/blog", icon: Newspaper },
+  { title: "Quản lý bảo hành", url: "/dashboard/warranty", icon: Shield },
 ];
 
 export function DashboardSidebar() {
