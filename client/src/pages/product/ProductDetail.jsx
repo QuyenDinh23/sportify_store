@@ -11,8 +11,11 @@ import { toast } from "sonner";
 import Header from '../../components/Header';
 import { MainNavigation } from '../../components/MainNavigation';
 import Footer from '../../components/Footer';
-import { getProductById } from "../../api/product/productApi";
+import { getProductById, getRelatedProducts } from "../../api/product/productApi";
 import { addToCart } from "../../store/cartSlice";
+import ProductCard from '../../components/product/ProductCard';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../../components/ui/carousel';
+
 
 
 const ProductDetail = () => {
@@ -26,13 +29,11 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [mainImage, setMainImage] = useState("");
   const [availableStock, setAvailableStock] = useState(0);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   const fetchProduct = useCallback(async () => {
     try {
       const data = await getProductById(id);
-      console.log("data in product detail", data);
-      console.log("product sizes:", data.sizes);
-      console.log("colors data:", data.colors);
       if (data.colors && data.colors.length > 0) {
         console.log("first color sizes:", data.colors[0].sizes);
       }
@@ -45,9 +46,21 @@ const ProductDetail = () => {
       });
     }
   }, [id]);
+
+  const fetchRelatedProducts = useCallback(async () => {
+    try {
+      const data = await getRelatedProducts(id);
+      setRelatedProducts(data);
+    } catch (error) {
+      console.error("Error fetching related products:", error);
+    }
+  }, [id]);
+
   useEffect(() => {
     fetchProduct();
-  }, [id, fetchProduct]);
+    fetchRelatedProducts();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [id, fetchProduct, fetchRelatedProducts]);
 
   useEffect(() => {
     if (product && product.colors && product.colors[selectedColor]) {
@@ -90,7 +103,7 @@ const ProductDetail = () => {
     try {
       // Extract size from variant object
       const sizeToSend = typeof selectedSize === 'object' ? selectedSize.size : selectedSize;
-      
+
       // Dispatch async action để thêm vào giỏ hàng
       await dispatch(addToCart({
         productId: product._id,
@@ -170,37 +183,7 @@ const ProductDetail = () => {
               </div>
               <h1 className="text-3xl font-bold text-foreground mb-2">{product.name}</h1>
               <p className="text-muted-foreground text-lg">{product.brand.name}</p>
-
-              {/* Rating */}
-              {/* <div className="flex items-center gap-2 mt-3">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={cn(
-                        "h-5 w-5",
-                        i < 4 ? "fill-secondary text-secondary" : "text-muted"
-                      )}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground">(128 đánh giá)</span>
-              </div> */}
             </div>
-
-            {/* Price */}
-            {/* <div>
-              <div className="flex items-baseline gap-3">
-                <div className={cn("text-3xl font-bold", hasDiscount && "text-secondary")}>
-                  {product.discountedPrice.toLocaleString("vi-VN")}đ
-                </div>
-                {hasDiscount && (
-                  <div className="text-xl text-muted-foreground line-through">
-                    {product.price.toLocaleString("vi-VN")}đ
-                  </div>
-                )}
-              </div>
-            </div> */}
             {/* Price */}
             <div className="flex items-baseline gap-3">
               <span
@@ -389,6 +372,39 @@ const ProductDetail = () => {
               <p className="text-muted-foreground">Phần đánh giá sẽ được cập nhật sau.</p>
             </TabsContent>
           </Tabs>
+
+          {/* Related Products */}
+          {relatedProducts.length > 0 && (
+            <div className="mt-16 pb-16">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-2xl font-bold text-foreground">Sản phẩm liên quan</h2>
+              </div>
+
+              <div className="relative">
+                <Carousel
+                  opts={{
+                    align: "start",
+                    loop: true,
+                  }}
+                  className="w-full"
+                >
+                  <CarouselContent className="-ml-2 md:-ml-4">
+                    {relatedProducts.map((relatedProduct) => (
+                      <CarouselItem
+                        key={relatedProduct._id}
+                        className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/4"
+                      >
+                        <ProductCard product={relatedProduct} />
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-0" />
+                  <CarouselNext className="right-0" />
+                </Carousel>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
       <Footer />

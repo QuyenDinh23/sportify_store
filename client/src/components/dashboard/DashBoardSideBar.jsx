@@ -66,7 +66,7 @@ export function DashboardSidebar() {
         {/* Logo */}
         <div className="p-4 border-b">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-hero rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">S</span>
             </div>
             {!isCollapsed && (
