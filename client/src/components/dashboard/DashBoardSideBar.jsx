@@ -9,6 +9,7 @@ import {
   LogOut,
   Ticket,
   Newspaper,
+  ShoppingCart,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -28,6 +29,7 @@ import { authApi } from "../../services/authApi";
 
 const menuItems = [
   { title: "Tổng quan", url: "/dashboard", icon: BarChart3 },
+  { title: "Quản lý đơn hàng", url: "/dashboard/orders", icon: ShoppingCart },
   { title: "Quản lý sản phẩm", url: "/dashboard/products", icon: Package },
   { title: "Quản lý danh mục", url: "/dashboard/categories", icon: Grid3X3 },
   {
