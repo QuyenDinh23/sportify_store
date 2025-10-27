@@ -6,15 +6,24 @@ import { getSportsShoes } from '../../api/product/productApi';
 import { useEffect } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../../components/ui/carousel';
 import ProductCard from './ProductCard';
+import { getSports } from '../../api/sport/sportApi';
 
 const CategoryGrid = () => {
   const [sportShoes, setSportShoes] = useState([]);
-
+  const [sports, setSports] = useState([]);
   const fetchSportShoes = async () => {
     try {
       const product = await getSportsShoes(10);
-      console.log("product in category grid", product);
       setSportShoes(product);
+    } catch (error) {
+      console.error('Error fetching best sellers:', error);
+    }
+  };
+
+  const fetchSports = async () => {
+    try {
+      const res = await getSports();
+      setSports(res);
     } catch (error) {
       console.error('Error fetching best sellers:', error);
     }
@@ -22,6 +31,7 @@ const CategoryGrid = () => {
 
   useEffect(() => {
     fetchSportShoes();
+    fetchSports();
   }, []);
   return (
     <section className="py-16 bg-sport-muted">
@@ -65,7 +75,7 @@ const CategoryGrid = () => {
             >
               <CarouselContent className="-ml-2 md:-ml-4">
                 {sportShoes.map((product) => (
-                  <CarouselItem key={product._id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/4">
+                  <CarouselItem key={product._id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/4 scale-[0.9]">
                     <ProductCard product={product} />
                   </CarouselItem>
                 ))}
@@ -80,7 +90,7 @@ const CategoryGrid = () => {
         <div>
           <h2 className="text-3xl font-bold text-center mb-8">Môn thể thao</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {sportCategories.map((sport) => (
+            {sports.map((sport) => (
               <Card
                 key={sport.id}
                 className="group hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"

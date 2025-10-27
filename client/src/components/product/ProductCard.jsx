@@ -14,7 +14,7 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 animate-fade-in">
+    <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 animate-fade-in p-2 text-sm">
       {/* Product image */}
       <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden bg-muted">
         {product.colors[0]?.images[0] && product.colors[0].images[0].trim() !== "" ? (
@@ -51,7 +51,7 @@ const ProductCard = ({ product }) => {
       </Link>
 
       {/* Product info */}
-      <div className="p-4">
+      <div className="p-3">
         <Link to={`/product/${product._id}`}>
           <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 truncate mb-2">
             {product.name}
