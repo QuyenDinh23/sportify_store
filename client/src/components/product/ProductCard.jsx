@@ -2,6 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
+import { Card, CardContent } from '../../components/ui/card';
+
 // eslint-disable-next-line no-unused-vars
 import { cn } from "../../lib/utils";
 
@@ -14,89 +16,93 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 animate-fade-in p-2 text-sm">
-      {/* Product image */}
-      <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden bg-muted">
-        {product.colors[0]?.images[0] && product.colors[0].images[0].trim() !== "" ? (
-          <img
-            src={product.colors[0].images[0]}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <span>No image</span>
-          </div>
+    <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden border-0 bg-card rounded-xl">
+      {/* Product Image */}
+      <Link to={`/product/${product._id}`} className="block relative overflow-hidden">
+        <img
+          src={
+            product.colors[0]?.images[0] && product.colors[0].images[0].trim() !== ""
+              ? product.colors[0].images[0]
+              : "/no-image.png"
+          }
+          alt={product.name}
+          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+        />
+
+        {/* Badge Giảm giá */}
+        {hasDiscount && (
+          <Badge className="absolute top-2 left-2 bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 shadow-md">
+            -{product.discountPercentage}%
+          </Badge>
         )}
 
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-2 z-10">
-          {hasDiscount && (
-            <Badge
-              className="bg-gradient-to-r from-red-500 to-orange-400 text-white font-bold shadow-md px-3 py-1 rounded-lg border border-white/30"
-            >
-              -{product.discountPercentage}%
-            </Badge>
-          )}
-        </div>
-
-        {/* Wishlist button */}
+        {/* Wishlist */}
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-2 right-2 h-8 w-8 bg-background/90 hover:bg-background hover:scale-110 transition-all duration-200 shadow-md opacity-0 group-hover:opacity-100"
         >
           <Heart className="h-4 w-4" />
         </Button>
       </Link>
 
-      {/* Product info */}
-      <div className="p-3">
+      <CardContent className="p-3">
+        {/* Thương hiệu + Đánh giá */}
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+            {product.brand?.name}
+          </span>
+        </div>
+
+        {/* Tên sản phẩm */}
         <Link to={`/product/${product._id}`}>
-          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 truncate mb-2">
+          <h3 className="font-semibold text-sm mb-2 line-clamp-2 h-10 group-hover:text-primary transition-colors leading-tight">
             {product.name}
           </h3>
         </Link>
 
-        <p className="text-sm text-muted-foreground mb-2">{product.brand?.name}</p>
-
-        {/* Color options */}
-        <div className="flex gap-1 mb-3">
-          {product.colors.slice(0, 5).map((color, index) => (
+        {/* Màu sắc */}
+        <div className="flex gap-1 mb-2">
+          {product.colors.slice(0, 4).map((color, i) => (
             <div
-              key={index}
-              className="w-6 h-6 rounded-full border-2 border-border cursor-pointer hover:scale-110 transition-transform"
+              key={i}
+              className="w-5 h-5 rounded-full border border-border hover:scale-110 transition-transform"
               style={{ backgroundColor: color.hex }}
               title={color.name}
             />
           ))}
-          {product.colors.length > 5 && (
-            <div className="w-6 h-6 rounded-full border-2 border-border flex items-center justify-center text-xs text-muted-foreground">
-              +{product.colors.length - 5}
+          {product.colors.length > 4 && (
+            <div className="w-5 h-5 rounded-full border border-border flex items-center justify-center text-xs text-muted-foreground">
+              +{product.colors.length - 4}
             </div>
           )}
         </div>
 
-        {/* Price */}
-        <div className="flex items-center gap-2 mb-4">
+        {/* Giá */}
+        <div className="flex items-center gap-2 mb-2.5">
           <span className="text-lg font-bold text-primary">
-            {product.discountedPrice.toLocaleString("vi-VN")}đ
+            {product.discountedPrice?.toLocaleString("vi-VN")}đ
           </span>
-          {product.originalPrice && (
-            <span className="text-sm text-muted-foreground line-through">
+          {product.price && (
+            <span className="text-xs text-muted-foreground line-through">
               {product.price.toLocaleString("vi-VN")}đ
             </span>
           )}
         </div>
 
-        {/* Add to Cart */}
-        <Button className="w-full" variant="sport" onClick={handleAddToCart}>
-          <ShoppingCart className="h-4 w-4 mr-2" />
+        {/* Thêm vào giỏ */}
+        <Button
+          className="w-full h-9 text-xs font-semibold group-hover:scale-105 transition-transform"
+          variant="sport"
+          onClick={handleAddToCart}
+        >
+          <ShoppingCart className="h-3.5 w-3.5 mr-1.5" />
           Thêm vào giỏ
         </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
+
 };
 
 export default ProductCard;
