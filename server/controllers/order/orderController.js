@@ -92,14 +92,37 @@ export const createOrder = async (req, res) => {
         const itemTotal = item.priceAtAdd * item.quantity;
         subtotal += itemTotal;
         
+        // Get product data
+        const product = item.productId;
+        
+        // Get color name (could be string or object)
+        let colorName = item.selectedColor;
+        if (typeof item.selectedColor === 'object' && item.selectedColor.name) {
+          colorName = item.selectedColor.name;
+        }
+        
+        // Find the selected color in product colors to get its images
+        let productImage = product.image || null; // fallback to main image
+        
+        if (product.colors && product.colors.length > 0 && colorName) {
+          // Try to find the selected color and get its first image
+          const selectedColorObj = product.colors.find(c => 
+            c.name === colorName || c.name === item.selectedColor
+          );
+          
+          if (selectedColorObj && selectedColorObj.images && selectedColorObj.images.length > 0) {
+            productImage = selectedColorObj.images[0];
+          }
+        }
+        
         const orderItem = {
-          productId: item.productId._id,
-          name: item.productId.name,
+          productId: product._id,
+          name: product.name,
           price: item.priceAtAdd,
           quantity: item.quantity,
-          selectedColor: item.selectedColor?.name || item.selectedColor,
+          selectedColor: colorName,
           selectedSize: item.selectedSize,
-          image: item.productId.images?.[0] || null
+          image: productImage
         };
         
         console.log(`Created order item ${index}:`, orderItem);
