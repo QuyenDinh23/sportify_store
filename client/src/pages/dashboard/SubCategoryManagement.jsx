@@ -224,10 +224,6 @@ const SubcategoryManagement = () => {
                 ))}
               </SelectContent>
             </Select>
-            {/* <Button onClick={handleAdd} variant="sport">
-              <Plus className="h-4 w-4 mr-2" />
-              Thêm mới
-            </Button> */}
           </div>
         }
       />
