@@ -41,6 +41,8 @@ const ProductSchema = new mongoose.Schema({
   reviewCount: { type: Number, default: 0 },
   isNew: { type: Boolean, default: true },
   isOnSale: { type: Boolean, default: false },
+  
+  warrantyPeriod: { type: Number, default: 12 },
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

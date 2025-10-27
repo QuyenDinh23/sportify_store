@@ -1,4 +1,4 @@
-import { Home, ShieldCheck, ShoppingCart, User } from "lucide-react";
+import { Home, ShieldCheck, ShoppingCart, User, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { authApi } from "../services/authApi";
@@ -121,6 +121,19 @@ const AccountSideBar = ({ path }) => {
           >
             <ShoppingCart className="h-6 w-6 text-white" />{" "}
             <p style={{ marginLeft: "20px" }}>Lịch sử mua hàng</p>
+          </li>
+          <li
+            onClick={() => navigate("/account/warranty")}
+            id="warranty"
+            style={{
+              padding: "12px 20px",
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+            }}
+          >
+            <Shield className="h-6 w-6 text-white" />{" "}
+            <p style={{ marginLeft: "20px" }}>Yêu cầu bảo hành</p>
           </li>
           <li
             onClick={() => navigate("/account/security")}

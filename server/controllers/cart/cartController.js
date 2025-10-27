@@ -79,6 +79,8 @@ const addToCart = async (req, res) => {
     const selectedColorObj = product.colors[colorIndex];
     console.log("Selected color object:", selectedColorObj);
     
+    // Kiểm tra size có hợp lệ không - sử dụng product.sizes thay vì color.sizes
+    if (!product.sizes.includes(selectedSize.size)) {
     // Extract size from selectedSize (could be string or object)
     let sizeValue = selectedSize;
     if (typeof selectedSize === 'object' && selectedSize.size) {

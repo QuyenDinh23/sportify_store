@@ -11,22 +11,29 @@ import {
   CreditCard,
   Phone,
   Mail,
-  Calendar
+  Calendar,
+  Shield
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
 import { Separator } from "../../components/ui/separator";
+import { useToast } from "../../hooks/use-toast";
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { getOrderDetail } from "../../api/order/orderApi";
+import { createWarrantyRequest } from "../../api/warranty/warrantyApi";
+import { WarrantyRequestDialog } from "../../components/warranty/WarrantyRequestDialog";
 
 const OrderDetail = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const { toast } = useToast();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isWarrantyDialogOpen, setIsWarrantyDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -70,6 +77,32 @@ const OrderDetail = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleOpenWarrantyDialog = (product) => {
+    setSelectedProduct(product);
+    setIsWarrantyDialogOpen(true);
+  };
+
+  const handleSubmitWarranty = async (warrantyData) => {
+    try {
+      await createWarrantyRequest(warrantyData);
+      
+      toast({
+        title: "Thành công",
+        description: "Gửi yêu cầu bảo hành thành công",
+      });
+      
+      setIsWarrantyDialogOpen(false);
+      setSelectedProduct(null);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.response?.data?.message || "Không thể gửi yêu cầu",
+        variant: "destructive",
+      });
+      throw error; // Re-throw to let the form handle it
+    }
   };
 
   if (loading) {
@@ -167,6 +200,48 @@ const OrderDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  {order.items.map((item, index) => (
+                    <div key={index} className="flex gap-4 p-4 border rounded-lg">
+                      <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                            <span>No image</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {item.selectedColor} - {item.selectedSize}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Số lượng: {item.quantity}
+                        </p>
+                        {order.status === 'delivered' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={() => handleOpenWarrantyDialog(item)}
+                          >
+                            <Shield className="h-4 w-4 mr-2" />
+                            Yêu cầu bảo hành
+                          </Button>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">
+                          {item.price.toLocaleString("vi-VN")}đ
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Tổng: {(item.price * item.quantity).toLocaleString("vi-VN")}đ
+                        </p>
                   {order.items.map((item, index) => {
                     // Debug: log the item structure
                     console.log('OrderDetail Item:', item);
@@ -324,6 +399,20 @@ const OrderDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Warranty Request Dialog */}
+      {order && (
+        <WarrantyRequestDialog
+          isOpen={isWarrantyDialogOpen}
+          onClose={() => {
+            setIsWarrantyDialogOpen(false);
+            setSelectedProduct(null);
+          }}
+          onSubmit={handleSubmitWarranty}
+          product={selectedProduct}
+          order={order}
+        />
+      )}
       
       <Footer />
     </div>

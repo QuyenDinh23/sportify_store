@@ -34,6 +34,8 @@ import BlogDetail from "./pages/blog/BlogDetail";
 import BlogManagement from "./pages/dashboard/BlogManagement";
 import BlogPostForm from "./pages/dashboard/BlogPostForm";
 import BlogCategoryManagement from "./pages/dashboard/BlogCategoryManagement";
+import WarrantyManagement from "./pages/dashboard/WarrantyManagement";
+import WarrantyRequest from "./pages/AccountManage/WarrantyRequest";
 
 
 
@@ -77,6 +79,7 @@ const App = () => {
                 <Route path="blog/create" element={<BlogPostForm />} />
                 <Route path="blog/edit/:id" element={<BlogPostForm />} />
                 <Route path="blog/categories" element={<BlogCategoryManagement />} />
+                <Route path="warranty" element={<WarrantyManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["user"]} />}>
@@ -88,6 +91,7 @@ const App = () => {
                 element={<AddEditAddress />}
               />
               <Route path="/account/order" element={<OrderHistory />} />
+              <Route path="/account/warranty" element={<WarrantyRequest />} />
               <Route path="/account/security" element={<SecurityMain />} />
               <Route
                 path="/account/security/password"
