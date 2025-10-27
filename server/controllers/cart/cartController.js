@@ -81,14 +81,26 @@ const addToCart = async (req, res) => {
     
     // Kiểm tra size có hợp lệ không - sử dụng product.sizes thay vì color.sizes
     if (!product.sizes.includes(selectedSize.size)) {
+    // Extract size from selectedSize (could be string or object)
+    let sizeValue = selectedSize;
+    if (typeof selectedSize === 'object' && selectedSize.size) {
+      sizeValue = selectedSize.size;
+    }
+    console.log("Size value:", sizeValue);
+    console.log("Selected color sizes:", selectedColorObj.sizes);
+    
+    // Tìm size variant trong color đã chọn để lấy quantity cụ thể
+    const sizeVariant = selectedColorObj.sizes.find(s => s.size === sizeValue);
+    if (!sizeVariant) {
       return res.status(400).json({
         success: false,
-        message: 'Kích thước không hợp lệ'
+        message: 'Kích thước không hợp lệ hoặc không có trong màu đã chọn'
       });
     }
     
-    // Kiểm tra số lượng tồn kho - sử dụng stockQuantity tổng
-    const availableStock = product.stockQuantity;
+    const availableStock = sizeVariant.quantity;
+    console.log("Available stock for this color/size:", availableStock);
+    
     if (quantity > availableStock) {
       return res.status(400).json({
         success: false,
@@ -112,7 +124,7 @@ const addToCart = async (req, res) => {
     const existingItemIndex = cart.items.findIndex(item => 
       item.productId.toString() === productId && 
       item.selectedColor.name === selectedColorObj.name && 
-      item.selectedSize === selectedSize
+      item.selectedSize === sizeValue
     );
     
     if (existingItemIndex !== -1) {
@@ -134,17 +146,24 @@ const addToCart = async (req, res) => {
       const priceAtAdd = product.discountPercentage > 0 
         ? product.price * (1 - product.discountPercentage / 100)
         : product.price;
+      
+      // Use the first image from the selected color
+      const images = selectedColorObj.images && selectedColorObj.images.length > 0 
+        ? selectedColorObj.images 
+        : product.images;
+      
       const newItem = {
         productId: productId,
         name: product.name,
         selectedColor: selectedColorObj,
-        selectedSize,
+        selectedSize: sizeValue,
         quantity,
         priceAtAdd: priceAtAdd,
         importPrice: product.importPrice,
         discountPercentage: product.discountPercentage,
         subtotal: priceAtAdd * quantity,
-        images: product.images
+        images: images,
+        availableStock: availableStock // Lưu số lượng có sẵn để validate sau này
       };
       cart.items.push(newItem);
     }
@@ -184,13 +203,7 @@ const updateCartItem = async (req, res) => {
     const userId = req.user.id;
     const { itemId, quantity } = req.body;
     
-    const cart = await Cart.findOne({ userId: userId }).populate({
-      path: 'items.productId',
-      populate: {
-        path: 'brand',
-        model: 'Brand'
-      }
-    });
+    const cart = await Cart.findOne({ userId: userId });
     if (!cart) {
       return res.status(404).json({
         success: false,
@@ -206,26 +219,90 @@ const updateCartItem = async (req, res) => {
       });
     }
     
-    // Kiểm tra tồn kho
-    const product = item.productId;
-    const availableStock = product.stockQuantity;
+    // Populate từ Cart model vì item là subdocument
+    await cart.populate({
+      path: 'items.productId',
+      populate: {
+        path: 'brand',
+        model: 'Brand'
+      }
+    });
+    
+    // Get the populated item
+    const populatedItem = cart.items.find(item => item._id.toString() === itemId);
+    
+    console.log("Cart item:", populatedItem);
+    console.log("SelectedColor in item:", populatedItem.selectedColor);
+    
+    // Lấy product và kiểm tra tồn kho theo color/size cụ thể
+    const product = populatedItem.productId;
+    
+    if (!product) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sản phẩm không tồn tại'
+      });
+    }
+    
+    // Lấy tên màu từ selectedColor (có thể là object hoặc object có name)
+    const colorName = typeof populatedItem.selectedColor === 'string' 
+      ? populatedItem.selectedColor 
+      : (populatedItem.selectedColor?.name || populatedItem.selectedColor);
+    
+    console.log("Color name:", colorName);
+    
+    // Tìm color trong product
+    const colorIndex = product.colors.findIndex(c => c.name === colorName);
+    if (colorIndex === -1 || !product.colors[colorIndex]) {
+      return res.status(400).json({
+        success: false,
+        message: 'Màu sắc không hợp lệ'
+      });
+    }
+    
+    const selectedColorObj = product.colors[colorIndex];
+    
+    // Tìm size variant để lấy quantity cụ thể
+    const sizeVariant = selectedColorObj.sizes.find(s => s.size === populatedItem.selectedSize);
+    if (!sizeVariant) {
+      return res.status(400).json({
+        success: false,
+        message: 'Kích thước không hợp lệ'
+      });
+    }
+    
+    const availableStock = sizeVariant.quantity;
+    console.log("Available stock for this color/size:", availableStock);
     
     if (quantity > availableStock) {
       return res.status(400).json({
         success: false,
-        message: `Chỉ còn ${availableStock} sản phẩm trong kho`
+        message: `Chỉ còn ${availableStock} sản phẩm trong kho cho màu này và size này`
       });
     }
+    
+    // Update the actual item in the array
+    const itemToUpdate = cart.items.find(item => item._id.toString() === itemId);
     
     if (quantity <= 0) {
       // Xóa item nếu số lượng <= 0
       cart.items = cart.items.filter(item => item._id.toString() !== itemId);
     } else {
-      item.quantity = quantity;
-      item.subtotal = item.priceAtAdd * quantity;
+      itemToUpdate.quantity = quantity;
+      itemToUpdate.subtotal = itemToUpdate.priceAtAdd * quantity;
+      itemToUpdate.availableStock = availableStock; // Cập nhật availableStock
     }
     
     await cart.save();
+    
+    // Repopulate after save to include updated data
+    await cart.populate({
+      path: 'items.productId',
+      populate: {
+        path: 'brand',
+        model: 'Brand'
+      }
+    });
     
     res.status(200).json({
       success: true,

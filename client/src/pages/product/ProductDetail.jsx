@@ -88,11 +88,14 @@ const ProductDetail = () => {
     }
 
     try {
+      // Extract size from variant object
+      const sizeToSend = typeof selectedSize === 'object' ? selectedSize.size : selectedSize;
+      
       // Dispatch async action để thêm vào giỏ hàng
       await dispatch(addToCart({
         productId: product._id,
         selectedColor: product.colors[selectedColor].name,
-        selectedSize,
+        selectedSize: sizeToSend,
         quantity
       })).unwrap();
 

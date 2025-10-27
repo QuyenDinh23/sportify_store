@@ -366,7 +366,7 @@ const Cart = () => {
                       Thương hiệu: {item.productId?.brand?.name || 'N/A'}
                     </p>
                     
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                       <div className="flex items-center gap-2">
                         <span>Màu:</span>
                         <div 
@@ -380,6 +380,11 @@ const Cart = () => {
                         <span>Kích thước: </span>
                         <span className="font-medium">{item.selectedSize || 'N/A'}</span>
                       </div>
+                      {item.availableStock && (
+                        <div className="text-xs text-muted-foreground">
+                          Còn {item.availableStock} sản phẩm
+                        </div>
+                      )}
                     </div>
 
                     {/* Price and Quantity */}
@@ -407,6 +412,7 @@ const Cart = () => {
                             size="icon"
                             onClick={() => handleUpdateQuantity(item._id, item.quantity + 1)}
                             className="rounded-l-none h-8 w-8"
+                            disabled={item.quantity >= (item.availableStock || 999)}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
