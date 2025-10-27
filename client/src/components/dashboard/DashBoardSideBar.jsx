@@ -9,6 +9,8 @@ import {
   LogOut,
   Ticket,
   Newspaper,
+  ShoppingCart,
+  Shield,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -28,6 +30,7 @@ import { authApi } from "../../services/authApi";
 
 const menuItems = [
   { title: "Tổng quan", url: "/dashboard", icon: BarChart3 },
+  { title: "Quản lý đơn hàng", url: "/dashboard/orders", icon: ShoppingCart },
   { title: "Quản lý sản phẩm", url: "/dashboard/products", icon: Package },
   { title: "Quản lý danh mục", url: "/dashboard/categories", icon: Grid3X3 },
   {
@@ -39,6 +42,7 @@ const menuItems = [
   { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
   { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Ticket },
   { title: "Quản lý blog", url: "/dashboard/blog", icon: Newspaper },
+  { title: "Quản lý bảo hành", url: "/dashboard/warranty", icon: Shield },
 ];
 
 export function DashboardSidebar() {

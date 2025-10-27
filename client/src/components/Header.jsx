@@ -166,6 +166,12 @@ const Header = () => {
                       <span>Lịch sử mua hàng</span>
                     </DropdownMenuItem>
                   </Link>
+                  <Link to={"/account/warranty"}>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      <span>Yêu cầu bảo hành</span>
+                    </DropdownMenuItem>
+                  </Link>
                   <Link to={"/account/security"}>
                     <DropdownMenuItem className="cursor-pointer">
                       <ShieldCheck className="mr-2 h-4 w-4" />

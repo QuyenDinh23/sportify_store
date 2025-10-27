@@ -35,3 +35,22 @@ export const cancelOrder = async (orderId, reason) => {
     throw error.response?.data || error.message;
   }
 };
+
+// Admin functions
+export const getAllOrdersAdmin = async (params = {}) => {
+  try {
+    const response = await api.get('/orders/admin/all', { params });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const updateOrderStatusAdmin = async (orderId, statusData) => {
+  try {
+    const response = await api.put(`/orders/${orderId}/status`, statusData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
