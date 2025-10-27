@@ -200,7 +200,7 @@ const OrderDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {order.items.map((item, index) => (
+                  {/* {order.items.map((item, index) => (
                     <div key={index} className="flex gap-4 p-4 border rounded-lg">
                       <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                         {item.image ? (
@@ -241,7 +241,7 @@ const OrderDetail = () => {
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Tổng: {(item.price * item.quantity).toLocaleString("vi-VN")}đ
-                        </p>
+                        </p> */}
                   {order.items.map((item, index) => {
                     // Debug: log the item structure
                     console.log('OrderDetail Item:', item);
@@ -288,6 +288,17 @@ const OrderDetail = () => {
                           <p className="text-sm text-muted-foreground">
                             Số lượng: {item.quantity}
                           </p>
+                          {order.status === 'delivered' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => handleOpenWarrantyDialog(item)}
+                            >
+                              <Shield className="h-4 w-4 mr-2" />
+                              Yêu cầu bảo hành
+                            </Button>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="font-medium">
