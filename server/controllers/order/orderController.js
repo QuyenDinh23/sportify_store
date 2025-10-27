@@ -384,3 +384,113 @@ export const cancelOrder = async (req, res) => {
     });
   }
 };
+
+// Lấy tất cả đơn hàng (Admin)
+export const getAllOrders = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, search } = req.query;
+
+    const query = {};
+    
+    // Filter by status if provided
+    if (status) {
+      query.status = status;
+    }
+
+    // Search by order number or customer name
+    if (search) {
+      query.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+        { 'shippingAddress.fullName': { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const orders = await Order.find(query)
+      .populate('userId', 'fullName email phone')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+
+    const total = await Order.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        orders,
+        pagination: {
+          current: parseInt(page),
+          pages: Math.ceil(total / limit),
+          total
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Get all orders error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách đơn hàng",
+      error: error.message
+    });
+  }
+};
+
+// Cập nhật trạng thái đơn hàng (Admin)
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, trackingNumber, estimatedDelivery } = req.body;
+
+    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'];
+    
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Trạng thái không hợp lệ"
+      });
+    }
+
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy đơn hàng"
+      });
+    }
+
+    order.status = status;
+    
+    if (trackingNumber) {
+      order.trackingNumber = trackingNumber;
+    }
+    
+    if (estimatedDelivery) {
+      order.estimatedDelivery = new Date(estimatedDelivery);
+    }
+
+    if (status === 'delivered' && !order.deliveredAt) {
+      order.deliveredAt = new Date();
+    }
+
+    if (status === 'cancelled' && !order.cancelledAt) {
+      order.cancelledAt = new Date();
+    }
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật trạng thái đơn hàng thành công",
+      data: order
+    });
+
+  } catch (error) {
+    console.error("Update order status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật trạng thái đơn hàng",
+      error: error.message
+    });
+  }
+};
