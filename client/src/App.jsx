@@ -34,11 +34,13 @@ import BlogDetail from "./pages/blog/BlogDetail";
 import BlogManagement from "./pages/dashboard/BlogManagement";
 import BlogPostForm from "./pages/dashboard/BlogPostForm";
 import BlogCategoryManagement from "./pages/dashboard/BlogCategoryManagement";
+
+import StaffAccount from "./pages/AccountManage/AccountMangageStaff";
+import UsersManagement from "./pages/dashboard/UsersManagement";
+
 import OrderManagement from "./pages/dashboard/OrderManagement";
 import WarrantyManagement from "./pages/dashboard/WarrantyManagement";
 import WarrantyRequest from "./pages/AccountManage/WarrantyRequest";
-
-
 
 const queryClient = new QueryClient();
 
@@ -64,7 +66,7 @@ const App = () => {
             <Route path="/order-detail/:orderId" element={<OrderDetail />} />
             <Route path="/orders" element={<Orders />} />
             {/* route dashboard */}
-            <Route element={<ProtectedRoute roles={["admin", "staff"]} />}>
+            <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>
                 <Route index element={<Overview />} />
                 <Route path="orders" element={<OrderManagement />} />
@@ -74,13 +76,44 @@ const App = () => {
                   path="subcategories"
                   element={<SubcategoryManagement />}
                 />
+                <Route path="account" element={<StaffAccount />} />
                 <Route path="brands" element={<BrandManagement />} />
                 <Route path="sports" element={<SportManagement />} />
                 <Route path="vouchers" element={<VoucherManagement />} />
                 <Route path="blog" element={<BlogManagement />} />
                 <Route path="blog/create" element={<BlogPostForm />} />
                 <Route path="blog/edit/:id" element={<BlogPostForm />} />
-                <Route path="blog/categories" element={<BlogCategoryManagement />} />
+
+                <Route
+                  path="blog/categories"
+                  element={<BlogCategoryManagement />}
+                />
+                <Route path="users" element={<UsersManagement />} />
+                <Route path="warranty" element={<WarrantyManagement />} />
+              </Route>
+            </Route>
+            <Route element={<ProtectedRoute roles={["staff-sale"]} />}>
+              <Route path="/staff-content/dashboard" element={<Dashboard />}>
+                <Route index element={<Overview />} />
+                <Route path="products" element={<ProductManagement />} />
+                <Route path="categories" element={<CategoryManagement />} />
+                <Route
+                  path="subcategories"
+                  element={<SubcategoryManagement />}
+                />
+                <Route path="account" element={<StaffAccount />} />
+                <Route path="brands" element={<BrandManagement />} />
+                <Route path="sports" element={<SportManagement />} />
+                <Route path="vouchers" element={<VoucherManagement />} />
+                <Route path="blog" element={<BlogManagement />} />
+                <Route path="blog/create" element={<BlogPostForm />} />
+                <Route path="blog/edit/:id" element={<BlogPostForm />} />
+                <Route
+                  path="blog/categories"
+                  element={<BlogCategoryManagement />}
+                />
+                <Route path="users" element={<UsersManagement />} />
+
                 <Route path="warranty" element={<WarrantyManagement />} />
               </Route>
             </Route>

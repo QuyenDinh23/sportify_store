@@ -13,6 +13,7 @@ import {
 } from '../../components/ui/table';
 
 export function DataTable({
+  style,
   title,
   data,
   columns,
@@ -39,7 +40,7 @@ export function DataTable({
   };
 
   return (
-    <Card>
+    <Card style={style}>
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <CardTitle>{title}</CardTitle>
@@ -105,7 +106,7 @@ export function DataTable({
                 </TableRow>
               ) : (
                 data.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow key={item._id}>
                     {columns.map((column) => (
                       <TableCell key={column.key}>
                         {column.render ?

@@ -87,9 +87,11 @@ const Login = () => {
         });
         if (userInfo.role === "admin") {
           navigate("/dashboard");
-        } else if (userInfo.role === "staff") {
-          navigate("/staff");
-        } else {
+        } else if (userInfo.role === "staff-content") {
+          navigate("/staff-content/dashboard");
+        } else if (userInfo.role === "staff-sale") {
+          navigate("/staff-sale/dashboard");
+        } else if (userInfo.role === "user") {
           navigate("/");
         }
       }
@@ -567,16 +569,20 @@ const Login = () => {
           )}
 
           {/* Footer */}
-          {!showEmailForFb?(<div className="text-sm text-gray-600">
-            {!isRegister ? "Chưa có tài khoản?" : "Đã có tài khoản?"}{" "}
-            <button
-              variant="link"
-              onClick={handleToggleRegister}
-              className="text-blue-600 hover:underline"
-            >
-              {!isRegister ? "Đăng ký" : "Đăng nhập"}
-            </button>
-          </div>):""}
+          {!showEmailForFb ? (
+            <div className="text-sm text-gray-600">
+              {!isRegister ? "Chưa có tài khoản?" : "Đã có tài khoản?"}{" "}
+              <button
+                variant="link"
+                onClick={handleToggleRegister}
+                className="text-blue-600 hover:underline"
+              >
+                {!isRegister ? "Đăng ký" : "Đăng nhập"}
+              </button>
+            </div>
+          ) : (
+            ""
+          )}
           <div className="mt-6">
             Đăng nhập để luôn nắm bắt thông tin mới nhất từ Sportify
           </div>

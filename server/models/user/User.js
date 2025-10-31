@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema(
     phone: { type: String },
     dateOfBirth: { type: Date },
     gender: { type: String, enum: ["male", "female", "other"] },
+    status: {
+      type: String,
+      enum: ["active", "inactive", "banned"],
+      default: "active",
+    },
   },
   { timestamps: true }
 );

@@ -54,16 +54,22 @@ const BlogManagement = () => {
   const [pagination, setPagination] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedPublished, setSelectedPublished] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedPublished, setSelectedPublished] = useState("all");
   const itemsPerPage = 10;
   const { toast } = useToast();
 
   useEffect(() => {
     fetchPosts();
     fetchCategories();
-  }, [currentPage, itemsPerPage, searchTerm, selectedCategory, selectedPublished]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    searchTerm,
+    selectedCategory,
+    selectedPublished,
+  ]);
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -71,8 +77,8 @@ const BlogManagement = () => {
         page: currentPage,
         limit: itemsPerPage,
         search: searchTerm,
-        category: selectedCategory === 'all' ? '' : selectedCategory,
-        published: selectedPublished === 'all' ? '' : selectedPublished,
+        category: selectedCategory === "all" ? "" : selectedCategory,
+        published: selectedPublished === "all" ? "" : selectedPublished,
       };
       const response = await getAllBlogPosts(filters);
       setPosts(response.data);
@@ -85,8 +91,15 @@ const BlogManagement = () => {
         description: "Không thể tải danh sách bài viết",
         variant: "destructive",
       });
-    } 
-  }, [currentPage, itemsPerPage, searchTerm, selectedCategory, selectedPublished, toast]);
+    }
+  }, [
+    currentPage,
+    itemsPerPage,
+    searchTerm,
+    selectedCategory,
+    selectedPublished,
+    toast,
+  ]);
 
   const fetchCategories = async () => {
     try {
@@ -306,7 +319,7 @@ const BlogManagement = () => {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span>{formatDate(post.createdAt)}</span>
+                      <span>{formatDate(post.publishedAt)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
