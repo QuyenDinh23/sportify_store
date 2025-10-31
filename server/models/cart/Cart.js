@@ -41,7 +41,11 @@ const cartItemSchema = new mongoose.Schema({
   },
   images: [{
     type: String
-  }]
+  }],
+  availableStock: {
+    type: Number,
+    default: 999  // Default high value if not set for old cart items
+  }
 });
 
 const cartSchema = new mongoose.Schema({

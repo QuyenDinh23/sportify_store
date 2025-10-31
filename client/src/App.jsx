@@ -34,8 +34,13 @@ import BlogDetail from "./pages/blog/BlogDetail";
 import BlogManagement from "./pages/dashboard/BlogManagement";
 import BlogPostForm from "./pages/dashboard/BlogPostForm";
 import BlogCategoryManagement from "./pages/dashboard/BlogCategoryManagement";
+
 import StaffAccount from "./pages/AccountManage/AccountMangageStaff";
 import UsersManagement from "./pages/dashboard/UsersManagement";
+
+import OrderManagement from "./pages/dashboard/OrderManagement";
+import WarrantyManagement from "./pages/dashboard/WarrantyManagement";
+import WarrantyRequest from "./pages/AccountManage/WarrantyRequest";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +69,7 @@ const App = () => {
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>
                 <Route index element={<Overview />} />
+                <Route path="orders" element={<OrderManagement />} />
                 <Route path="products" element={<ProductManagement />} />
                 <Route path="categories" element={<CategoryManagement />} />
                 <Route
@@ -77,14 +83,13 @@ const App = () => {
                 <Route path="blog" element={<BlogManagement />} />
                 <Route path="blog/create" element={<BlogPostForm />} />
                 <Route path="blog/edit/:id" element={<BlogPostForm />} />
+
                 <Route
                   path="blog/categories"
                   element={<BlogCategoryManagement />}
                 />
-                <Route
-                  path="users"
-                  element={<UsersManagement />}
-                />
+                <Route path="users" element={<UsersManagement />} />
+                <Route path="warranty" element={<WarrantyManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["staff-sale"]} />}>
@@ -107,10 +112,9 @@ const App = () => {
                   path="blog/categories"
                   element={<BlogCategoryManagement />}
                 />
-                <Route
-                  path="users"
-                  element={<UsersManagement />}
-                />
+                <Route path="users" element={<UsersManagement />} />
+
+                <Route path="warranty" element={<WarrantyManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["user"]} />}>
@@ -122,6 +126,7 @@ const App = () => {
                 element={<AddEditAddress />}
               />
               <Route path="/account/order" element={<OrderHistory />} />
+              <Route path="/account/warranty" element={<WarrantyRequest />} />
               <Route path="/account/security" element={<SecurityMain />} />
               <Route
                 path="/account/security/password"

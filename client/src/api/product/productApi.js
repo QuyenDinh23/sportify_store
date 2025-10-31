@@ -73,3 +73,43 @@ export const toggleProductStatusApi = async (id) => {
     throw err.response?.data || err;
   }
 };
+
+export const getSportsShoes = async (limit = "all") => {
+  try {
+    const res = await axiosInstance.get("/products/sports-shoes", {
+      params: { limit },
+    });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+
+// Lấy danh sách sản phẩm đang giảm giá
+export const getDiscountedProducts = async (limit = "all") => {
+  try {
+    const res = await axiosInstance.get("/products/discounted", {
+      params: { limit },
+    });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+
+// Lấy danh sách sản phẩm theo sport
+export const getProductsBySport = async (sportId, limit = "all") => {
+  try {
+    const res = await axiosInstance.get("/products/by-sport", {
+      params: { sportId, limit },
+    });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+
+export const getRelatedProducts = async (productId) => {
+  const response = await axiosInstance.get(`/products/${productId}/related`);
+  return response.data;
+};

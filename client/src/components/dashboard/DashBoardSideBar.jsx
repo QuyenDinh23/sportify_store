@@ -11,6 +11,8 @@ import {
   Newspaper,
   User,
   Users,
+  ShoppingCart,
+  Shield,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -30,6 +32,7 @@ import { authApi } from "../../services/authApi";
 
 const menuItems = [
   { title: "Tổng quan", url: "/dashboard", icon: BarChart3 },
+  { title: "Quản lý đơn hàng", url: "/dashboard/orders", icon: ShoppingCart },
   { title: "Quản lý sản phẩm", url: "/dashboard/products", icon: Package },
   { title: "Quản lý danh mục", url: "/dashboard/categories", icon: Grid3X3 },
   {
@@ -41,7 +44,10 @@ const menuItems = [
   { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
   { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Ticket },
   { title: "Quản lý blog", url: "/dashboard/blog", icon: Newspaper },
+
   { title: "Quản lý người dùng", url: "/dashboard/users", icon: Users },
+
+  { title: "Quản lý bảo hành", url: "/dashboard/warranty", icon: Shield },
 ];
 
 export function DashboardSidebar() {
@@ -65,7 +71,7 @@ export function DashboardSidebar() {
         {/* Logo */}
         <div className="p-4 border-b">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-hero rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">S</span>
             </div>
             {!isCollapsed && (

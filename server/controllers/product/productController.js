@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Product from "../../models/product/Product.js";
+import Subcategory from "../../models/category/SubCategory.js"
 
 export const createProduct = async (req, res) => {
   try {
@@ -290,5 +291,155 @@ export const toggleProductStatus = async (req, res) => {
   } catch (error) {
     console.error("Lỗi khi toggle trạng thái sản phẩm:", error);
     res.status(500).json({ message: "Server error khi cập nhật trạng thái sản phẩm" });
+  }
+};
+
+// Lấy sản phẩm có subcategory chứa "Giày thể thao" (limit tuỳ chọn)
+export const getSportsShoes = async (req, res) => {
+  try {
+    const { limit } = req.query;
+
+    const subcategories = await Subcategory.find({
+      name: { $regex: "Giày thể thao", $options: "i" }
+    }).select("_id");
+
+    if (!subcategories.length) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy danh mục có tên chứa 'Giày thể thao'" });
+    }
+
+    const subcategoryIds = subcategories.map((s) => s._id);
+
+    const query = {
+      subcategory: { $in: subcategoryIds },
+      status: "active",
+    };
+
+    let productsQuery = Product.find(query)
+      .populate("category", "name")
+      .populate("subcategory", "name")
+      .populate("brand", "name logo")
+      .populate("sport", "name")
+      .sort({ createdAt: -1 });
+
+    if (limit && limit !== "all") {
+      const parsedLimit = parseInt(limit);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        productsQuery = productsQuery.limit(parsedLimit);
+      }
+    }
+
+    const products = await productsQuery.exec();
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm Giày thể thao:", error);
+    res.status(500).json({ message: "Server error khi lấy sản phẩm Giày thể thao" });
+  }
+};
+
+// Lấy danh sách sản phẩm đang giảm giá
+export const getDiscountedProducts = async (req, res) => {
+  try {
+    const { limit } = req.query;
+
+    // Chỉ lấy sản phẩm có discountPercentage > 0 hoặc isOnSale = true
+    const query = {
+      status: "active",
+      $or: [
+        { discountPercentage: { $gt: 0 } },
+        { isOnSale: true }
+      ]
+    };
+
+    let productsQuery = Product.find(query)
+      .populate("category", "name")
+      .populate("subcategory", "name")
+      .populate("brand", "name logo")
+      .populate("sport", "name")
+      .sort({ discountPercentage: -1, createdAt: -1 }); // ưu tiên giảm giá cao nhất
+
+    // Giới hạn số lượng (nếu có)
+    if (limit && limit !== "all") {
+      const parsedLimit = parseInt(limit);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        productsQuery = productsQuery.limit(parsedLimit);
+      }
+    }
+
+    const products = await productsQuery.exec();
+
+    if (!products.length) {
+      return res.status(404).json({ message: "Không có sản phẩm giảm giá" });
+    }
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm giảm giá:", error);
+    res.status(500).json({ message: "Server error khi lấy sản phẩm giảm giá" });
+  }
+};
+
+// Lấy sản phẩm theo sport
+export const getProductsBySport = async (req, res) => {
+  try {
+    const { sportId, limit } = req.query;
+
+    if (!sportId) {
+      return res.status(400).json({ message: "Thiếu sportId" });
+    }
+
+    // Query sản phẩm có sport tương ứng và đang active
+    let query = { sport: sportId, status: "active" };
+
+    let productsQuery = Product.find(query)
+      .populate("category subcategory brand sport")
+      .sort({ createdAt: -1 });
+
+    // Nếu có limit thì giới hạn số lượng
+    if (limit && limit !== "all") {
+      productsQuery = productsQuery.limit(Number(limit));
+    }
+
+    const products = await productsQuery;
+
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Lỗi khi lấy sản phẩm theo sport:", error);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+// Lấy 5 sản phẩm liên quan ngẫu nhiên theo sport hoặc category
+export const getRelatedProducts = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Tìm sản phẩm gốc
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+    }
+
+    // Tìm các sản phẩm liên quan (cùng sport hoặc category), loại trừ chính nó
+    const query = {
+      _id: { $ne: id },
+      $or: [
+        { sport: product.sport },
+        { category: product.category }
+      ]
+    };
+
+    // Lấy ngẫu nhiên 5 sản phẩm
+    const relatedProducts = await Product.aggregate([
+      { $match: query },
+      { $sample: { size: 5 } } // chọn ngẫu nhiên 5 sản phẩm
+    ]);
+
+    res.status(200).json(relatedProducts);
+  } catch (error) {
+    console.error("Error fetching related products:", error);
+    res.status(500).json({ message: "Lỗi server khi lấy sản phẩm liên quan" });
   }
 };
