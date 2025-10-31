@@ -2,15 +2,11 @@ import bcrypt from "bcrypt";
 import User from "../../models/user/User.js";
 import jwt from "jsonwebtoken";
 import RefreshToken from "../../models/token/RefreshToken.js";
+import userController from "../user/userController.js";
 const authController = {
   //REGISTER
   registerUser: async (req, res) => {
     try {
-      const findUser = await User.findOne({ email: req.body.email });
-      if (findUser) {
-        return res.status(400).json("Email đã được đăng ký");
-      }
-
       const salt = await bcrypt.genSalt(10);
       const hashed = await bcrypt.hash(req.body.password, salt);
       //create new user
@@ -50,7 +46,9 @@ const authController = {
     try {
       const user = await User.findOne({ email: req.body.email });
       if (!user) return res.status(404).send("Không tìm thấy người dùng");
-
+      if (user.status === "banned") {
+        return res.status(404).send("Tài khoản của bạn đã bị cấm");
+      }
       const isMatch = await bcrypt.compare(req.body.password, user.password);
       if (!isMatch) return res.status(404).send("Sai mật khẩu");
       const accessToken = authController.generateAccessToken(user);
@@ -75,6 +73,9 @@ const authController = {
     try {
       const user = await User.findOne({ fbId: req.body.fbId });
       if (user) {
+        if (user.status === "banned") {
+          return res.status(404).send("Tài khoản của bạn đã bị cấm");
+        }
         const accessToken = authController.generateAccessToken(user);
         const refreshToken = authController.generateRefreshToken(user);
         await RefreshToken.create({
@@ -90,7 +91,11 @@ const authController = {
         res.status(200).json({ accessToken });
       } else {
         if (!req.body.email) {
-          return res.status(400).json({ message: "Email is required", name: req.body.name, fbId: req.body.fbId });// name and fbId to prefill in client
+          return res.status(400).json({
+            message: "Email is required",
+            name: req.body.name,
+            fbId: req.body.fbId,
+          }); // name and fbId to prefill in client
         }
         if (req.body.email) {
           const emailExists = await User.findOne({ email: req.body.email });

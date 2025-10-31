@@ -9,6 +9,8 @@ import {
   LogOut,
   Ticket,
   Newspaper,
+  User,
+  Users,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -39,6 +41,7 @@ const menuItems = [
   { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
   { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Ticket },
   { title: "Quản lý blog", url: "/dashboard/blog", icon: Newspaper },
+  { title: "Quản lý người dùng", url: "/dashboard/users", icon: Users },
 ];
 
 export function DashboardSidebar() {
@@ -110,6 +113,17 @@ export function DashboardSidebar() {
               <NavLink to="/">
                 <Home className="h-4 w-4" />
                 {!isCollapsed && <span className="ml-2">Về trang chủ</span>}
+              </NavLink>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start"
+              asChild
+            >
+              <NavLink to="/dashboard/account">
+                <User className="h-4 w-4" />
+                {!isCollapsed && <span className="ml-2">Tài khoản</span>}
               </NavLink>
             </Button>
             <Button variant="ghost" size="sm" className="w-full justify-start">
