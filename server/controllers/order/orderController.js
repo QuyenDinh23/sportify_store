@@ -771,6 +771,13 @@ export const vnpayIPN = async (req, res) => {
   }
 };
 
+// Helper function để tạo frontend URL đúng định dạng (tránh double slash)
+const getFrontendUrl = (path) => {
+  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, ''); // Xóa dấu / cuối nếu có
+  const cleanPath = path.startsWith('/') ? path : `/${path}`; // Đảm bảo path bắt đầu bằng /
+  return `${baseUrl}${cleanPath}`;
+};
+
 // Xử lý Return URL từ VNPay
 // Đây là nơi browser redirect về sau khi thanh toán (Browser redirect)
 // Chỉ kiểm tra và hiển thị kết quả, KHÔNG cập nhật database
@@ -783,7 +790,7 @@ export const vnpayReturn = async (req, res) => {
     
     if (!isValidSignature) {
       console.error("VNPay Return: Invalid signature");
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/vnpay-failure?error=invalid_signature`);
+      return res.redirect(getFrontendUrl('/payment/vnpay-failure?error=invalid_signature'));
     }
 
     const orderNumber = vnp_Params['vnp_TxnRef'];
@@ -795,22 +802,22 @@ export const vnpayReturn = async (req, res) => {
     
     if (!order) {
       console.error("VNPay Return: Order not found:", orderNumber);
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/vnpay-failure?error=order_not_found`);
+      return res.redirect(getFrontendUrl('/payment/vnpay-failure?error=order_not_found'));
     }
 
     // Kiểm tra kết quả thanh toán
     if (responseCode === '00' && transactionStatus === '00') {
       // Thanh toán thành công
       console.log(`VNPay Return: Payment successful for order ${orderNumber}`);
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/order-detail/${order._id}?payment=success`);
+      return res.redirect(getFrontendUrl(`/order-detail/${order._id}?payment=success`));
     } else {
       // Thanh toán thất bại
       console.log(`VNPay Return: Payment failed for order ${orderNumber}. ResponseCode: ${responseCode}`);
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/order-detail/${order._id}?payment=failed&error=${responseCode}`);
+      return res.redirect(getFrontendUrl(`/order-detail/${order._id}?payment=failed&error=${responseCode}`));
     }
 
   } catch (error) {
     console.error("VNPay Return error:", error);
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment/vnpay-failure?error=system_error`);
+    return res.redirect(getFrontendUrl('/payment/vnpay-failure?error=system_error'));
   }
 };
