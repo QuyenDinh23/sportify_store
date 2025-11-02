@@ -9,6 +9,8 @@ import {
   LogOut,
   Ticket,
   Newspaper,
+  User,
+  Users,
   ShoppingCart,
   Shield,
 } from "lucide-react";
@@ -42,6 +44,9 @@ const menuItems = [
   { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
   { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Ticket },
   { title: "Quản lý blog", url: "/dashboard/blog", icon: Newspaper },
+
+  { title: "Quản lý người dùng", url: "/dashboard/users", icon: Users },
+
   { title: "Quản lý bảo hành", url: "/dashboard/warranty", icon: Shield },
 ];
 
@@ -66,7 +71,7 @@ export function DashboardSidebar() {
         {/* Logo */}
         <div className="p-4 border-b">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-hero rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">S</span>
             </div>
             {!isCollapsed && (
@@ -114,6 +119,17 @@ export function DashboardSidebar() {
               <NavLink to="/">
                 <Home className="h-4 w-4" />
                 {!isCollapsed && <span className="ml-2">Về trang chủ</span>}
+              </NavLink>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start"
+              asChild
+            >
+              <NavLink to="/dashboard/account">
+                <User className="h-4 w-4" />
+                {!isCollapsed && <span className="ml-2">Tài khoản</span>}
               </NavLink>
             </Button>
             <Button variant="ghost" size="sm" className="w-full justify-start">

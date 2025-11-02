@@ -16,7 +16,7 @@ const Index = () => {
         <HeroCarousel />
         <BestSelling />
         <CategoryGrid />
-        <ProductGrid />
+        {/* <ProductGrid /> */}
         <HomeBlogSection />
       </main>
       <Footer />

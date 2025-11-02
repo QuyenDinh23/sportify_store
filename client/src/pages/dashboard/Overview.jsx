@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+
+
 import { Package, Grid3X3, Award, Trophy, ShoppingCart, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { dashboardStats } from '../../data/dashboardData';

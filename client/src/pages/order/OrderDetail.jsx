@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { 
-  ArrowLeft, 
-  Package, 
-  Truck, 
-  CheckCircle, 
-  Clock, 
-  MapPin, 
+import {
+  ArrowLeft,
+  Package,
+  Truck,
+  CheckCircle,
+  Clock,
+  MapPin,
   CreditCard,
   Phone,
   Mail,
@@ -87,12 +87,12 @@ const OrderDetail = () => {
   const handleSubmitWarranty = async (warrantyData) => {
     try {
       await createWarrantyRequest(warrantyData);
-      
+
       toast({
         title: "Thành công",
         description: "Gửi yêu cầu bảo hành thành công",
       });
-      
+
       setIsWarrantyDialogOpen(false);
       setSelectedProduct(null);
     } catch (error) {
@@ -145,7 +145,7 @@ const OrderDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -184,7 +184,7 @@ const OrderDetail = () => {
                     Đặt lúc: {formatDate(order.createdAt)}
                   </span>
                 </div>
-                
+
                 {order.trackingNumber && (
                   <div className="p-3 bg-muted rounded-lg">
                     <p className="text-sm font-medium">Mã vận đơn: {order.trackingNumber}</p>
@@ -200,49 +200,7 @@ const OrderDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {/* {order.items.map((item, index) => (
-                    <div key={index} className="flex gap-4 p-4 border rounded-lg">
-                      <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                            <span>No image</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {item.selectedColor} - {item.selectedSize}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Số lượng: {item.quantity}
-                        </p>
-                        {order.status === 'delivered' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => handleOpenWarrantyDialog(item)}
-                          >
-                            <Shield className="h-4 w-4 mr-2" />
-                            Yêu cầu bảo hành
-                          </Button>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">
-                          {item.price.toLocaleString("vi-VN")}đ
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Tổng: {(item.price * item.quantity).toLocaleString("vi-VN")}đ
-                        </p> */}
-                  {order.items.map((item, index) => {
+                  {/* {order.items.map((item, index) => {
                     // Debug: log the item structure
                     console.log('OrderDetail Item:', item);
                     
@@ -262,6 +220,72 @@ const OrderDetail = () => {
                     
                     // Get product name
                     const productName = item.name 
+                      || (item.productId && typeof item.productId === 'object' ? item.productId.name : null)
+                      || 'Sản phẩm không tồn tại';
+
+                    return (
+                      <div key={index} className="flex gap-4 p-4 border rounded-lg">
+                        <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+                          {productImage ? (
+                            <img
+                              src={productImage}
+                              alt={productName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                              <Package className="h-6 w-6" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium">{productName}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {item.selectedColor} - {item.selectedSize}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Số lượng: {item.quantity}
+                          </p>
+                          {order.status === 'delivered' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={() => handleOpenWarrantyDialog(item)}
+                          >
+                            <Shield className="h-4 w-4 mr-2" />
+                            Yêu cầu bảo hành
+                          </Button>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">
+                          {item.price.toLocaleString("vi-VN")}đ
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Tổng: {(item.price * item.quantity).toLocaleString("vi-VN")}đ
+                        </p> */}
+
+                  {order.items.map((item, index) => {
+                    // Debug: log the item structure
+                    console.log('OrderDetail Item:', item);
+
+                    // Get image from multiple possible sources
+                    let productImage = null;
+
+                    // Try different paths to get the image
+                    if (item.image) {
+                      productImage = item.image;
+                    } else if (item.productId) {
+                      // If productId is populated (object)
+                      if (typeof item.productId === 'object' && item.productId.images) {
+                        productImage = item.productId.images[0];
+                      }
+                      // If productId is just an ID string, we can't access images
+                    }
+
+                    // Get product name
+                    const productName = item.name
                       || (item.productId && typeof item.productId === 'object' ? item.productId.name : null)
                       || 'Sản phẩm không tồn tại';
 
@@ -398,8 +422,8 @@ const OrderDetail = () => {
                 </div>
 
                 {order.status === 'pending' && (
-                  <Button 
-                    variant="destructive" 
+                  <Button
+                    variant="destructive"
                     className="w-full"
                     onClick={() => {
                       // TODO: Implement cancel order
@@ -428,7 +452,7 @@ const OrderDetail = () => {
           order={order}
         />
       )}
-      
+
       <Footer />
     </div>
   );

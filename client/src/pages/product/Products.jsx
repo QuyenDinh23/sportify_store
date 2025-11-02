@@ -4,15 +4,15 @@ import { Button } from "../../components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
 import FilterSidebar from "../../components/product/FilterSidebar";
 import ProductCard from "../../components/product/ProductCard";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { getProductsByFilter } from "../../api/product/productApi";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { MainNavigation } from "../../components/MainNavigation";
 import Pagination from '../../components/pagination/Pagination';
 
-
 const Products = () => {
+  const location = useLocation();
   const [filters, setFilters] = useState({
     brands: [],
     colors: [],
@@ -32,18 +32,23 @@ const Products = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await getProductsByFilter({
-          category: categoryId || "all",
-          subcategory: subcategoryId || "all",
-        });
-        setAllProducts(res.products); // lưu sản phẩm gốc
-        setProducts(res.products);    // hiển thị ban đầu
+        if (location.state?.products) {
+          setAllProducts(location.state.products);
+          setProducts(location.state.products);
+        } else {
+          const res = await getProductsByFilter({
+            category: categoryId || "all",
+            subcategory: subcategoryId || "all",
+          });
+          setAllProducts(res.products);
+          setProducts(res.products);
+        }
       } catch (err) {
         console.error(err);
       }
     };
     fetchProducts();
-  }, [categoryId, subcategoryId]);
+  }, [location.state, categoryId, subcategoryId]);
 
   useEffect(() => {
     const filtered = allProducts.filter((p) => {
@@ -53,7 +58,7 @@ const Products = () => {
       const sizeMatch = filters.sizes.length === 0 || p.colors?.some((c) => c.sizes?.some((s) => filters.sizes.includes(s.size)));
       return brandMatch && sportMatch && colorMatch && sizeMatch;
     });
-    
+
     setTotalPages(Math.ceil(filtered.length / itemsPerPage));
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -65,58 +70,58 @@ const Products = () => {
   };
   return (
     <div className="min-h-screen bg-background">
-        <Header title="Sản phẩm" />
-        <MainNavigation />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex gap-8">
-            {/* Desktop Filter Sidebar */}
-            <aside className="hidden lg:block w-64 flex-shrink-0">
-                <div className="sticky top-24">
-                <FilterSidebar
-                  onFilterChange={setFilters}
-                  products={allProducts} />
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <div className="flex-1">
-                {/* Mobile Filter Button */}
-                <div className="lg:hidden mb-6">
-                <Sheet>
-                    <SheetTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                        <SlidersHorizontal className="h-4 w-4 mr-2" />
-                        Bộ lọc
-                    </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="w-80 overflow-y-auto">
-                    <FilterSidebar onFilterChange={setFilters} className="border-none" />
-                    </SheetContent>
-                </Sheet>
-                </div>
-
-                {/* Products Grid */}
-                {products.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {products.map((product) => (
-                    <ProductCard key={product._id} product={product} />
-                    ))}
-                </div>
-                ) : (
-                <div className="text-center py-16">
-                    <p className="text-muted-foreground text-lg">
-                    Không tìm thấy sản phẩm phù hợp với bộ lọc của bạn
-                    </p>
-                </div>
-                )}
+      <Header title="Sản phẩm" />
+      <MainNavigation />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex gap-8">
+          {/* Desktop Filter Sidebar */}
+          <aside className="hidden lg:block w-64 flex-shrink-0">
+            <div className="sticky top-24">
+              <FilterSidebar
+                onFilterChange={setFilters}
+                products={allProducts} />
             </div>
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Mobile Filter Button */}
+            <div className="lg:hidden mb-6">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    Bộ lọc
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80 overflow-y-auto">
+                  <FilterSidebar onFilterChange={setFilters} className="border-none" />
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Products Grid */}
+            {products.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.map((product) => (
+                  <ProductCard key={product._id} product={product} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground text-lg">
+                  Không tìm thấy sản phẩm phù hợp với bộ lọc của bạn
+                </p>
+              </div>
+            )}
           </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </div>
       <Footer />
     </div>
   );
