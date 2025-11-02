@@ -821,3 +821,145 @@ export const vnpayReturn = async (req, res) => {
     return res.redirect(getFrontendUrl('/payment/vnpay-failure?error=system_error'));
   }
 };
+
+// Lấy thống kê tổng đơn hàng và doanh thu (Admin)
+export const getOrderStatistics = async (req, res) => {
+  try {
+    // Tính tổng số đơn hàng (tất cả trạng thái)
+    const totalOrders = await Order.countDocuments();
+
+    // Tính tổng doanh thu từ các đơn đã thành công
+    // Chỉ tính các đơn: confirmed, processing, shipped, delivered
+    const completedOrders = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['confirmed', 'processing', 'shipped', 'delivered'] }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$totalAmount' }
+        }
+      }
+    ]);
+
+    // Lấy tổng doanh thu (nếu có đơn thành công)
+    const totalRevenue = completedOrders.length > 0 ? completedOrders[0].totalRevenue : 0;
+
+    // Tính số đơn hàng đã thành công
+    const completedOrdersCount = await Order.countDocuments({
+      status: { $in: ['confirmed', 'processing', 'shipped', 'delivered'] }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalOrders,
+        completedOrders: completedOrdersCount,
+        totalRevenue
+      }
+    });
+  } catch (error) {
+    console.error("Get order statistics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy thống kê đơn hàng",
+      error: error.message
+    });
+  }
+};
+
+// Lấy doanh thu theo tháng (Admin)
+export const getRevenueByMonth = async (req, res) => {
+  try {
+    // Lấy doanh thu của 6 tháng gần nhất
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    sixMonthsAgo.setDate(1); // Đặt về đầu tháng
+
+    const revenueData = await Order.aggregate([
+      {
+        $match: {
+          status: { $in: ['confirmed', 'processing', 'shipped', 'delivered'] },
+          createdAt: { $gte: sixMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          revenue: { $sum: '$totalAmount' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1 }
+      }
+    ]);
+
+    // Format dữ liệu để trả về
+    const formattedData = revenueData.map(item => ({
+      month: `${item._id.month}/${item._id.year}`,
+      revenue: item.revenue,
+      orders: item.orderCount
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedData
+    });
+  } catch (error) {
+    console.error("Get revenue by month error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy doanh thu theo tháng",
+      error: error.message
+    });
+  }
+};
+
+// Lấy đơn hàng theo trạng thái (Admin)
+export const getOrdersByStatus = async (req, res) => {
+  try {
+    const statusData = await Order.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Map tên trạng thái sang tiếng Việt
+    const statusNames = {
+      'pending': 'Chờ xử lý',
+      'confirmed': 'Đã xác nhận',
+      'processing': 'Đang xử lý',
+      'shipped': 'Đã giao hàng',
+      'delivered': 'Đã nhận hàng',
+      'cancelled': 'Đã hủy',
+      'returned': 'Đã trả hàng'
+    };
+
+    const formattedData = statusData.map(item => ({
+      status: item._id,
+      label: statusNames[item._id] || item._id,
+      count: item.count
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedData
+    });
+  } catch (error) {
+    console.error("Get orders by status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy đơn hàng theo trạng thái",
+      error: error.message
+    });
+  }
+};

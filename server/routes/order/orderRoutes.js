@@ -6,6 +6,9 @@ import {
   cancelOrder,
   getAllOrders,
   updateOrderStatus,
+  getOrderStatistics,
+  getRevenueByMonth,
+  getOrdersByStatus,
   vnpayIPN,
   vnpayReturn
 } from "../../controllers/order/orderController.js";
@@ -21,6 +24,15 @@ router.get("/", middlewareController.verifyToken, getUserOrders);
 
 // Lấy tất cả đơn hàng (Admin only - no userId filter)
 router.get("/admin/all", middlewareController.verifyToken, getAllOrders);
+
+// Lấy thống kê đơn hàng và doanh thu (Admin)
+router.get("/admin/statistics", middlewareController.verifyToken, getOrderStatistics);
+
+// Lấy doanh thu theo tháng (Admin)
+router.get("/admin/revenue-by-month", middlewareController.verifyToken, getRevenueByMonth);
+
+// Lấy đơn hàng theo trạng thái (Admin)
+router.get("/admin/orders-by-status", middlewareController.verifyToken, getOrdersByStatus);
 
 // Lấy chi tiết đơn hàng (cần authentication)
 router.get("/:orderId", middlewareController.verifyToken, getOrderDetail);
