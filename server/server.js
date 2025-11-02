@@ -27,9 +27,55 @@ import warrantyRoutes from "./routes/warranty/warrantyRoutes.js";
 
 //create server
 const server = express();
+// Cấu hình CORS - cho phép cả localhost, local IP và ngrok
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  // Cho phép tất cả các ngrok URLs
+  /^https:\/\/.*\.ngrok-free\.dev$/,
+  /^https:\/\/.*\.ngrok\.io$/,
+  // Cho phép local IP addresses (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+  /^http:\/\/192\.168\.\d+\.\d+:5173$/,
+  /^http:\/\/10\.\d+\.\d+\.\d+:5173$/,
+  /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+:5173$/,
+  // Có thể thêm origin từ environment variable
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])
+];
+
 server.use(
   cors({
-    origin: "http://localhost:5173", // địa chỉ frontend
+    origin: function (origin, callback) {
+      // Cho phép requests không có origin (như mobile apps hoặc Postman)
+      if (!origin) {
+        console.log('CORS: Request without origin, allowing');
+        return callback(null, true);
+      }
+      
+      console.log(`CORS: Checking origin: ${origin}`);
+      
+      // Kiểm tra xem origin có trong danh sách allowed không
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        if (typeof allowedOrigin === 'string') {
+          const matches = origin === allowedOrigin;
+          if (matches) console.log(`CORS: Matched string origin: ${allowedOrigin}`);
+          return matches;
+        } else if (allowedOrigin instanceof RegExp) {
+          const matches = allowedOrigin.test(origin);
+          if (matches) console.log(`CORS: Matched regex: ${allowedOrigin.toString()}`);
+          return matches;
+        }
+        return false;
+      });
+      
+      if (isAllowed) {
+        console.log(`CORS: Allowing origin: ${origin}`);
+        callback(null, true);
+      } else {
+        console.log(`CORS: Blocked origin: ${origin}`);
+        console.log(`CORS: Allowed origins:`, allowedOrigins);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true, // cho phép gửi cookie/token nếu cần
   })
 );

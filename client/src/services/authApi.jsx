@@ -98,8 +98,15 @@ export const authApi = {
       store.dispatch(setCredentials(res.data)); // lưu user + token (nếu cần)
       return res.data;
     } catch (err) {
-      console.error("AuthMe failed:", err.response.data);
-      throw err.response.data.error;
+      // 401 là bình thường khi user chưa login - không cần log error
+      if (err.response?.status === 401) {
+        // User chưa đăng nhập - đây là expected behavior
+        // Không log error để tránh noise trong console
+        throw err.response.data?.error || new Error("Unauthorized");
+      }
+      // Chỉ log error khi là lỗi thực sự (không phải 401)
+      console.error("AuthMe failed:", err.response?.data || err.message);
+      throw err.response?.data?.error || err.message;
     }
   },
 

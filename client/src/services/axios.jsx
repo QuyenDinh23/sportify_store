@@ -22,11 +22,44 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor cho response: handle 401
+// Interceptor cho response: handle 401/403
 api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const originalRequest = err.config;
+    
+    // Handle 401 (Unauthorized) - token expired hoặc không có token
+    if (err.response?.status === 401 && !originalRequest._retry) {
+      // Không retry cho auth-me endpoint (tránh loop)
+      if (originalRequest.url?.includes('/auth/auth-me')) {
+        return Promise.reject(err);
+      }
+      
+      originalRequest._retry = true;
+
+      try {
+        // gọi API refresh
+        const res = await axios.post(
+          `${apiUrl}/auth/refresh-token`,
+          {},
+          { withCredentials: true }
+        );
+        const newAccessToken = res.data.accessToken || res.data;
+
+        // update Redux
+        store.dispatch(setToken({ accessToken: newAccessToken }));
+
+        // gắn lại token và retry request
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
+      } catch (refreshErr) {
+        // Refresh token thất bại - logout user
+        store.dispatch(logout());
+        return Promise.reject(refreshErr);
+      }
+    }
+    
+    // Handle 403 (Forbidden)
     if (err.response?.status === 403 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -37,10 +70,10 @@ api.interceptors.response.use(
           {},
           { withCredentials: true }
         );
-        const newAccessToken = await res.data;
+        const newAccessToken = res.data.accessToken || res.data;
 
         // update Redux
-        store.dispatch(setToken(newAccessToken));
+        store.dispatch(setToken({ accessToken: newAccessToken }));
 
         // gắn lại token và retry request
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
@@ -50,6 +83,7 @@ api.interceptors.response.use(
         return Promise.reject(refreshErr);
       }
     }
+    
     return Promise.reject(err);
   }
 );
