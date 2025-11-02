@@ -92,36 +92,39 @@ const Login = () => {
     e.preventDefault();
     // Validation đơn giản
     let hasError = false;
-
+    debugger;
     if (!fullName.trim()) {
       setErrorName(true);
       hasError = true;
     } else {
       setErrorName(false);
     }
-
+    var messss = ""
     if (!emailRegister.trim() || !emailRegex.test(emailRegister)) {
       setErrorEmailRegister(true);
       hasError = true;
+      messss = "invalid email";
     } else {
       setErrorEmailRegister(false);
     }
     if (!passwordRegister.trim() || !passwordRegex.test(passwordRegister)) {
       setErrorPasswordRegister(true);
       hasError = true;
+      messss = "invalid password";
     } else {
       setErrorPasswordRegister(false);
     }
     if (passwordRegister !== confirmPassword) {
       setErrorConfirmPassword(true);
       hasError = true;
+      messss = "passwords do not match";
     } else {
       setErrorConfirmPassword(false);
     }
 
     if (hasError) {
       toast({
-        title: "Đăng ký thất bại",
+        title: "Đăng ký thất bại " + messss,
         description: "Thông tin không hợp lệ, vui lòng kiểm tra lại!",
         variant: "destructive",
       });
