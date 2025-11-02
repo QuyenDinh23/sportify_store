@@ -5,7 +5,9 @@ import {
   getOrderDetail, 
   cancelOrder,
   getAllOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  vnpayIPN,
+  vnpayReturn
 } from "../../controllers/order/orderController.js";
 import middlewareController from "../../middlewares/middlewareController.js";
 
@@ -28,5 +30,15 @@ router.put("/:orderId/status", middlewareController.verifyToken, updateOrderStat
 
 // Hủy đơn hàng (cần authentication)
 router.put("/:orderId/cancel", middlewareController.verifyToken, cancelOrder);
+
+// VNPay IPN URL - Server-to-server (không cần authentication)
+// VNPay sẽ gọi URL này để thông báo kết quả thanh toán
+// Phải trả về JSON với RspCode và Message
+router.get("/payment/vnpay-ipn", vnpayIPN);
+
+// VNPay Return URL - Browser redirect (không cần authentication)
+// Browser redirect về URL này sau khi thanh toán
+// Chỉ để hiển thị kết quả, không cập nhật database
+router.get("/payment/vnpay-return", vnpayReturn);
 
 export default router;

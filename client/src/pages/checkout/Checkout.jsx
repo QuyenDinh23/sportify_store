@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, CreditCard, Truck, MapPin, User, Phone, Mail } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -14,15 +14,24 @@ import { MainNavigation } from '../../components/MainNavigation';
 import Footer from '../../components/Footer';
 import AddressSelector from '../../components/AddressSelector';
 import { createOrder } from "../../api/order/orderApi";
-import { clearCart } from "../../store/cartSlice";
+import { clearCart, fetchCart } from "../../store/cartSlice";
 import { addressApi } from "../../services/addressApi";
 import { getAvailableVouchers } from "../../api/voucher/voucherApi";
 
 const Checkout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
-  const { items, totalQuantity, totalPrice } = useSelector((state) => state.cart);
+  const { items: allCartItems, totalQuantity, totalPrice } = useSelector((state) => state.cart);
   const { user } = useSelector((state) => state.auth);
+  
+  // Lấy danh sách sản phẩm được chọn từ location state
+  const selectedItemIds = location.state?.selectedItemIds || [];
+  
+  // Filter chỉ lấy những sản phẩm được chọn
+  const items = selectedItemIds.length > 0 
+    ? allCartItems.filter(item => selectedItemIds.includes(item._id))
+    : allCartItems;
 
   const [loading, setLoading] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
@@ -55,20 +64,34 @@ const Checkout = () => {
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
 
+  // Tính toán lại tổng tiền dựa trên items được chọn
+  const selectedItemsTotal = items.reduce((total, item) => {
+    return total + (item.priceAtAdd * item.quantity);
+  }, 0);
+  
+  const selectedItemsQuantity = items.reduce((total, item) => {
+    return total + item.quantity;
+  }, 0);
+  
   // Tính phí ship
-  const shippingFee = totalPrice >= 500000 ? 0 : 30000;
-  const finalTotal = totalPrice + shippingFee - voucherDiscount;
+  const shippingFee = selectedItemsTotal >= 500000 ? 0 : 30000;
+  const finalTotal = selectedItemsTotal + shippingFee - voucherDiscount;
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
-    if (items.length === 0) {
+    if (allCartItems.length === 0) {
       navigate('/cart');
       return;
     }
-  }, [user, items, navigate]);
+    // Nếu không có selectedItemIds và có items trong cart, nên quay về cart để chọn
+    if (selectedItemIds.length === 0 && allCartItems.length > 0) {
+      navigate('/cart');
+      return;
+    }
+  }, [user, allCartItems, selectedItemIds, navigate]);
 
   // Load saved addresses
   useEffect(() => {
@@ -160,7 +183,7 @@ const Checkout = () => {
   // Xử lý chọn voucher
   const handleVoucherSelect = (voucher) => {
     setSelectedVoucher(voucher);
-    const discount = calculateVoucherDiscount(voucher, totalPrice);
+    const discount = calculateVoucherDiscount(voucher, selectedItemsTotal);
     setVoucherDiscount(discount);
   };
 
@@ -179,13 +202,28 @@ const Checkout = () => {
         shippingAddress,
         paymentMethod,
         notes,
-        voucherCode: selectedVoucher?.code || null
+        voucherCode: selectedVoucher?.code || null,
+        selectedItemIds: selectedItemIds.length > 0 ? selectedItemIds : items.map(item => item._id)
       };
 
       const response = await createOrder(orderData);
       
-      // Clear cart after successful order
-      dispatch(clearCart());
+      // Nếu là VNPay, redirect đến payment URL
+      if (paymentMethod === 'vnpay') {
+        // Backend sẽ trả về paymentUrl trong response
+        if (response.data?.paymentUrl) {
+          window.location.href = response.data.paymentUrl;
+          return;
+        } else {
+          toast.error('Không thể tạo link thanh toán VNPay');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Refresh cart after successful order (backend đã xóa các items được chọn)
+      // Nếu tất cả items đã được đặt, cart sẽ trống
+      await dispatch(fetchCart()).unwrap();
       
       toast.success('Đặt hàng thành công!');
       navigate(`/order-detail/${response.data._id}`);
@@ -514,6 +552,27 @@ const Checkout = () => {
                       <p className="text-sm text-muted-foreground">Chuyển khoản trước khi giao hàng</p>
                     </div>
                   </div>
+                  
+                  <div 
+                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                      paymentMethod === 'vnpay' ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
+                    onClick={() => setPaymentMethod('vnpay')}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="vnpay"
+                      checked={paymentMethod === 'vnpay'}
+                      onChange={() => setPaymentMethod('vnpay')}
+                      className="text-primary"
+                    />
+                    <CreditCard className="h-5 w-5" />
+                    <div>
+                      <p className="font-medium">Thanh toán qua VNPay</p>
+                      <p className="text-sm text-muted-foreground">Thanh toán online qua cổng VNPay</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -568,8 +627,8 @@ const Checkout = () => {
                 {/* Price Breakdown */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Tạm tính ({totalQuantity} sản phẩm)</span>
-                    <span>{totalPrice.toLocaleString("vi-VN")}đ</span>
+                    <span>Tạm tính ({selectedItemsQuantity} sản phẩm)</span>
+                    <span>{selectedItemsTotal.toLocaleString("vi-VN")}đ</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Phí vận chuyển</span>
@@ -614,8 +673,8 @@ const Checkout = () => {
                         {availableVouchers.length > 0 ? (
                           <div className="space-y-2 max-h-32 overflow-y-auto">
                             {availableVouchers.map((voucher) => {
-                              const discount = calculateVoucherDiscount(voucher, totalPrice);
-                              const isEligible = totalPrice >= voucher.minOrderAmount;
+                              const discount = calculateVoucherDiscount(voucher, selectedItemsTotal);
+                              const isEligible = selectedItemsTotal >= voucher.minOrderAmount;
                               
                               return (
                                 <div

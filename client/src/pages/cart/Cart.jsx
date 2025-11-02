@@ -144,7 +144,18 @@ const Cart = () => {
       toast.error("Giỏ hàng trống");
       return;
     }
-    navigate('/checkout');
+    
+    if (selectedItems.size === 0) {
+      toast.error("Vui lòng chọn ít nhất một sản phẩm để thanh toán");
+      return;
+    }
+    
+    // Truyền danh sách các sản phẩm được chọn qua location state
+    navigate('/checkout', { 
+      state: { 
+        selectedItemIds: Array.from(selectedItems) 
+      } 
+    });
   };
 
   // Handle select all checkbox
@@ -231,7 +242,10 @@ const Cart = () => {
   };
 
   const voucherDiscount = calculateVoucherDiscount(selectedVoucher, selectedItemsTotal);
-  const finalTotal = selectedItemsTotal - voucherDiscount;
+  
+  // Tính phí ship (giống như Checkout)
+  const shippingFee = selectedItemsTotal >= 500000 ? 0 : 30000;
+  const finalTotal = selectedItemsTotal + shippingFee - voucherDiscount;
 
   // Show login message if user is not logged in
   if (!user) {
@@ -441,20 +455,26 @@ const Cart = () => {
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Truck className="h-5 w-5 text-blue-600" />
-                <span className="font-medium text-blue-800">Thêm 200.000đ vào giỏ hàng để được freeship!</span>
+                <span className="font-medium text-blue-800">
+                  {selectedItemsTotal < 500000
+                    ? `Thêm ${(500000 - selectedItemsTotal).toLocaleString("vi-VN")}đ vào giỏ hàng để được freeship!`
+                    : 'Bạn đã được freeship!'
+                  }
+                </span>
               </div>
-              <div className="w-full bg-blue-100 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min((selectedItemsTotal / 200000) * 100, 100)}%` }}
-                ></div>
-              </div>
-              <p className="text-sm text-blue-600 mt-1">
-                {selectedItemsTotal < 200000 
-                  ? `Còn ${(200000 - selectedItemsTotal).toLocaleString("vi-VN")}đ để được freeship`
-                  : 'Bạn đã được freeship!'
-                }
-              </p>
+              {selectedItemsTotal < 500000 && (
+                <>
+                  <div className="w-full bg-blue-100 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min((selectedItemsTotal / 500000) * 100, 100)}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Còn {(500000 - selectedItemsTotal).toLocaleString("vi-VN")}đ để được freeship
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Promotion Banner */}
@@ -482,7 +502,9 @@ const Cart = () => {
                 
                 <div className="flex justify-between text-muted-foreground">
                   <span>Phí vận chuyển</span>
-                  <span className="text-green-600">Miễn phí</span>
+                  <span className={shippingFee === 0 ? "text-green-600" : ""}>
+                    {shippingFee === 0 ? "Miễn phí" : `${shippingFee.toLocaleString("vi-VN")}đ`}
+                  </span>
                 </div>
                 
                 {voucherDiscount > 0 && (
