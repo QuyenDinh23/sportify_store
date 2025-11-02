@@ -1,8 +1,60 @@
+import { useEffect, useState } from 'react';
 import { Package, Grid3X3, Award, Trophy, ShoppingCart, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { dashboardStats } from '../../data/dashboardData';
+import { getOrderStatistics, getRevenueByMonth, getOrdersByStatus } from '../../api/order/orderApi';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const Overview = () => {
+  const [orderStats, setOrderStats] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+    loading: true
+  });
+
+  const [revenueData, setRevenueData] = useState([]);
+  const [statusData, setStatusData] = useState([]);
+  const [chartsLoading, setChartsLoading] = useState(true);
+
+  // Màu sắc cho pie chart
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        // Fetch tổng quan
+        const statsResponse = await getOrderStatistics();
+        if (statsResponse.success) {
+          setOrderStats({
+            totalOrders: statsResponse.data.totalOrders,
+            totalRevenue: statsResponse.data.totalRevenue,
+            loading: false
+          });
+        }
+
+        // Fetch doanh thu theo tháng
+        const revenueResponse = await getRevenueByMonth();
+        if (revenueResponse.success) {
+          setRevenueData(revenueResponse.data);
+        }
+
+        // Fetch đơn hàng theo trạng thái
+        const statusResponse = await getOrdersByStatus();
+        if (statusResponse.success) {
+          setStatusData(statusResponse.data);
+        }
+
+        setChartsLoading(false);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setOrderStats(prev => ({ ...prev, loading: false }));
+        setChartsLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -37,13 +89,13 @@ const Overview = () => {
     },
     {
       title: 'Đơn hàng',
-      value: dashboardStats.totalOrders,
+      value: orderStats.loading ? '...' : orderStats.totalOrders.toLocaleString('vi-VN'),
       icon: ShoppingCart,
       color: 'text-red-600'
     },
     {
       title: 'Doanh thu',
-      value: formatCurrency(dashboardStats.revenue),
+      value: orderStats.loading ? '...' : formatCurrency(orderStats.totalRevenue),
       icon: DollarSign,
       color: 'text-emerald-600'
     }
@@ -69,6 +121,92 @@ const Overview = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Doanh thu theo tháng */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Doanh thu theo tháng</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {chartsLoading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <span className="text-muted-foreground">Đang tải dữ liệu...</span>
+              </div>
+            ) : revenueData.length === 0 ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <span className="text-muted-foreground">Chưa có dữ liệu</span>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={revenueData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                  />
+                  <Tooltip 
+                    formatter={(value) => formatCurrency(value)}
+                    labelStyle={{ color: '#000' }}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#8884d8" 
+                    strokeWidth={2}
+                    name="Doanh thu"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Đơn hàng theo trạng thái */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Đơn hàng theo trạng thái</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {chartsLoading ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <span className="text-muted-foreground">Đang tải dữ liệu...</span>
+              </div>
+            ) : statusData.length === 0 ? (
+              <div className="h-[300px] flex items-center justify-center">
+                <span className="text-muted-foreground">Chưa có dữ liệu</span>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ label, percent }) => `${label} (${(percent * 100).toFixed(0)}%)`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                    nameKey="label"
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Recent Activity */}

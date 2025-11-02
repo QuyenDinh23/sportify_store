@@ -54,3 +54,30 @@ export const updateOrderStatusAdmin = async (orderId, statusData) => {
     throw error.response?.data || error.message;
   }
 };
+
+export const getOrderStatistics = async () => {
+  try {
+    const response = await api.get('/orders/admin/statistics');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getRevenueByMonth = async () => {
+  try {
+    const response = await api.get('/orders/admin/revenue-by-month');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getOrdersByStatus = async () => {
+  try {
+    const response = await api.get('/orders/admin/orders-by-status');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
