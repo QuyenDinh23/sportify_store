@@ -74,6 +74,8 @@ export const createWarrantyRequest = async (req, res) => {
       customerId,
       orderId,
       productId,
+      selectedColor: productInOrder.selectedColor,
+      selectedSize: productInOrder.selectedSize,
       reason,
       description,
       attachments,
@@ -210,6 +212,10 @@ export const updateWarrantyStatus = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy yêu cầu bảo hành" });
     }
 
+    // Lưu trạng thái cũ để kiểm tra thay đổi
+    const oldStatus = warrantyRequest.status;
+    const oldResult = warrantyRequest.result;
+
     if (status) warrantyRequest.status = status;
     if (result) warrantyRequest.result = result;
     if (resolutionNote) warrantyRequest.resolutionNote = resolutionNote;
@@ -224,6 +230,103 @@ export const updateWarrantyStatus = async (req, res) => {
 
     warrantyRequest.actionBy = adminId;
     warrantyRequest.lastUpdate = new Date();
+
+    // Xử lý cập nhật số lượng sản phẩm
+    const product = await Product.findById(warrantyRequest.productId);
+    if (!product) {
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+    }
+
+    // Kiểm tra nếu có selectedColor và selectedSize
+    if (warrantyRequest.selectedColor && warrantyRequest.selectedSize) {
+      // Tìm color và size variant trong product
+      const colorIndex = product.colors.findIndex(c => c.name === warrantyRequest.selectedColor);
+      
+      if (colorIndex !== -1) {
+        const colorObj = product.colors[colorIndex];
+        const sizeIndex = colorObj.sizes.findIndex(s => s.size === warrantyRequest.selectedSize);
+
+        if (sizeIndex !== -1) {
+          // Trường hợp 1: Cập nhật từ processing -> completed với result = "completed"
+          // Tăng số lượng sản phẩm (sản phẩm được trả lại kho)
+          if (oldStatus === "processing" && status === "completed" && result === "completed") {
+            // Cập nhật colors.sizes.quantity
+            product.colors[colorIndex].sizes[sizeIndex].quantity += 1;
+            // Tính lại stockQuantity thủ công
+            product.stockQuantity = product.colors.reduce((total, color) => {
+              const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
+              return total + colorTotal;
+            }, 0);
+            // Đánh dấu đã thay đổi để trigger pre-save middleware
+            product.markModified('colors');
+            await product.save();
+            console.log(`Đã tăng số lượng sản phẩm ${product.name} (${warrantyRequest.selectedColor} - ${warrantyRequest.selectedSize}) lên 1. stockQuantity: ${product.stockQuantity}`);
+          }
+          
+          // Trường hợp 2: result = "replaced"
+          // Giảm số lượng sản phẩm bị lỗi (nếu chưa được xử lý trước đó)
+          if (result === "replaced") {
+            // Chỉ giảm nếu chưa được xử lý trước đó (oldResult !== "replaced")
+            if (oldResult !== "replaced") {
+              if (product.colors[colorIndex].sizes[sizeIndex].quantity > 0) {
+                // Cập nhật colors.sizes.quantity
+                product.colors[colorIndex].sizes[sizeIndex].quantity -= 1;
+                // Tính lại stockQuantity thủ công
+                product.stockQuantity = product.colors.reduce((total, color) => {
+                  const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
+                  return total + colorTotal;
+                }, 0);
+                // Đánh dấu đã thay đổi để trigger pre-save middleware
+                product.markModified('colors');
+                await product.save();
+                console.log(`Đã giảm số lượng sản phẩm bị lỗi ${product.name} (${warrantyRequest.selectedColor} - ${warrantyRequest.selectedSize}) xuống 1. stockQuantity: ${product.stockQuantity}`);
+              }
+
+              // Tăng số lượng sản phẩm thay thế nếu có replacementOrderId
+              if (replacementOrderId && mongoose.Types.ObjectId.isValid(replacementOrderId)) {
+                const replacementOrder = await Order.findById(replacementOrderId);
+                if (replacementOrder) {
+                  // Tìm sản phẩm trong replacement order (thường là cùng productId)
+                  const replacementItem = replacementOrder.items.find(
+                    item => item.productId.toString() === warrantyRequest.productId.toString()
+                  );
+                  
+                  if (replacementItem) {
+                    const replacementProduct = await Product.findById(replacementItem.productId);
+                    if (replacementProduct) {
+                      const replacementColorIndex = replacementProduct.colors.findIndex(
+                        c => c.name === replacementItem.selectedColor
+                      );
+                      
+                      if (replacementColorIndex !== -1) {
+                        const replacementColorObj = replacementProduct.colors[replacementColorIndex];
+                        const replacementSizeIndex = replacementColorObj.sizes.findIndex(
+                          s => s.size === replacementItem.selectedSize
+                        );
+                        
+                        if (replacementSizeIndex !== -1) {
+                          // Cập nhật colors.sizes.quantity
+                          replacementProduct.colors[replacementColorIndex].sizes[replacementSizeIndex].quantity += 1;
+                          // Tính lại stockQuantity thủ công
+                          replacementProduct.stockQuantity = replacementProduct.colors.reduce((total, color) => {
+                            const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
+                            return total + colorTotal;
+                          }, 0);
+                          // Đánh dấu đã thay đổi để trigger pre-save middleware
+                          replacementProduct.markModified('colors');
+                          await replacementProduct.save();
+                          console.log(`Đã tăng số lượng sản phẩm thay thế ${replacementProduct.name} (${replacementItem.selectedColor} - ${replacementItem.selectedSize}) lên 1. stockQuantity: ${replacementProduct.stockQuantity}`);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
 
     const updatedRequest = await warrantyRequest.save();
     

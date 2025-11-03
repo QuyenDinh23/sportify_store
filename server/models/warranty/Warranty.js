@@ -4,6 +4,8 @@ const WarrantySchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true },
   productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+  selectedColor: { type: String },
+  selectedSize: { type: String },
   reason: {
     type: String,
     enum: [

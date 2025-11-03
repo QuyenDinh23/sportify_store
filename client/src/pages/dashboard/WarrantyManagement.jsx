@@ -38,6 +38,7 @@ import { useToast } from '../../hooks/use-toast';
 import {
   getAllWarrantyRequests,
   processWarrantyRequest,
+  updateWarrantyStatus,
   deleteWarrantyRequest,
 } from '../../api/warranty/warrantyApi';
 import { Check, X, Clock, FileText, TrendingUp, ShieldCheck, ShieldX } from 'lucide-react';
@@ -78,6 +79,27 @@ const warrantyResponseSchema = z.object({
   }
 );
 
+const warrantyStatusUpdateSchema = z.object({
+  status: z.string({
+    required_error: "Vui lòng chọn trạng thái",
+  }).refine(
+    (val) => ["pending", "processing", "completed", "rejected"].includes(val),
+    {
+      message: "Trạng thái không hợp lệ",
+    }
+  ),
+  result: z.string().optional().refine(
+    (val) => !val || ["completed", "replaced", "rejected"].includes(val),
+    {
+      message: "Kết quả không hợp lệ",
+    }
+  ),
+  resolutionNote: z.string().optional(),
+  adminNote: z.string().optional(),
+  rejectReason: z.string().optional(),
+  replacementOrderId: z.string().optional(),
+});
+
 const statusConfig = {
   pending: { label: 'Đang chờ', color: 'bg-yellow-500', variant: 'secondary' },
   processing: { label: 'Đang xử lý', color: 'bg-blue-500', variant: 'default' },
@@ -106,6 +128,7 @@ const WarrantyManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWarranty, setSelectedWarranty] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUpdateStatusDialogOpen, setIsUpdateStatusDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [action, setAction] = useState('view');
   const { toast } = useToast();
@@ -121,7 +144,21 @@ const WarrantyManagement = () => {
     },
   });
 
+  const { control: updateStatusControl, handleSubmit: handleUpdateStatusSubmit, reset: resetUpdateStatus, formState: { errors: updateStatusErrors }, watch: watchUpdateStatus } = useForm({
+    resolver: zodResolver(warrantyStatusUpdateSchema),
+    defaultValues: {
+      status: '',
+      result: '',
+      resolutionNote: '',
+      adminNote: '',
+      rejectReason: '',
+      replacementOrderId: '',
+    },
+  });
+
   const watchedAction = watch('action');
+  const watchedStatus = watchUpdateStatus('status');
+  const watchedResult = watchUpdateStatus('result');
 
   const columns = [
     {
@@ -155,6 +192,27 @@ const WarrantyManagement = () => {
           {statusConfig[value]?.label || value}
         </Badge>
       ),
+    },
+    {
+      key: 'actions',
+      label: 'Thao tác',
+      render: (value, item) => {
+        const warranty = item.warranty || item;
+        return (
+          <div className="flex items-center gap-2">
+            {warranty.status === 'processing' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleUpdateStatus(item)}
+              >
+                <Clock className="h-4 w-4 mr-1" />
+                Cập nhật
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -270,6 +328,49 @@ const WarrantyManagement = () => {
 
   const handleView = (warrantyItem) => {
     handleOpenDialog(warrantyItem, 'view');
+  };
+
+  const handleUpdateStatus = (warrantyItem) => {
+    const warranty = warrantyItem.warranty || warrantyItem;
+    setSelectedWarranty(warranty);
+    
+    resetUpdateStatus({
+      status: warranty.status || '',
+      result: warranty.result || '',
+      resolutionNote: warranty.resolutionNote || '',
+      adminNote: warranty.adminNote || '',
+      rejectReason: warranty.rejectReason || '',
+      replacementOrderId: warranty.replacementOrderId || '',
+    });
+    
+    setIsUpdateStatusDialogOpen(true);
+  };
+
+  const onSubmitStatusUpdate = async (data) => {
+    try {
+      await updateWarrantyStatus(selectedWarranty._id, {
+        status: data.status,
+        result: data.result || null,
+        resolutionNote: data.resolutionNote || null,
+        adminNote: data.adminNote || null,
+        rejectReason: data.rejectReason || null,
+        replacementOrderId: data.replacementOrderId || null,
+      });
+
+      toast({
+        title: 'Thành công',
+        description: 'Cập nhật trạng thái yêu cầu bảo hành thành công',
+      });
+      setIsUpdateStatusDialogOpen(false);
+      resetUpdateStatus();
+      loadWarranties();
+    } catch (error) {
+      toast({
+        title: 'Lỗi',
+        description: error.response?.data?.message || 'Không thể cập nhật trạng thái',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -553,6 +654,159 @@ const WarrantyManagement = () => {
              )}
            </DialogFooter>
            </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isUpdateStatusDialogOpen} onOpenChange={setIsUpdateStatusDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Cập nhật trạng thái yêu cầu bảo hành</DialogTitle>
+            <DialogDescription>
+              Cập nhật trạng thái và kết quả xử lý yêu cầu bảo hành
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdateStatusSubmit(onSubmitStatusUpdate)}>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">
+                  Trạng thái <span className="text-red-500">*</span>
+                </label>
+                <Controller
+                  name="status"
+                  control={updateStatusControl}
+                  render={({ field }) => (
+                    <Select value={field.value || ''} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn trạng thái" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(statusConfig).map(([key, config]) => (
+                          <SelectItem key={key} value={key}>
+                            {config.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {updateStatusErrors.status && (
+                  <p className="text-sm text-destructive mt-1">{updateStatusErrors.status.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Kết quả</label>
+                <Controller
+                  name="result"
+                  control={updateStatusControl}
+                  render={({ field }) => (
+                    <Select 
+                      value={field.value || undefined} 
+                      onValueChange={(value) => field.onChange(value || null)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn kết quả (tùy chọn)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="completed">Hoàn thành</SelectItem>
+                        <SelectItem value="replaced">Đã thay thế</SelectItem>
+                        <SelectItem value="rejected">Từ chối</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {updateStatusErrors.result && (
+                  <p className="text-sm text-destructive mt-1">{updateStatusErrors.result.message}</p>
+                )}
+              </div>
+
+              {watchedStatus === 'completed' && watchedResult === 'completed' && (
+                <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
+                  <strong>Lưu ý:</strong> Khi cập nhật từ "processing" thành "completed" với result = "completed", 
+                  số lượng sản phẩm sẽ được tăng lên 1 (sản phẩm được trả lại kho).
+                </div>
+              )}
+
+              {watchedResult === 'replaced' && (
+                <>
+                  <div className="bg-yellow-50 p-3 rounded-lg text-sm text-yellow-700">
+                    <strong>Lưu ý:</strong> Khi result = "replaced", số lượng sản phẩm bị lỗi sẽ giảm 1 
+                    và số lượng sản phẩm thay thế sẽ tăng 1.
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">
+                      Mã đơn hàng thay thế
+                    </label>
+                    <Controller
+                      name="replacementOrderId"
+                      control={updateStatusControl}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          placeholder="Nhập mã đơn hàng thay thế"
+                        />
+                      )}
+                    />
+                  </div>
+                </>
+              )}
+
+              {watchedStatus === 'rejected' && (
+                <div>
+                  <label className="text-sm font-medium">Lý do từ chối</label>
+                  <Controller
+                    name="rejectReason"
+                    control={updateStatusControl}
+                    render={({ field }) => (
+                      <Textarea
+                        {...field}
+                        rows={3}
+                        placeholder="Nhập lý do từ chối..."
+                      />
+                    )}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-medium">Ghi chú giải quyết</label>
+                <Controller
+                  name="resolutionNote"
+                  control={updateStatusControl}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      rows={3}
+                      placeholder="Nhập ghi chú giải quyết..."
+                    />
+                  )}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Ghi chú admin</label>
+                <Controller
+                  name="adminNote"
+                  control={updateStatusControl}
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      rows={3}
+                      placeholder="Nhập ghi chú cho admin..."
+                    />
+                  )}
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button variant="outline" type="button" onClick={() => setIsUpdateStatusDialogOpen(false)}>
+                Hủy
+              </Button>
+              <Button type="submit">Cập nhật</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
