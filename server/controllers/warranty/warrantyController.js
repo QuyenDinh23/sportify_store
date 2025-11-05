@@ -237,8 +237,31 @@ export const updateWarrantyStatus = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
     }
 
+    // Suy luận result hiệu lực: dùng result mới, hoặc result hiện có
+    const effectiveResult = result || warrantyRequest.result || null;
+
+    // Nếu chuyển sang completed mà chưa có result, mặc định là "completed"
+    if (warrantyRequest.status === "completed" && !effectiveResult) {
+      warrantyRequest.result = "completed";
+    }
+
     // Kiểm tra nếu có selectedColor và selectedSize
     if (warrantyRequest.selectedColor && warrantyRequest.selectedSize) {
+      // Lấy số lượng sản phẩm từ đơn hàng gốc (để hoàn đúng số lượng đã mua)
+      let originalItemQuantity = 1;
+      try {
+        const originalOrder = await Order.findById(warrantyRequest.orderId);
+        if (originalOrder) {
+          const matchedItem = originalOrder.items.find((it) =>
+            it.productId.toString() === warrantyRequest.productId.toString() &&
+            it.selectedColor === warrantyRequest.selectedColor &&
+            it.selectedSize === warrantyRequest.selectedSize
+          );
+          if (matchedItem && typeof matchedItem.quantity === 'number') {
+            originalItemQuantity = matchedItem.quantity;
+          }
+        }
+      } catch (_) {}
       // Tìm color và size variant trong product
       const colorIndex = product.colors.findIndex(c => c.name === warrantyRequest.selectedColor);
       
@@ -249,9 +272,9 @@ export const updateWarrantyStatus = async (req, res) => {
         if (sizeIndex !== -1) {
           // Trường hợp 1: Cập nhật từ processing -> completed với result = "completed"
           // Tăng số lượng sản phẩm (sản phẩm được trả lại kho)
-          if (oldStatus === "processing" && status === "completed" && result === "completed") {
+          if (oldStatus === "processing" && status === "completed" && (effectiveResult === "completed" || !result)) {
             // Cập nhật colors.sizes.quantity
-            product.colors[colorIndex].sizes[sizeIndex].quantity += 1;
+            product.colors[colorIndex].sizes[sizeIndex].quantity += originalItemQuantity;
             // Tính lại stockQuantity thủ công
             product.stockQuantity = product.colors.reduce((total, color) => {
               const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
@@ -265,12 +288,14 @@ export const updateWarrantyStatus = async (req, res) => {
           
           // Trường hợp 2: result = "replaced"
           // Giảm số lượng sản phẩm bị lỗi (nếu chưa được xử lý trước đó)
-          if (result === "replaced") {
+          if (effectiveResult === "replaced") {
             // Chỉ giảm nếu chưa được xử lý trước đó (oldResult !== "replaced")
             if (oldResult !== "replaced") {
               if (product.colors[colorIndex].sizes[sizeIndex].quantity > 0) {
                 // Cập nhật colors.sizes.quantity
-                product.colors[colorIndex].sizes[sizeIndex].quantity -= 1;
+                const currentQty = product.colors[colorIndex].sizes[sizeIndex].quantity;
+                const deductQty = Math.min(originalItemQuantity, currentQty);
+                product.colors[colorIndex].sizes[sizeIndex].quantity = currentQty - deductQty;
                 // Tính lại stockQuantity thủ công
                 product.stockQuantity = product.colors.reduce((total, color) => {
                   const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
@@ -285,40 +310,31 @@ export const updateWarrantyStatus = async (req, res) => {
               // Tăng số lượng sản phẩm thay thế nếu có replacementOrderId
               if (replacementOrderId && mongoose.Types.ObjectId.isValid(replacementOrderId)) {
                 const replacementOrder = await Order.findById(replacementOrderId);
-                if (replacementOrder) {
-                  // Tìm sản phẩm trong replacement order (thường là cùng productId)
-                  const replacementItem = replacementOrder.items.find(
-                    item => item.productId.toString() === warrantyRequest.productId.toString()
-                  );
-                  
-                  if (replacementItem) {
+                if (replacementOrder && Array.isArray(replacementOrder.items)) {
+                  // Tăng số lượng theo từng item trong đơn hàng thay thế
+                  for (const replacementItem of replacementOrder.items) {
                     const replacementProduct = await Product.findById(replacementItem.productId);
-                    if (replacementProduct) {
-                      const replacementColorIndex = replacementProduct.colors.findIndex(
-                        c => c.name === replacementItem.selectedColor
-                      );
-                      
-                      if (replacementColorIndex !== -1) {
-                        const replacementColorObj = replacementProduct.colors[replacementColorIndex];
-                        const replacementSizeIndex = replacementColorObj.sizes.findIndex(
-                          s => s.size === replacementItem.selectedSize
-                        );
-                        
-                        if (replacementSizeIndex !== -1) {
-                          // Cập nhật colors.sizes.quantity
-                          replacementProduct.colors[replacementColorIndex].sizes[replacementSizeIndex].quantity += 1;
-                          // Tính lại stockQuantity thủ công
-                          replacementProduct.stockQuantity = replacementProduct.colors.reduce((total, color) => {
-                            const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
-                            return total + colorTotal;
-                          }, 0);
-                          // Đánh dấu đã thay đổi để trigger pre-save middleware
-                          replacementProduct.markModified('colors');
-                          await replacementProduct.save();
-                          console.log(`Đã tăng số lượng sản phẩm thay thế ${replacementProduct.name} (${replacementItem.selectedColor} - ${replacementItem.selectedSize}) lên 1. stockQuantity: ${replacementProduct.stockQuantity}`);
-                        }
-                      }
-                    }
+                    if (!replacementProduct) continue;
+
+                    const replacementColorIndex = replacementProduct.colors.findIndex(
+                      c => c.name === replacementItem.selectedColor
+                    );
+                    if (replacementColorIndex === -1) continue;
+
+                    const replacementColorObj = replacementProduct.colors[replacementColorIndex];
+                    const replacementSizeIndex = replacementColorObj.sizes.findIndex(
+                      s => s.size === replacementItem.selectedSize
+                    );
+                    if (replacementSizeIndex === -1) continue;
+
+                    replacementProduct.colors[replacementColorIndex].sizes[replacementSizeIndex].quantity += (replacementItem.quantity || 1);
+                    replacementProduct.stockQuantity = replacementProduct.colors.reduce((total, color) => {
+                      const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
+                      return total + colorTotal;
+                    }, 0);
+                    replacementProduct.markModified('colors');
+                    await replacementProduct.save();
+                    console.log(`Đã tăng số lượng sản phẩm thay thế ${replacementProduct.name} (${replacementItem.selectedColor} - ${replacementItem.selectedSize}) lên ${replacementItem.quantity || 1}. stockQuantity: ${replacementProduct.stockQuantity}`);
                   }
                 }
               }

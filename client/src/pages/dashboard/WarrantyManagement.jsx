@@ -88,16 +88,8 @@ const warrantyStatusUpdateSchema = z.object({
       message: "Trạng thái không hợp lệ",
     }
   ),
-  result: z.string().optional().refine(
-    (val) => !val || ["completed", "replaced", "rejected"].includes(val),
-    {
-      message: "Kết quả không hợp lệ",
-    }
-  ),
-  resolutionNote: z.string().optional(),
   adminNote: z.string().optional(),
   rejectReason: z.string().optional(),
-  replacementOrderId: z.string().optional(),
 });
 
 const statusConfig = {
@@ -148,17 +140,13 @@ const WarrantyManagement = () => {
     resolver: zodResolver(warrantyStatusUpdateSchema),
     defaultValues: {
       status: '',
-      result: '',
-      resolutionNote: '',
       adminNote: '',
       rejectReason: '',
-      replacementOrderId: '',
     },
   });
 
   const watchedAction = watch('action');
   const watchedStatus = watchUpdateStatus('status');
-  const watchedResult = watchUpdateStatus('result');
 
   const columns = [
     {
@@ -350,11 +338,8 @@ const WarrantyManagement = () => {
     try {
       await updateWarrantyStatus(selectedWarranty._id, {
         status: data.status,
-        result: data.result || null,
-        resolutionNote: data.resolutionNote || null,
         adminNote: data.adminNote || null,
         rejectReason: data.rejectReason || null,
-        replacementOrderId: data.replacementOrderId || null,
       });
 
       toast({
@@ -500,6 +485,18 @@ const WarrantyManagement = () => {
                     Mã yêu cầu
                   </label>
                   <p className="font-medium font-mono">{selectedWarranty._id}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Màu
+                  </label>
+                  <p className="font-medium">{selectedWarranty.selectedColor || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Kích thước
+                  </label>
+                  <p className="font-medium">{selectedWarranty.selectedSize || 'N/A'}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
@@ -661,9 +658,6 @@ const WarrantyManagement = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cập nhật trạng thái yêu cầu bảo hành</DialogTitle>
-            <DialogDescription>
-              Cập nhật trạng thái và kết quả xử lý yêu cầu bảo hành
-            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleUpdateStatusSubmit(onSubmitStatusUpdate)}>
@@ -695,62 +689,7 @@ const WarrantyManagement = () => {
                 )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Kết quả</label>
-                <Controller
-                  name="result"
-                  control={updateStatusControl}
-                  render={({ field }) => (
-                    <Select 
-                      value={field.value || undefined} 
-                      onValueChange={(value) => field.onChange(value || null)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Chọn kết quả (tùy chọn)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="completed">Hoàn thành</SelectItem>
-                        <SelectItem value="replaced">Đã thay thế</SelectItem>
-                        <SelectItem value="rejected">Từ chối</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {updateStatusErrors.result && (
-                  <p className="text-sm text-destructive mt-1">{updateStatusErrors.result.message}</p>
-                )}
-              </div>
-
-              {watchedStatus === 'completed' && watchedResult === 'completed' && (
-                <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
-                  <strong>Lưu ý:</strong> Khi cập nhật từ "processing" thành "completed" với result = "completed", 
-                  số lượng sản phẩm sẽ được tăng lên 1 (sản phẩm được trả lại kho).
-                </div>
-              )}
-
-              {watchedResult === 'replaced' && (
-                <>
-                  <div className="bg-yellow-50 p-3 rounded-lg text-sm text-yellow-700">
-                    <strong>Lưu ý:</strong> Khi result = "replaced", số lượng sản phẩm bị lỗi sẽ giảm 1 
-                    và số lượng sản phẩm thay thế sẽ tăng 1.
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">
-                      Mã đơn hàng thay thế
-                    </label>
-                    <Controller
-                      name="replacementOrderId"
-                      control={updateStatusControl}
-                      render={({ field }) => (
-                        <Input
-                          {...field}
-                          placeholder="Nhập mã đơn hàng thay thế"
-                        />
-                      )}
-                    />
-                  </div>
-                </>
-              )}
+              
 
               {watchedStatus === 'rejected' && (
                 <div>
@@ -769,20 +708,7 @@ const WarrantyManagement = () => {
                 </div>
               )}
 
-              <div>
-                <label className="text-sm font-medium">Ghi chú giải quyết</label>
-                <Controller
-                  name="resolutionNote"
-                  control={updateStatusControl}
-                  render={({ field }) => (
-                    <Textarea
-                      {...field}
-                      rows={3}
-                      placeholder="Nhập ghi chú giải quyết..."
-                    />
-                  )}
-                />
-              </div>
+              
 
               <div>
                 <label className="text-sm font-medium">Ghi chú admin</label>
