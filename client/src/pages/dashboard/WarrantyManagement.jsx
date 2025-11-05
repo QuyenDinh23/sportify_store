@@ -111,6 +111,9 @@ const reasonConfig = {
   intact_no_longer_needed: "Hàng nguyên vẹn nhưng không còn nhu cầu",
 };
 
+// Trang quản trị Bảo hành
+// - Liệt kê, lọc và phân trang danh sách yêu cầu bảo hành
+// - Cung cấp dialog để xem chi tiết, cập nhật trạng thái và xử lý yêu cầu
 const WarrantyManagement = () => {
   const [warranties, setWarranties] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -148,6 +151,7 @@ const WarrantyManagement = () => {
   const watchedAction = watch('action');
   const watchedStatus = watchUpdateStatus('status');
 
+  // Định nghĩa cột cho bảng dữ liệu
   const columns = [
     {
       key: 'warrantyRequestId',

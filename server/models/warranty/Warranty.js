@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+/**
+ * Schema Bảo hành
+ *
+ * Mô tả yêu cầu bảo hành của người dùng đối với một đơn hàng/sản phẩm và lưu lại
+ * biến thể đã mua (màu/kích thước) để phục vụ việc điều chỉnh tồn kho chính xác.
+ */
+
 const WarrantySchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true },
@@ -25,7 +32,8 @@ const WarrantySchema = new mongoose.Schema({
   attachments: {
     type: [String],
     required: true,
-    validate: [arr => arr.length > 0, "At least one attachment is required"],
+    // Yêu cầu tối thiểu có 1 minh chứng (ảnh/video/…)
+    validate: [arr => arr.length > 0, "Cần ít nhất một tệp đính kèm"],
   },
   issueDate: Date,
   contactInfo: String,
@@ -50,6 +58,7 @@ const WarrantySchema = new mongoose.Schema({
   responseDate: Date,
 }, { timestamps: true });
 
+// Duy trì trường lastUpdate để theo dõi lịch sử cập nhật
 WarrantySchema.pre("save", function (next) {
   this.lastUpdate = new Date();
   next();
