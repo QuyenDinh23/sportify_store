@@ -634,9 +634,12 @@ export const getAllOrders = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { status, trackingNumber, estimatedDelivery } = req.body;
+    const { status, trackingNumber, estimatedDelivery, returnCondition } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'];
+    const validStatuses = [
+      'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled',
+      'return_requested', 'returned', 'refund_requested', 'refunded'
+    ];
     
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
@@ -654,6 +657,7 @@ export const updateOrderStatus = async (req, res) => {
       });
     }
 
+    const oldStatus = order.status;
     order.status = status;
     
     if (trackingNumber) {
@@ -670,6 +674,38 @@ export const updateOrderStatus = async (req, res) => {
 
     if (status === 'cancelled' && !order.cancelledAt) {
       order.cancelledAt = new Date();
+    }
+
+    // Determine refund eligibility (assumption): delivered orders, non-COD
+    if (['refund_requested'].includes(status)) {
+      order.refundEligible = (order.status === 'refund_requested' || oldStatus === 'delivered') && order.paymentMethod !== 'cod';
+    }
+
+    // Inventory behavior when returned/refunded completed
+    if ((status === 'returned' || status === 'refunded') && (oldStatus === 'return_requested' || oldStatus === 'refund_requested' || oldStatus === 'processing' || oldStatus === 'delivered')) {
+      try {
+        const isDamaged = returnCondition === 'damaged' || order?.refundInfo?.condition === 'damaged';
+        for (const item of order.items) {
+          const product = await Product.findById(item.productId);
+          if (!product) continue;
+          const colorIndex = product.colors.findIndex(c => c.name === item.selectedColor);
+          if (colorIndex === -1) continue;
+          const sizeIndex = (product.colors[colorIndex].sizes || []).findIndex(s => s.size === item.selectedSize);
+          if (sizeIndex === -1) continue;
+          // If damaged and refunded, do NOT increase stock; else increase back
+          if (!isDamaged) {
+            product.colors[colorIndex].sizes[sizeIndex].quantity += item.quantity;
+            product.markModified('colors');
+            await product.save();
+          }
+        }
+      } catch (invErr) {
+        console.error('Inventory adjust error on return/refund:', invErr);
+      }
+    }
+
+    if (status === 'refunded') {
+      order.refundProcessedAt = new Date();
     }
 
     await order.save();
@@ -941,7 +977,10 @@ export const getOrdersByStatus = async (req, res) => {
       'shipped': 'Đã giao hàng',
       'delivered': 'Đã nhận hàng',
       'cancelled': 'Đã hủy',
-      'returned': 'Đã trả hàng'
+      'return_requested': 'Yêu cầu hoàn trả',
+      'returned': 'Đã trả hàng',
+      'refund_requested': 'Yêu cầu hoàn tiền',
+      'refunded': 'Đã hoàn tiền'
     };
 
     const formattedData = statusData.map(item => ({
@@ -961,5 +1000,146 @@ export const getOrdersByStatus = async (req, res) => {
       message: "Lỗi khi lấy đơn hàng theo trạng thái",
       error: error.message
     });
+  }
+};
+
+// Admin tạo đơn hàng thay thế cho bảo hành
+export const createReplacementOrder = async (req, res) => {
+  try {
+    const { userId, items, notes, warrantyId } = req.body;
+    if (!userId || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'Thiếu userId hoặc items' });
+    }
+
+    // Build order items and validate stock
+    const orderItems = [];
+    let inferredQuantity = null;
+    // If warrantyId provided, infer quantity from original order for matching item
+    if (warrantyId) {
+      try {
+        const Warranty = (await import('../../models/warranty/Warranty.js')).default;
+        const wr = await Warranty.findById(warrantyId);
+        if (wr) {
+          const originalOrder = await Order.findById(wr.orderId);
+          const matchedItem = originalOrder?.items?.find(it =>
+            it.productId.toString() === wr.productId.toString() &&
+            it.selectedColor === wr.selectedColor &&
+            it.selectedSize === wr.selectedSize
+          );
+          if (matchedItem) inferredQuantity = matchedItem.quantity;
+        }
+      } catch (_) {}
+    }
+
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+      if (!product) return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại' });
+      const colorIndex = product.colors.findIndex(c => c.name === item.selectedColor);
+      if (colorIndex === -1) return res.status(400).json({ success: false, message: 'Màu không hợp lệ' });
+      const sizeIndex = (product.colors[colorIndex].sizes || []).findIndex(s => s.size === item.selectedSize);
+      if (sizeIndex === -1) return res.status(400).json({ success: false, message: 'Size không hợp lệ' });
+      const qty = Number(item.quantity || inferredQuantity || 1);
+      if (product.colors[colorIndex].sizes[sizeIndex].quantity < qty) {
+        return res.status(400).json({ success: false, message: 'Không đủ tồn kho cho sản phẩm thay thế' });
+      }
+      // Deduct now
+      product.colors[colorIndex].sizes[sizeIndex].quantity -= qty;
+      product.markModified('colors');
+      await product.save();
+
+      orderItems.push({
+        productId: product._id,
+        name: product.name,
+        price: 0,
+        quantity: qty,
+        selectedColor: item.selectedColor,
+        selectedSize: item.selectedSize,
+        image: product.image || null
+      });
+    }
+
+    const order = new Order({
+      userId,
+      items: orderItems,
+      shippingAddress: null,
+      paymentMethod: 'bank_transfer',
+      subtotal: 0,
+      shippingFee: 0,
+      voucherCode: null,
+      voucherDiscount: 0,
+      totalAmount: 0,
+      notes: notes || 'Đơn hàng bảo hành (đổi mới)'
+    });
+    order.status = 'confirmed';
+    await order.save();
+
+    res.status(201).json({ success: true, message: 'Tạo đơn thay thế thành công', data: order });
+  } catch (error) {
+    console.error('Create replacement order error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi khi tạo đơn thay thế', error: error.message });
+  }
+};
+
+// Khách hàng gửi thông tin hoàn tiền + yêu cầu hoàn tiền
+export const submitRefundInfo = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user.id;
+    const { bankAccountName, bankAccountNumber, bankName, note, condition } = req.body;
+
+    const order = await Order.findOne({ _id: orderId, userId });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+    }
+
+    if (order.status !== 'delivered') {
+      return res.status(400).json({ success: false, message: 'Chỉ đơn đã giao mới được yêu cầu hoàn tiền' });
+    }
+
+    if (order.paymentMethod === 'cod') {
+      return res.status(400).json({ success: false, message: 'Đơn COD không hỗ trợ hoàn tiền qua ngân hàng' });
+    }
+
+    order.refundInfo = {
+      bankAccountName: bankAccountName || null,
+      bankAccountNumber: bankAccountNumber || null,
+      bankName: bankName || null,
+      note: note || null,
+      condition: condition === 'damaged' ? 'damaged' : 'intact'
+    };
+    order.refundEligible = true;
+    order.status = 'refund_requested';
+
+    await order.save();
+
+    res.status(200).json({ success: true, message: 'Đã gửi yêu cầu hoàn tiền', data: order });
+  } catch (error) {
+    console.error('Submit refund info error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi khi gửi yêu cầu hoàn tiền', error: error.message });
+  }
+};
+
+// Khách hàng yêu cầu hoàn trả hàng (không bắt buộc hoàn tiền)
+export const requestReturn = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const userId = req.user.id;
+
+    const order = await Order.findOne({ _id: orderId, userId });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+    }
+
+    if (!['delivered'].includes(order.status)) {
+      return res.status(400).json({ success: false, message: 'Chỉ đơn đã giao mới được yêu cầu hoàn trả' });
+    }
+
+    order.status = 'return_requested';
+    await order.save();
+
+    res.status(200).json({ success: true, message: 'Đã gửi yêu cầu hoàn trả hàng', data: order });
+  } catch (error) {
+    console.error('Request return error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi khi yêu cầu hoàn trả', error: error.message });
   }
 };

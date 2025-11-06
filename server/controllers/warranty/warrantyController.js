@@ -3,9 +3,25 @@ import Warranty from "../../models/warranty/Warranty.js";
 import Order from "../../models/order/Order.js";
 import Product from "../../models/product/Product.js";
 
+/**
+ * Bộ điều khiển (Controller) Bảo hành
+ *
+ * Cung cấp các handler cho các nghiệp vụ: tạo, truy vấn, xử lý và cập nhật yêu cầu bảo hành.
+ * Phần điều chỉnh tồn kho được xử lý cẩn trọng để đảm bảo số lượng ở cả hai cấp:
+ * - Cấp biến thể (colors.sizes.quantity)
+ * - Tổng tồn kho của sản phẩm (stockQuantity)
+ * luôn nhất quhttps://accounts.google.com/SignOutOptions?hl=vi&continue=https://www.google.com%3Fhl%3Dvi&ec=GBRA8wEán sau mỗi thao tác bảo hành.
+ */
+
+/**
+ * Tạo yêu cầu bảo hành mới
+ * - Xác thực quyền sở hữu đơn hàng, sự tồn tại của sản phẩm và thời hạn bảo hành.
+ * - Ngăn trùng lặp yêu cầu ở trạng thái Chờ duyệt/Đang xử lý cho cùng đơn hàng & sản phẩm.
+ * - Ghi nhận biến thể đã mua (màu/kích thước) từ đơn gốc để phục vụ xử lý tồn kho về sau.
+ */
 export const createWarrantyRequest = async (req, res) => {
   try {
-    const { orderId, productId, reason, description, attachments, issueDate, contactInfo } = req.body;
+    const { orderId, productId, reason, description, attachments, issueDate, contactInfo, bankAccountName, bankAccountNumber, bankName } = req.body;
     const customerId = req.user?.id;
 
     if (!customerId) {
@@ -81,6 +97,9 @@ export const createWarrantyRequest = async (req, res) => {
       attachments,
       issueDate: issueDate ? new Date(issueDate) : new Date(),
       contactInfo,
+      bankAccountName: bankAccountName || null,
+      bankAccountNumber: bankAccountNumber || null,
+      bankName: bankName || null,
       status: "pending",
     });
 
@@ -101,6 +120,10 @@ export const createWarrantyRequest = async (req, res) => {
   }
 };
 
+/**
+ * Lấy danh sách tất cả yêu cầu bảo hành (phạm vi quản trị)
+ * Hỗ trợ lọc theo trạng thái, lý do và phân trang.
+ */
 export const getAllWarrantyRequests = async (req, res) => {
   try {
     const { status, reason, page = 1, limit = 10 } = req.query;
@@ -140,6 +163,9 @@ export const getAllWarrantyRequests = async (req, res) => {
   }
 };
 
+/**
+ * Lấy chi tiết một yêu cầu bảo hành theo id, kèm populate các trường phục vụ UI.
+ */
 export const getWarrantyRequestById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -169,6 +195,9 @@ export const getWarrantyRequestById = async (req, res) => {
   }
 };
 
+/**
+ * Lấy danh sách yêu cầu bảo hành của người dùng hiện tại, có thể lọc theo trạng thái.
+ */
 export const getMyWarrantyRequests = async (req, res) => {
   try {
     const customerId = req.user?.id;
@@ -193,6 +222,16 @@ export const getMyWarrantyRequests = async (req, res) => {
   }
 };
 
+/**
+ * Cập nhật trạng thái bảo hành và (ngầm định) kết quả xử lý
+ *
+ * Điều chỉnh tồn kho:
+ * - Khi chuyển từ Đang xử lý -> Hoàn thành và kết quả hiệu lực là "completed":
+ *   hoàn trả số lượng bằng đúng số đã mua đối với biến thể màu/kích thước tương ứng.
+ * - Khi kết quả là "replaced":
+ *   trừ số lượng hàng lỗi (tối đa bằng tồn hiện tại), và nếu có đơn thay thế
+ *   thì cộng số lượng tương ứng theo từng mặt hàng trong đơn thay thế.
+ */
 export const updateWarrantyStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -232,22 +271,23 @@ export const updateWarrantyStatus = async (req, res) => {
     warrantyRequest.lastUpdate = new Date();
 
     // Xử lý cập nhật số lượng sản phẩm
+    // Tải sản phẩm để điều chỉnh số lượng ở cấp biến thể và tổng tồn kho
     const product = await Product.findById(warrantyRequest.productId);
     if (!product) {
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
     }
 
-    // Suy luận result hiệu lực: dùng result mới, hoặc result hiện có
+    // Suy luận kết quả (result) hiệu lực: ưu tiên result mới, nếu không có dùng result hiện tại
     const effectiveResult = result || warrantyRequest.result || null;
 
-    // Nếu chuyển sang completed mà chưa có result, mặc định là "completed"
+    // Nếu chuyển sang trạng thái "completed" mà chưa có result, mặc định gán "completed"
     if (warrantyRequest.status === "completed" && !effectiveResult) {
       warrantyRequest.result = "completed";
     }
 
-    // Kiểm tra nếu có selectedColor và selectedSize
+    // Chỉ xử lý điều chỉnh tồn kho khi có đầy đủ selectedColor và selectedSize
     if (warrantyRequest.selectedColor && warrantyRequest.selectedSize) {
-      // Lấy số lượng sản phẩm từ đơn hàng gốc (để hoàn đúng số lượng đã mua)
+      // Lấy số lượng đã mua từ đơn hàng gốc (để hoàn/trừ đúng số lượng)
       let originalItemQuantity = 1;
       try {
         const originalOrder = await Order.findById(warrantyRequest.orderId);
@@ -262,7 +302,7 @@ export const updateWarrantyStatus = async (req, res) => {
           }
         }
       } catch (_) {}
-      // Tìm color và size variant trong product
+      // Tìm biến thể theo màu/kích thước trong product để cập nhật số lượng lồng nhau
       const colorIndex = product.colors.findIndex(c => c.name === warrantyRequest.selectedColor);
       
       if (colorIndex !== -1) {
@@ -270,8 +310,8 @@ export const updateWarrantyStatus = async (req, res) => {
         const sizeIndex = colorObj.sizes.findIndex(s => s.size === warrantyRequest.selectedSize);
 
         if (sizeIndex !== -1) {
-          // Trường hợp 1: Cập nhật từ processing -> completed với result = "completed"
-          // Tăng số lượng sản phẩm (sản phẩm được trả lại kho)
+          // Trường hợp 1: Từ "processing" -> "completed" với result = "completed"
+          // Tăng số lượng sản phẩm (hàng được trả lại kho)
           if (oldStatus === "processing" && status === "completed" && (effectiveResult === "completed" || !result)) {
             // Cập nhật colors.sizes.quantity
             product.colors[colorIndex].sizes[sizeIndex].quantity += originalItemQuantity;
@@ -280,14 +320,15 @@ export const updateWarrantyStatus = async (req, res) => {
               const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
               return total + colorTotal;
             }, 0);
-            // Đánh dấu đã thay đổi để trigger pre-save middleware
+            // Đánh dấu đã thay đổi để kích hoạt pre-save middleware
             product.markModified('colors');
             await product.save();
             console.log(`Đã tăng số lượng sản phẩm ${product.name} (${warrantyRequest.selectedColor} - ${warrantyRequest.selectedSize}) lên 1. stockQuantity: ${product.stockQuantity}`);
           }
           
           // Trường hợp 2: result = "replaced"
-          // Giảm số lượng sản phẩm bị lỗi (nếu chưa được xử lý trước đó)
+          // Giảm số lượng sản phẩm bị lỗi (nếu trước đó chưa trừ)
+          // Đồng thời, nếu có đơn thay thế thì cộng số lượng cho sản phẩm thay thế
           if (effectiveResult === "replaced") {
             // Chỉ giảm nếu chưa được xử lý trước đó (oldResult !== "replaced")
             if (oldResult !== "replaced") {
@@ -301,17 +342,17 @@ export const updateWarrantyStatus = async (req, res) => {
                   const colorTotal = (color.sizes || []).reduce((sum, s) => sum + (s.quantity || 0), 0);
                   return total + colorTotal;
                 }, 0);
-                // Đánh dấu đã thay đổi để trigger pre-save middleware
+                // Đánh dấu đã thay đổi để kích hoạt pre-save middleware
                 product.markModified('colors');
                 await product.save();
                 console.log(`Đã giảm số lượng sản phẩm bị lỗi ${product.name} (${warrantyRequest.selectedColor} - ${warrantyRequest.selectedSize}) xuống 1. stockQuantity: ${product.stockQuantity}`);
               }
 
-              // Tăng số lượng sản phẩm thay thế nếu có replacementOrderId
+              // Tăng số lượng cho từng sản phẩm trong đơn thay thế nếu có replacementOrderId
               if (replacementOrderId && mongoose.Types.ObjectId.isValid(replacementOrderId)) {
                 const replacementOrder = await Order.findById(replacementOrderId);
                 if (replacementOrder && Array.isArray(replacementOrder.items)) {
-                  // Tăng số lượng theo từng item trong đơn hàng thay thế
+                  // Duyệt từng item trong đơn thay thế và cộng số lượng tương ứng
                   for (const replacementItem of replacementOrder.items) {
                     const replacementProduct = await Product.findById(replacementItem.productId);
                     if (!replacementProduct) continue;
@@ -377,8 +418,8 @@ export const processWarrantyRequest = async (req, res) => {
       return res.status(401).json({ message: "Chưa đăng nhập" });
     }
 
-    if (!["approve", "replace", "reject"].includes(action)) {
-      return res.status(400).json({ message: "Hành động không hợp lệ. Chọn: approve, replace, hoặc reject" });
+    if (!["approve", "replace", "reject", "refund"].includes(action)) {
+      return res.status(400).json({ message: "Hành động không hợp lệ. Chọn: approve, replace, refund, hoặc reject" });
     }
 
     const warrantyRequest = await Warranty.findById(id);
@@ -419,6 +460,11 @@ export const processWarrantyRequest = async (req, res) => {
       warrantyRequest.replacementOrderId = replacementOrderId;
       warrantyRequest.resolutionDate = new Date();
       warrantyRequest.resolutionNote = `Đổi sản phẩm mới. Mã đơn hàng thay thế: ${replacementOrderId}`;
+    } else if (action === "refund") {
+      warrantyRequest.status = "completed";
+      warrantyRequest.result = "refunded";
+      warrantyRequest.resolutionDate = new Date();
+      warrantyRequest.resolutionNote = `Hoàn tiền cho khách hàng`;
     } else if (action === "reject") { 
       warrantyRequest.status = "rejected";
       warrantyRequest.result = "rejected";
@@ -446,6 +492,7 @@ export const processWarrantyRequest = async (req, res) => {
     const actionMessages = {
       approve: "đã được chấp nhận",
       replace: "đã được đổi sản phẩm mới",
+      refund: "đã được hoàn tiền",
       reject: "đã bị từ chối",
     };
 
