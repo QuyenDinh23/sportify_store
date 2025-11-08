@@ -41,13 +41,14 @@ import {
   updateWarrantyStatus,
   deleteWarrantyRequest,
 } from '../../api/warranty/warrantyApi';
-import { Check, X, Clock, FileText, TrendingUp, ShieldCheck, ShieldX } from 'lucide-react';
+import { createReplacementOrderAdmin } from '../../api/order/orderApi';
+import { Check, X, Clock, FileText, TrendingUp, ShieldCheck, ShieldX, DollarSign } from 'lucide-react';
 
 const warrantyResponseSchema = z.object({
   action: z.string({
     required_error: "Vui lòng chọn hành động",
   }).refine(
-    (val) => ["approve", "replace", "reject"].includes(val),
+    (val) => ["approve", "replace", "reject", "refund"].includes(val),
     {
       message: "Vui lòng chọn hành động",
     }
@@ -146,6 +147,7 @@ const WarrantyManagement = () => {
   });
 
   const watchedAction = watch('action');
+  const [replacementOrderNumber, setReplacementOrderNumber] = useState("");
   const watchedStatus = watchUpdateStatus('status');
 
   const columns = [
@@ -463,7 +465,7 @@ const WarrantyManagement = () => {
                   <label className="text-sm font-medium text-muted-foreground">
                     Mã đơn hàng
                   </label>
-                  <p className="font-medium font-mono">{selectedWarranty.orderId?._id || selectedWarranty.orderId || 'N/A'}</p>
+                  <p className="font-medium font-mono">{(selectedWarranty.orderId && selectedWarranty.orderId.orderNumber) ? selectedWarranty.orderId.orderNumber : (selectedWarranty.orderId?._id || selectedWarranty.orderId || 'N/A')}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
@@ -477,6 +479,16 @@ const WarrantyManagement = () => {
                   </label>
                   <p className="font-medium">{selectedWarranty.productId?.name || 'N/A'}</p>
                 </div>
+                {selectedWarranty.replacementOrderId && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Đơn hàng thay thế</label>
+                    <p className="font-medium font-mono">
+                      {typeof selectedWarranty.replacementOrderId === 'object' && selectedWarranty.replacementOrderId.orderNumber
+                        ? selectedWarranty.replacementOrderId.orderNumber
+                        : selectedWarranty.replacementOrderId}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -533,6 +545,46 @@ const WarrantyManagement = () => {
                 <p className="font-medium">{selectedWarranty.description}</p>
               </div>
 
+              {selectedWarranty.contactInfo && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Liên hệ</label>
+                  <p className="font-medium">{selectedWarranty.contactInfo}</p>
+                </div>
+              )}
+
+              {(selectedWarranty.bankAccountName || selectedWarranty.bankAccountNumber || selectedWarranty.bankName) && (
+                <div className="bg-muted p-4 rounded-lg">
+                  <h4 className="font-semibold mb-3">Thông tin tài khoản ngân hàng (khách cung cấp)</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm text-muted-foreground">Chủ tài khoản</label>
+                      <p className="font-medium">{selectedWarranty.bankAccountName || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Số tài khoản</label>
+                      <p className="font-medium">{selectedWarranty.bankAccountNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Ngân hàng</label>
+                      <p className="font-medium">{selectedWarranty.bankName || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {Array.isArray(selectedWarranty.attachments) && selectedWarranty.attachments.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Hình ảnh/video đính kèm</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedWarranty.attachments.map((url, idx) => (
+                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="w-24 h-24 rounded border overflow-hidden">
+                        <img src={url} alt={`attachment-${idx}`} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {selectedWarranty.adminNote && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">
@@ -560,7 +612,7 @@ const WarrantyManagement = () => {
                          <SelectItem value="approve">
                            <div className="flex items-center gap-2">
                              <ShieldCheck className="h-4 w-4 text-green-600" />
-                             Chấp nhận
+                             Trả hàng hoàn tiền
                            </div>
                          </SelectItem>
                          <SelectItem value="replace">
@@ -569,10 +621,16 @@ const WarrantyManagement = () => {
                              Đổi sản phẩm
                            </div>
                          </SelectItem>
+                         <SelectItem value="refund">
+                           <div className="flex items-center gap-2">
+                             <DollarSign className="h-4 w-4 text-emerald-600" />
+                             Hoàn tiền
+                           </div>
+                         </SelectItem>
                          <SelectItem value="reject">
                            <div className="flex items-center gap-2">
                              <ShieldX className="h-4 w-4 text-red-600" />
-                             Từ chối
+                             Từ chối bảo hành
                            </div>
                          </SelectItem>
                        </SelectContent>
@@ -619,6 +677,44 @@ const WarrantyManagement = () => {
                        />
                      )}
                    />
+                   <div className="mt-2">
+                     <Button
+                       type="button"
+                       variant="secondary"
+                       onClick={async () => {
+                         try {
+                           const userId = selectedWarranty?.customerId?._id || selectedWarranty?.customerId;
+                           const payload = {
+                             userId,
+                             items: [{
+                               productId: selectedWarranty?.productId?._id || selectedWarranty?.productId,
+                               selectedColor: selectedWarranty?.selectedColor,
+                               selectedSize: selectedWarranty?.selectedSize,
+                               // Server will infer original quantity from warranty/order if not provided
+                             }],
+                             notes: 'Đơn hàng thay thế cho bảo hành',
+                             warrantyId: selectedWarranty?._id,
+                           };
+                           const res = await createReplacementOrderAdmin(payload);
+                           reset({
+                             action: 'replace',
+                             adminNote: '',
+                             rejectReason: '',
+                             replacementOrderId: res?.data?._id || res?.data?.id,
+                           });
+                           setReplacementOrderNumber(res?.data?.orderNumber || "");
+                           toast({ title: 'Đã tạo đơn thay thế', description: res?.data?.orderNumber || 'Thành công' });
+                         } catch (e) {
+                           toast({ title: 'Lỗi', description: e?.message || 'Không thể tạo đơn thay thế', variant: 'destructive' });
+                         }
+                       }}
+                     >
+                       Tạo đơn thay thế tự động
+                     </Button>
+                   </div>
+                   {(replacementOrderNumber || (watch('replacementOrderId') && selectedWarranty?.replacementOrderId)) && (
+                     <p className="text-xs text-muted-foreground mt-2">Mã đơn thay thế: <span className="font-medium">{replacementOrderNumber || watch('replacementOrderId')}</span></p>
+                   )}
                    {errors.replacementOrderId && (
                      <p className="text-sm text-destructive mt-1">{errors.replacementOrderId.message}</p>
                    )}

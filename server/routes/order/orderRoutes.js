@@ -9,6 +9,9 @@ import {
   getOrderStatistics,
   getRevenueByMonth,
   getOrdersByStatus,
+  createReplacementOrder,
+  submitRefundInfo,
+  requestReturn,
   vnpayIPN,
   vnpayReturn
 } from "../../controllers/order/orderController.js";
@@ -34,8 +37,17 @@ router.get("/admin/revenue-by-month", middlewareController.verifyToken, getReven
 // Lấy đơn hàng theo trạng thái (Admin)
 router.get("/admin/orders-by-status", middlewareController.verifyToken, getOrdersByStatus);
 
+// Tạo đơn thay thế (Admin)
+router.post("/admin/replacement", middlewareController.verifyToken, createReplacementOrder);
+
 // Lấy chi tiết đơn hàng (cần authentication)
 router.get("/:orderId", middlewareController.verifyToken, getOrderDetail);
+
+// Gửi thông tin hoàn tiền + yêu cầu hoàn tiền (cần authentication)
+router.put("/:orderId/refund-info", middlewareController.verifyToken, submitRefundInfo);
+
+// Gửi yêu cầu hoàn trả hàng (cần authentication)
+router.put("/:orderId/return-request", middlewareController.verifyToken, requestReturn);
 
 // Cập nhật trạng thái đơn hàng (Admin only)
 router.put("/:orderId/status", middlewareController.verifyToken, updateOrderStatus);
