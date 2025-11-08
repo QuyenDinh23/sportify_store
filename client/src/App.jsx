@@ -2,7 +2,7 @@ import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/dashboard/DashBoard";
 import Overview from "./pages/dashboard/Overview";
 import CategoryManagement from "./pages/dashboard/CategoryManagement";
@@ -19,7 +19,6 @@ import Cart from "./pages/cart/Cart";
 import Checkout from "./pages/checkout/Checkout";
 import OrderSuccess from "./pages/checkout/OrderSuccess";
 import OrderDetail from "./pages/order/OrderDetail";
-import Orders from "./pages/order/Orders";
 import UserProfile from "./pages/AccountManage/UserProfile";
 import AddressManage from "./pages/AccountManage/AddressManagement";
 import AddEditAddress from "./pages/AccountManage/AddressAddEdit";
@@ -64,7 +63,7 @@ const App = () => {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             <Route path="/order-detail/:orderId" element={<OrderDetail />} />
-            <Route path="/orders" element={<Orders />} />
+            <Route path="/orders" element={<Navigate to="/account/order" replace />} />
             {/* route dashboard */}
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>

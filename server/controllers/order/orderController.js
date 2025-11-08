@@ -551,12 +551,26 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
+    // Check if order can be cancelled based on status
+    // Only pending orders can be cancelled
     if (order.status !== 'pending') {
+      // For VNPay orders that are paid: status changes to 'confirmed' after successful payment
+      // So if status is not 'pending', it means payment has been completed and cannot be cancelled
+      if (order.paymentMethod === 'vnpay') {
+        return res.status(400).json({
+          success: false,
+          message: "Đơn hàng đã thanh toán qua VNPay, không thể hủy. Vui lòng liên hệ hỗ trợ nếu cần hỗ trợ."
+        });
+      }
       return res.status(400).json({
         success: false,
         message: "Không thể hủy đơn hàng ở trạng thái này"
       });
     }
+
+    // At this point, order.status === 'pending'
+    // COD orders: can be cancelled (status is pending)
+    // VNPay orders: can only be cancelled if payment hasn't been completed yet (status is still pending)
 
     order.status = 'cancelled';
     order.cancelledAt = new Date();

@@ -215,7 +215,7 @@ const OrderSuccess = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Link to="/orders" className="block">
+                  <Link to="/account/order" className="block">
                     <Button variant="outline" className="w-full">
                       <Package className="h-4 w-4 mr-2" />
                       Xem đơn hàng của tôi

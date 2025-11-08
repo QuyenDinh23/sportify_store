@@ -21,9 +21,19 @@ import { Separator } from "../../components/ui/separator";
 import { useToast } from "../../hooks/use-toast";
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { getOrderDetail } from "../../api/order/orderApi";
+import { getOrderDetail, cancelOrder } from "../../api/order/orderApi";
 import { createWarrantyRequest } from "../../api/warranty/warrantyApi";
 import { WarrantyRequestDialog } from "../../components/warranty/WarrantyRequestDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import { Textarea } from "../../components/ui/textarea";
+import { Label } from "../../components/ui/label";
 
 const OrderDetail = () => {
   const { orderId } = useParams();
@@ -34,6 +44,9 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isWarrantyDialogOpen, setIsWarrantyDialogOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -103,6 +116,54 @@ const OrderDetail = () => {
       });
       throw error; // Re-throw to let the form handle it
     }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!order) return;
+
+    try {
+      setIsCancelling(true);
+      await cancelOrder(order._id, cancelReason);
+      
+      toast({
+        title: "Thành công",
+        description: "Hủy đơn hàng thành công",
+      });
+
+      setIsCancelDialogOpen(false);
+      setCancelReason("");
+      
+      // Refresh order data
+      const response = await getOrderDetail(orderId);
+      setOrder(response.data);
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: error.response?.data?.message || "Không thể hủy đơn hàng",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // Check if order can be cancelled
+  const canCancelOrder = () => {
+    if (!order) return false;
+    
+    // COD orders: can cancel if status is pending
+    if (order.paymentMethod === 'cod') {
+      return order.status === 'pending';
+    }
+    
+    // VNPay orders: can only cancel if status is still pending (not paid yet)
+    // Once VNPay payment is successful, status changes to 'confirmed' and cannot be cancelled
+    if (order.paymentMethod === 'vnpay') {
+      return order.status === 'pending';
+    }
+    
+    // Other payment methods: can cancel if pending
+    return order.status === 'pending';
   };
 
   if (loading) {
@@ -421,17 +482,21 @@ const OrderDetail = () => {
                   )}
                 </div>
 
-                {order.status === 'pending' && (
+                {canCancelOrder() && (
                   <Button
                     variant="destructive"
                     className="w-full"
-                    onClick={() => {
-                      // TODO: Implement cancel order
-                      console.log('Cancel order');
-                    }}
+                    onClick={() => setIsCancelDialogOpen(true)}
                   >
                     Hủy đơn hàng
                   </Button>
+                )}
+                {order.paymentMethod === 'vnpay' && order.status !== 'pending' && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      Đơn hàng đã thanh toán qua VNPay, không thể hủy. Vui lòng liên hệ hỗ trợ nếu cần hỗ trợ.
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -452,6 +517,49 @@ const OrderDetail = () => {
           order={order}
         />
       )}
+
+      {/* Cancel Order Dialog */}
+      <Dialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Hủy đơn hàng</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn hủy đơn hàng này? Vui lòng nhập lý do hủy đơn.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cancelReason">Lý do hủy đơn *</Label>
+              <Textarea
+                id="cancelReason"
+                placeholder="Nhập lý do hủy đơn hàng..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCancelDialogOpen(false);
+                setCancelReason("");
+              }}
+              disabled={isCancelling}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelOrder}
+              disabled={isCancelling || !cancelReason.trim()}
+            >
+              {isCancelling ? "Đang xử lý..." : "Xác nhận hủy"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
