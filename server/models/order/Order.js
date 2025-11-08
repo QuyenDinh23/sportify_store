@@ -148,8 +148,10 @@ const orderSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  // Refund information (when customer requests refund)
+  // Refund information for VNPay orders (when customer cancels paid order)
   refundInfo: {
+    zaloPhone: { type: String, default: null },
+    qrCode: { type: String, default: null }, // URL of uploaded QR code image
     bankAccountName: { type: String, default: null },
     bankAccountNumber: { type: String, default: null },
     bankName: { type: String, default: null },
