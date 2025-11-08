@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '../../hooks/use-toast';
 import { getAllOrdersAdmin, updateOrderStatusAdmin } from '../../api/order/orderApi';
 import Pagination from '../../components/pagination/Pagination';
-import { Search, Package, Calendar, DollarSign, User, Truck } from 'lucide-react';
+import { Search, Package, Calendar, DollarSign, User, Truck, Phone, QrCode } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -365,10 +365,68 @@ const OrderManagement = () => {
                           ? 'Thanh toán khi nhận hàng'
                           : order.paymentMethod === 'bank_transfer'
                           ? 'Chuyển khoản ngân hàng'
+                          : order.paymentMethod === 'vnpay'
+                          ? 'VNPay'
                           : 'Thẻ tín dụng'}
                       </span>
                     </div>
                   </div>
+
+                  {/* Refund Info for VNPay cancelled orders */}
+                  {order.paymentMethod === 'vnpay' && 
+                   order.status === 'cancelled' && 
+                   order.refundInfo && 
+                   (order.refundInfo.zaloPhone || order.refundInfo.qrCode) && (
+                    <div className="border-t pt-4">
+                      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+                        <h4 className="font-medium text-sm text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                          <QrCode className="h-4 w-4" />
+                          Thông tin hoàn tiền
+                        </h4>
+                        {order.refundInfo.zaloPhone && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Phone className="h-4 w-4 text-blue-600" />
+                            <span className="text-muted-foreground">Số điện thoại Zalo:</span>
+                            <span className="font-medium">{order.refundInfo.zaloPhone}</span>
+                          </div>
+                        )}
+                        {order.refundInfo.qrCode && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <QrCode className="h-4 w-4 text-blue-600" />
+                              <span className="text-muted-foreground">Mã QR hoàn tiền:</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <img
+                                src={order.refundInfo.qrCode}
+                                alt="QR Code hoàn tiền"
+                                className="w-32 h-32 object-contain border border-blue-200 dark:border-blue-800 rounded-lg bg-white p-2"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <a
+                                href={order.refundInfo.qrCode}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                              >
+                                Xem ảnh gốc
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                        {order.cancelReason && (
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Lý do hủy:</span>
+                            <p className="mt-1 text-foreground bg-white dark:bg-gray-800 p-2 rounded border">
+                              {order.cancelReason}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

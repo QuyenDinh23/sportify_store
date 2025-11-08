@@ -3,6 +3,7 @@ import Cart from "../../models/cart/Cart.js";
 import Voucher from "../../models/voucher/Voucher.js";
 import Product from "../../models/product/Product.js";
 import { createPaymentUrl, verifySecureHash, VNPAY_RETURN_URL, VNPAY_IPN_URL } from "../../utils/vnpay.js";
+import { uploadToCloudinary } from "../../middlewares/upload.js";
 
 // Tạo đơn hàng mới
 export const createOrder = async (req, res) => {
@@ -536,8 +537,9 @@ export const getOrderDetail = async (req, res) => {
 export const cancelOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { reason } = req.body;
+    const { reason, zaloPhone } = req.body;
     const userId = req.user.id;
+    const qrCodeFile = req.file; // File uploaded via multer
 
     const order = await Order.findOne({ 
       _id: orderId, 
@@ -551,26 +553,75 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
-    // Check if order can be cancelled based on status
-    // Only pending orders can be cancelled
-    if (order.status !== 'pending') {
-      // For VNPay orders that are paid: status changes to 'confirmed' after successful payment
-      // So if status is not 'pending', it means payment has been completed and cannot be cancelled
-      if (order.paymentMethod === 'vnpay') {
+    // Check if order can be cancelled
+    // For VNPay orders, always require zaloPhone and qrCode
+    if (order.paymentMethod === 'vnpay') {
+      // VNPay order - require zaloPhone and qrCode for all statuses
+      if (!zaloPhone || !zaloPhone.trim()) {
         return res.status(400).json({
           success: false,
-          message: "Đơn hàng đã thanh toán qua VNPay, không thể hủy. Vui lòng liên hệ hỗ trợ nếu cần hỗ trợ."
+          message: "Vui lòng nhập số điện thoại Zalo để hoàn tiền"
         });
       }
+      if (!qrCodeFile) {
+        return res.status(400).json({
+          success: false,
+          message: "Vui lòng upload mã QR để hoàn tiền"
+        });
+      }
+
+      // Upload QR code to Cloudinary
+      let qrCodeUrl = null;
+      try {
+        const uploadResult = await uploadToCloudinary(qrCodeFile.buffer, "sportifyStore/refund-qr");
+        qrCodeUrl = uploadResult.secure_url;
+      } catch (uploadError) {
+        console.error("Error uploading QR code:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Lỗi khi upload mã QR",
+          error: uploadError.message
+        });
+      }
+
+      // Check if order can be cancelled based on status
+      if (order.status !== 'pending' && order.status !== 'confirmed' && order.status !== 'processing') {
+        return res.status(400).json({
+          success: false,
+          message: "Không thể hủy đơn hàng ở trạng thái này"
+        });
+      }
+
+      // Update order with cancellation and refund info
+      order.status = 'cancelled';
+      order.cancelledAt = new Date();
+      order.cancelReason = reason || 'Khách hàng hủy';
+      order.refundInfo = {
+        ...order.refundInfo,
+        zaloPhone: zaloPhone.trim(),
+        qrCode: qrCodeUrl
+      };
+
+      await order.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "Hủy đơn hàng thành công. Yêu cầu hoàn tiền đã được ghi nhận.",
+        data: order
+      });
+    }
+
+    // For other payment methods (COD, bank_transfer, etc.)
+    // Only pending orders can be cancelled
+    if (order.status !== 'pending') {
       return res.status(400).json({
         success: false,
         message: "Không thể hủy đơn hàng ở trạng thái này"
       });
     }
 
-    // At this point, order.status === 'pending'
+    // At this point, order.status === 'pending' and paymentMethod !== 'vnpay'
     // COD orders: can be cancelled (status is pending)
-    // VNPay orders: can only be cancelled if payment hasn't been completed yet (status is still pending)
 
     order.status = 'cancelled';
     order.cancelledAt = new Date();
