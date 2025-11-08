@@ -40,6 +40,7 @@ import UsersManagement from "./pages/dashboard/UsersManagement";
 import OrderManagement from "./pages/dashboard/OrderManagement";
 import WarrantyManagement from "./pages/dashboard/WarrantyManagement";
 import WarrantyRequest from "./pages/AccountManage/WarrantyRequest";
+import ReturnWarrantyPolicy from "./pages/support/ReturnWarrantyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => {
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             <Route path="/order-detail/:orderId" element={<OrderDetail />} />
             <Route path="/orders" element={<Navigate to="/account/order" replace />} />
+            <Route path="/support/returns-warranty" element={<ReturnWarrantyPolicy />} />
             {/* route dashboard */}
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>

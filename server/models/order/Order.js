@@ -85,7 +85,18 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'],
+    enum: [
+      'pending',
+      'confirmed',
+      'processing',
+      'shipped',
+      'delivered',
+      'cancelled',
+      'return_requested',
+      'returned',
+      'refund_requested',
+      'refunded'
+    ],
     default: 'pending'
   },
   subtotal: {
@@ -136,7 +147,17 @@ const orderSchema = new mongoose.Schema({
   cancelReason: {
     type: String,
     default: null
-  }
+  },
+  // Refund information (when customer requests refund)
+  refundInfo: {
+    bankAccountName: { type: String, default: null },
+    bankAccountNumber: { type: String, default: null },
+    bankName: { type: String, default: null },
+    note: { type: String, default: null },
+    condition: { type: String, enum: [null, 'intact', 'damaged'], default: null },
+  },
+  refundEligible: { type: Boolean, default: false },
+  refundProcessedAt: { type: Date, default: null }
 }, {
   timestamps: true
 });

@@ -40,6 +40,9 @@ const warrantyRequestSchema = z.object({
   issueDate: z.string().optional(),
   contactInfo: z.string().optional(),
   attachments: z.string().min(1, "Vui lòng nhập ít nhất 1 URL file đính kèm"),
+  bankAccountName: z.string().optional(),
+  bankAccountNumber: z.string().optional(),
+  bankName: z.string().optional(),
 }).refine(
   (data) => {
     const urls = data.attachments
@@ -80,6 +83,9 @@ export const WarrantyRequestDialog = ({ isOpen, onClose, onSubmit, product, orde
       issueDate: "",
       contactInfo: "",
       attachments: "",
+      bankAccountName: "",
+      bankAccountNumber: "",
+      bankName: "",
     },
   });
 
@@ -109,6 +115,9 @@ export const WarrantyRequestDialog = ({ isOpen, onClose, onSubmit, product, orde
       issueDate: data.issueDate || undefined,
       contactInfo: data.contactInfo || undefined,
       attachments,
+      bankAccountName: data.bankAccountName || undefined,
+      bankAccountNumber: data.bankAccountNumber || undefined,
+      bankName: data.bankName || undefined,
     };
 
     onSubmit(warrantyData);
@@ -204,6 +213,39 @@ export const WarrantyRequestDialog = ({ isOpen, onClose, onSubmit, product, orde
               {errors.contactInfo && (
                 <p className="text-sm text-destructive mt-1">{errors.contactInfo.message}</p>
               )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Tên chủ tài khoản (tùy chọn)</Label>
+                <Controller
+                  name="bankAccountName"
+                  control={control}
+                  render={({ field }) => (
+                    <Input {...field} placeholder="Nguyễn Văn A" />
+                  )}
+                />
+              </div>
+              <div>
+                <Label>Số tài khoản (tùy chọn)</Label>
+                <Controller
+                  name="bankAccountNumber"
+                  control={control}
+                  render={({ field }) => (
+                    <Input {...field} placeholder="0123456789" />
+                  )}
+                />
+              </div>
+              <div>
+                <Label>Tên ngân hàng (tùy chọn)</Label>
+                <Controller
+                  name="bankName"
+                  control={control}
+                  render={({ field }) => (
+                    <Input {...field} placeholder="Vietcombank" />
+                  )}
+                />
+              </div>
             </div>
 
             <div>

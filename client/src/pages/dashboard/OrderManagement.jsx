@@ -28,6 +28,7 @@ const OrderManagement = () => {
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [orderToUpdate, setOrderToUpdate] = useState(null);
   const [statusValue, setStatusValue] = useState('');
+  const [returnCondition, setReturnCondition] = useState('intact');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [estimatedDelivery, setEstimatedDelivery] = useState('');
   const itemsPerPage = 10;
@@ -47,8 +48,14 @@ const OrderManagement = () => {
         return 'bg-green-100 text-green-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
+      case 'return_requested':
+        return 'bg-orange-100 text-orange-800';
       case 'returned':
         return 'bg-orange-100 text-orange-800';
+      case 'refund_requested':
+        return 'bg-pink-100 text-pink-800';
+      case 'refunded':
+        return 'bg-emerald-100 text-emerald-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -62,7 +69,10 @@ const OrderManagement = () => {
       shipped: 'Đã gửi hàng',
       delivered: 'Đã giao hàng',
       cancelled: 'Đã hủy',
+      return_requested: 'Yêu cầu hoàn trả',
       returned: 'Đã hoàn trả',
+      refund_requested: 'Yêu cầu hoàn tiền',
+      refunded: 'Đã hoàn tiền',
     };
     return statusMap[status] || status;
   };
@@ -129,6 +139,7 @@ const OrderManagement = () => {
 
       if (trackingNumber) statusData.trackingNumber = trackingNumber;
       if (estimatedDelivery) statusData.estimatedDelivery = estimatedDelivery;
+      if (['returned', 'refunded'].includes(statusValue)) statusData.returnCondition = returnCondition;
 
       await updateOrderStatusAdmin(orderToUpdate._id, statusData);
       
@@ -194,7 +205,10 @@ const OrderManagement = () => {
                   <SelectItem value="shipped">Đã gửi hàng</SelectItem>
                   <SelectItem value="delivered">Đã giao hàng</SelectItem>
                   <SelectItem value="cancelled">Đã hủy</SelectItem>
+                  <SelectItem value="return_requested">Yêu cầu hoàn trả</SelectItem>
                   <SelectItem value="returned">Đã hoàn trả</SelectItem>
+                  <SelectItem value="refund_requested">Yêu cầu hoàn tiền</SelectItem>
+                  <SelectItem value="refunded">Đã hoàn tiền</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -384,17 +398,47 @@ const OrderManagement = () => {
                 <SelectTrigger id="status-select">
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
-                <SelectContent>
+              <SelectContent>
                   <SelectItem value="pending">Chờ xử lý</SelectItem>
                   <SelectItem value="confirmed">Đã xác nhận</SelectItem>
                   <SelectItem value="processing">Đang xử lý</SelectItem>
                   <SelectItem value="shipped">Đã gửi hàng</SelectItem>
                   <SelectItem value="delivered">Đã giao hàng</SelectItem>
                   <SelectItem value="cancelled">Đã hủy</SelectItem>
-                  <SelectItem value="returned">Đã hoàn trả</SelectItem>
+                <SelectItem value="return_requested">Yêu cầu hoàn trả</SelectItem>
+                <SelectItem value="returned">Đã hoàn trả</SelectItem>
+                <SelectItem value="refund_requested">Yêu cầu hoàn tiền</SelectItem>
+                <SelectItem value="refunded">Đã hoàn tiền</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          {['returned', 'refunded'].includes(statusValue) && (
+            <div className="space-y-2">
+              <Label>Điều kiện hàng hoàn về</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="returnCondition"
+                    value="intact"
+                    checked={returnCondition === 'intact'}
+                    onChange={() => setReturnCondition('intact')}
+                  />
+                  <span>Nguyên vẹn</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="returnCondition"
+                    value="damaged"
+                    checked={returnCondition === 'damaged'}
+                    onChange={() => setReturnCondition('damaged')}
+                  />
+                  <span>Rách/Hỏng</span>
+                </label>
+              </div>
+            </div>
+          )}
             <div className="space-y-2">
               <Label htmlFor="tracking">Mã vận đơn</Label>
               <Input
