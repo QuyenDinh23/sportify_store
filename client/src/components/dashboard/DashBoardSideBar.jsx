@@ -56,7 +56,7 @@ const menuItemSaleStaff = [
   {
     title: "Quản lý bảo hành",
     url: "/staff-sale/dashboard/warranty",
-    icon: Shield,
+      icon: Shield,
   },
 ];
 const menuItemsContentStaff = [
