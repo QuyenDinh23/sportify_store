@@ -290,7 +290,7 @@ const BlogPostForm = () => {
         toast({ title: "Thành công", description: "Bài viết đã được tạo" });
       }
 
-      navigate("/dashboard/blog");
+      navigate("/staff-content/dashboard/blog");
     } catch (error) {
       console.error("Error saving post:", error);
       toast({
@@ -425,7 +425,7 @@ const BlogPostForm = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate("/dashboard/blog")}>
+        <Button variant="ghost" onClick={() => navigate("/staff-content/dashboard/blog")}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Quay lại
         </Button>
@@ -674,7 +674,7 @@ const BlogPostForm = () => {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate("/dashboard/blog")}
+            onClick={() => navigate("/staff-content/dashboard/blog")}
           >
             Hủy
           </Button>

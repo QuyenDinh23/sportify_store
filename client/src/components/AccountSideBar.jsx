@@ -35,7 +35,7 @@ const AccountSideBar = ({ path }) => {
           width: "350px",
           minHeight: "500px",
         }}
-        className="bg-primary"
+        className="bg-gradient-hero"
       >
         <div
           style={{
