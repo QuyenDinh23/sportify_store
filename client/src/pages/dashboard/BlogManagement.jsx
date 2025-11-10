@@ -192,13 +192,13 @@ const BlogManagement = () => {
         </div>
         <div className="flex gap-2">
           <Button asChild>
-            <Link to="/dashboard/blog/categories">
+            <Link to="/staff-content/dashboard/blog/categories">
               <BookOpen className="w-4 h-4 mr-2" />
               Quản lý danh mục
             </Link>
           </Button>
           <Button asChild>
-            <Link to="/dashboard/blog/create">
+            <Link to="/staff-content/dashboard/blog/create">
               <Plus className="w-4 h-4 mr-2" />
               Tạo bài viết mới
             </Link>
@@ -337,7 +337,7 @@ const BlogManagement = () => {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link to={`/dashboard/blog/edit/${post._id}`}>
+                          <Link to={`/staff-content/dashboard/blog/edit/${post._id}`}>
                             <Edit className="w-4 h-4 mr-2" />
                             Chỉnh sửa
                           </Link>

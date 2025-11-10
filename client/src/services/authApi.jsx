@@ -3,7 +3,6 @@ import api from "./axios";
 import { store } from "../store/index.jsx";
 import { logout, setCredentials, setToken } from "../store/authSlice";
 import { toast } from "../hooks/use-toast.jsx";
-import axios from "axios";
 
 export const authApi = {
   register: async (fullName, email, password) => {
@@ -111,12 +110,41 @@ export const authApi = {
   },
 
   refreshToken: async () => {
-    const res = await axios.post("/auth/refresh-token", {
+    const res = await api.post("/auth/refresh-token", {
       withCredentials: true,
     });
     store.dispatch(
       setCredentials({ accessToken: res.data.accessToken, user: null })
     );
     return res.data;
+  },
+  sendMail: async (email) => {
+    try {
+      const res = await api.post("/auth/send-otp", { email });
+      return res;
+    } catch (err) {
+      console.error(err);
+      // bạn có thể return null / false / custom object nếu muốn
+      return err.response || { message: "Unknown error" };
+    }
+  },
+  verifyOtp: async (data) => {
+    try {
+      const res = await api.post("/auth/verify-otp", data);
+      return res;
+    } catch (err) {
+      console.error(err);
+      // bạn có thể return null / false / custom object nếu muốn
+      return err.response || { message: "Unknown error" };
+    }
+  },
+  resetPassword: async (data) => {
+    try {
+      const res = await api.post("/auth/reset-password", data);
+      return res;
+    } catch (err) {
+      console.error(err);
+      return err.response || { message: "Unknown error" };
+    }
   },
 };

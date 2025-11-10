@@ -1,4 +1,3 @@
-
 // MainNavigation.jsx
 import React, { useEffect, useState } from "react";
 import { fetchAllCategories } from "../api/category/categoryApi";
@@ -11,10 +10,27 @@ import {
 } from "../components/ui/navigation-menu";
 import { toast } from "../hooks/use-toast";
 import { Link } from "react-router-dom";
+import { voucherApi } from "../services/voucherApi";
 
 export function MainNavigation() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [voucher, setVoucher] = useState([]);
+
+  const fetchVoucher = async () => {
+    try {
+      const res = await voucherApi.getAll();
+      const data = res?.data ?? res;
+      setVoucher(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Get vouchers failed:", error.response.data);
+      throw error.response.data.error;
+    }
+  };
+
+  useEffect(() => {
+    fetchVoucher();
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -44,7 +60,11 @@ export function MainNavigation() {
     { key: "female", label: "Nữ", filter: (c) => c.gender === "female" },
     { key: "boy", label: "Bé trai", filter: (c) => c.gender === "boy" },
     { key: "girl", label: "Bé gái", filter: (c) => c.gender === "girl" },
-    { key: "accessories", label: "Phụ kiện", filter: (c) => c.type === "accessories" },
+    {
+      key: "accessories",
+      label: "Phụ kiện",
+      filter: (c) => c.type === "accessories",
+    },
   ];
 
   // Xây dựng nhóm, đảm bảo mỗi category chỉ xuất hiện 1 lần (theo thứ tự groupDefs)
@@ -66,10 +86,15 @@ export function MainNavigation() {
   if (loading) {
     return (
       <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 text-center">Đang tải danh mục...</div>
+        <div className="container mx-auto px-4 py-4 text-center">
+          Đang tải danh mục...
+        </div>
       </div>
     );
   }
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('vi-VN');
+  };
 
   return (
     <div className="border-b border-border bg-card">
@@ -91,24 +116,31 @@ export function MainNavigation() {
                       <div className="grid md:grid-cols-3 gap-6">
                         {group.items.map((category) => (
                           <div key={category._id}>
-                            <h3 className="mb-3 text-sm font-semibold text-foreground">{category.name}</h3>
+                            <h3 className="mb-3 text-sm font-semibold text-foreground">
+                              {category.name}
+                            </h3>
 
                             {/* subcategories */}
-                            {Array.isArray(category.subcategories) && category.subcategories.length > 0 ? (
+                            {Array.isArray(category.subcategories) &&
+                            category.subcategories.length > 0 ? (
                               <ul className="space-y-2">
                                 {category.subcategories.map((sub) => (
                                   <li key={sub._id}>
-                                    <Link 
+                                    <Link
                                       to={`/products?category=${category._id}&sub=${sub._id}`}
                                       className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
                                     >
-                                      <div className="text-sm font-medium leading-none">{sub.name}</div>
+                                      <div className="text-sm font-medium leading-none">
+                                        {sub.name}
+                                      </div>
                                     </Link>
                                   </li>
                                 ))}
                               </ul>
                             ) : (
-                              <p className="text-sm text-muted-foreground">Chưa có phân mục con</p>
+                              <p className="text-sm text-muted-foreground">
+                                Chưa có phân mục con
+                              </p>
                             )}
                           </div>
                         ))}
@@ -118,6 +150,30 @@ export function MainNavigation() {
                 </NavigationMenuItem>
               );
             })}
+            <NavigationMenuItem>
+              <NavigationMenuTrigger className="h-14 text-base font-semibold">
+                Giảm giá
+              </NavigationMenuTrigger>
+              <NavigationMenuContent>
+                    <div className="w-screen max-w-6xl p-6 bg-card">
+                      <div className="grid md:grid-cols-3 gap-6">
+                        {voucher?.map((voucher) => (
+                          <div key={voucher._id}>
+                            <h3 className="mb-3 text-sm font-semibold text-foreground">
+                              {voucher.code}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {voucher.description}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Hạn sử dụng: {formatDate(voucher.endDate)}  
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </NavigationMenuContent>
+            </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>
       </div>
