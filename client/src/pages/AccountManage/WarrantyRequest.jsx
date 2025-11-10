@@ -54,6 +54,7 @@ const WarrantyRequest = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedWarranty, setSelectedWarranty] = useState(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isPolicyOpen, setIsPolicyOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -92,9 +93,14 @@ const WarrantyRequest = () => {
         <AccountSideBar path="warranty" />
         <div style={{ flex: 1, padding: "50px 150px" }}>
                      <div className="mb-6">
-             <h1 style={{ fontSize: "25px", fontWeight: "bold" }}>
-               Quản lý yêu cầu bảo hành
-             </h1>
+            <div className="flex items-center justify-between">
+              <h1 style={{ fontSize: "25px", fontWeight: "bold" }}>
+                Quản lý yêu cầu bảo hành
+              </h1>
+              <Button variant="outline" onClick={() => setIsPolicyOpen(true)}>
+                Xem chính sách bảo hành
+              </Button>
+            </div>
              <p className="text-muted-foreground">
                Xem các yêu cầu bảo hành cho sản phẩm của bạn
              </p>
@@ -322,9 +328,13 @@ const WarrantyRequest = () => {
                         {selectedWarranty.result === 'replaced' && selectedWarranty.replacementOrderId && (
                           <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                             <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                              Mã đơn hàng thay thế:
+                              Đơn hàng thay thế:
                             </p>
-                            <p className="text-sm text-blue-800 dark:text-blue-200">{selectedWarranty.replacementOrderId}</p>
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                              {typeof selectedWarranty.replacementOrderId === 'object' && selectedWarranty.replacementOrderId.orderNumber
+                                ? selectedWarranty.replacementOrderId.orderNumber
+                                : selectedWarranty.replacementOrderId}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -345,6 +355,26 @@ const WarrantyRequest = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Warranty Policy Dialog */}
+      <Dialog open={isPolicyOpen} onOpenChange={setIsPolicyOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Chính sách bảo hành</DialogTitle>
+            <DialogDescription>
+              Điều khoản bảo hành áp dụng cho sản phẩm tại cửa hàng
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p><strong>Thời hạn bảo hành:</strong> 30 ngày kể từ ngày nhận hàng.</p>
+            <p><strong>Phạm vi:</strong> Lỗi kỹ thuật của nhà sản xuất; không áp dụng cho hư hỏng do sử dụng sai cách hoặc tác động ngoại lực (rách, cháy, biến dạng).
+            </p>
+            <p><strong>Hình thức xử lý:</strong> Sửa chữa, đổi mới, hoặc hoàn tiền theo đánh giá của bộ phận kỹ thuật.</p>
+            <p><strong>Hoàn tiền:</strong> Chỉ áp dụng với đơn đã giao và thanh toán không phải COD. Khi chọn hoàn tiền, vui lòng cung cấp thông tin tài khoản ngân hàng.</p>
+            <p><strong>Hoàn trả hàng:</strong> Nếu sản phẩm nguyên vẹn, hàng sẽ nhập lại kho; nếu rách/hỏng, hàng sẽ loại bỏ và không cộng tồn kho.</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -9,10 +9,14 @@ import {
   getOrderStatistics,
   getRevenueByMonth,
   getOrdersByStatus,
+  createReplacementOrder,
+  submitRefundInfo,
+  requestReturn,
   vnpayIPN,
   vnpayReturn
 } from "../../controllers/order/orderController.js";
 import middlewareController from "../../middlewares/middlewareController.js";
+import { upload } from "../../middlewares/upload.js";
 
 const router = express.Router();
 
@@ -34,14 +38,24 @@ router.get("/admin/revenue-by-month", middlewareController.verifyToken, getReven
 // Lấy đơn hàng theo trạng thái (Admin)
 router.get("/admin/orders-by-status", middlewareController.verifyToken, getOrdersByStatus);
 
+// Tạo đơn thay thế (Admin)
+router.post("/admin/replacement", middlewareController.verifyToken, createReplacementOrder);
+
 // Lấy chi tiết đơn hàng (cần authentication)
 router.get("/:orderId", middlewareController.verifyToken, getOrderDetail);
+
+// Gửi thông tin hoàn tiền + yêu cầu hoàn tiền (cần authentication)
+router.put("/:orderId/refund-info", middlewareController.verifyToken, submitRefundInfo);
+
+// Gửi yêu cầu hoàn trả hàng (cần authentication)
+router.put("/:orderId/return-request", middlewareController.verifyToken, requestReturn);
 
 // Cập nhật trạng thái đơn hàng (Admin only)
 router.put("/:orderId/status", middlewareController.verifyToken, updateOrderStatus);
 
 // Hủy đơn hàng (cần authentication)
-router.put("/:orderId/cancel", middlewareController.verifyToken, cancelOrder);
+// Hỗ trợ upload file QR code cho đơn VNPay đã thanh toán
+router.put("/:orderId/cancel", middlewareController.verifyToken, upload.single('qrCode'), cancelOrder);
 
 // VNPay IPN URL - Server-to-server (không cần authentication)
 // VNPay sẽ gọi URL này để thông báo kết quả thanh toán

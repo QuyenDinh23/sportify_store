@@ -2,8 +2,10 @@ import axios from "axios";
 import { store } from "../store/index.jsx";
 import { logout, setToken } from "../store/authSlice";
 
+const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+
 const axiosInstance = axios.create({
-    baseURL : "http://localhost:3000/api",
+    baseURL : apiUrl,
     headers : {
         "Content-Type" : "application/json",
     },
@@ -40,7 +42,7 @@ axiosInstance.interceptors.response.use(
       
       console.log("=== TOKEN REFRESH ATTEMPT ===");
       try {
-        const refreshResponse = await axios.post('http://localhost:3000/api/auth/refresh-token', {}, {
+        const refreshResponse = await axios.post(`${apiUrl}/auth/refresh-token`, {}, {
           withCredentials: true
         });
         

@@ -101,12 +101,21 @@ const Header = () => {
               <DropdownMenuContent align="end" className="w-56 bg-card z-[100]">
                 <DropdownMenuItem
                   className="cursor-pointer"
-                  onClick={() => navigate("/orders")}
+                  onClick={() => {
+                    if (user) {
+                      navigate("/account/order");
+                    } else {
+                      navigate("/login");
+                    }
+                  }}
                 >
                   <Package className="mr-2 h-4 w-4" />
                   <span>Theo dõi đơn hàng</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => navigate("/support/returns-warranty")}
+                >
                   <RotateCcw className="mr-2 h-4 w-4" />
                   <span>Đổi trả và bảo hành</span>
                 </DropdownMenuItem>

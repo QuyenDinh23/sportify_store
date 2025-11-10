@@ -4,6 +4,8 @@ const WarrantySchema = new mongoose.Schema({
   customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order", required: true },
   productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+  selectedColor: { type: String },
+  selectedSize: { type: String },
   reason: {
     type: String,
     enum: [
@@ -36,7 +38,7 @@ const WarrantySchema = new mongoose.Schema({
   lastUpdate: { type: Date, default: Date.now },
   result: {
     type: String,
-    enum: ["completed", "replaced", "rejected", null],
+    enum: ["completed", "replaced", "rejected", "refunded", null],
     default: null,
   },
   resolutionDate: Date,
@@ -44,6 +46,10 @@ const WarrantySchema = new mongoose.Schema({
   adminNote: String,
   rejectReason: String,
   replacementOrderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+  // Optional bank info provided by customer for refund handling
+  bankAccountName: { type: String, default: null },
+  bankAccountNumber: { type: String, default: null },
+  bankName: { type: String, default: null },
   actionBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   responseDate: Date,
 }, { timestamps: true });

@@ -105,10 +105,10 @@ export function DataTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                data.map((item) => (
-                  <TableRow key={item._id}>
+                data.map((item, index) => (
+                  <TableRow key={item._id || item.id || `row-${index}`}>
                     {columns.map((column) => (
-                      <TableCell key={column.key}>
+                      <TableCell key={`${item._id || item.id || index}-${column.key}`}>
                         {column.render ?
                           column.render(item[column.key], item) :
                           item[column.key]?.toString()

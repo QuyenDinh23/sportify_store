@@ -27,10 +27,44 @@ export const getOrderDetail = async (orderId) => {
   }
 };
 
-export const cancelOrder = async (orderId, reason) => {
+export const submitRefundInfo = async (orderId, payload) => {
   try {
-    const response = await api.put(`/orders/${orderId}/cancel`, { reason });
+    const response = await api.put(`/orders/${orderId}/refund-info`, payload);
     return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const requestReturn = async (orderId) => {
+  try {
+    const response = await api.put(`/orders/${orderId}/return-request`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const cancelOrder = async (orderId, reason, zaloPhone = null, qrCodeFile = null) => {
+  try {
+    // If zaloPhone and qrCodeFile are provided, send FormData (for VNPay paid orders)
+    if (zaloPhone && qrCodeFile) {
+      const formData = new FormData();
+      formData.append('reason', reason);
+      formData.append('zaloPhone', zaloPhone);
+      formData.append('qrCode', qrCodeFile);
+      
+      const response = await api.put(`/orders/${orderId}/cancel`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } else {
+      // For regular orders, send JSON
+      const response = await api.put(`/orders/${orderId}/cancel`, { reason });
+      return response.data;
+    }
   } catch (error) {
     throw error.response?.data || error.message;
   }
@@ -76,6 +110,15 @@ export const getRevenueByMonth = async () => {
 export const getOrdersByStatus = async () => {
   try {
     const response = await api.get('/orders/admin/orders-by-status');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const createReplacementOrderAdmin = async (payload) => {
+  try {
+    const response = await api.post('/orders/admin/replacement', payload);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
