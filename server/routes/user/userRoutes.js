@@ -44,4 +44,5 @@ userRoute.put(
   middlewareController.verifyToken,
   userController.toggleStatusCustomer
 );
+
 export default userRoute;

@@ -3,6 +3,9 @@ import User from "../../models/user/User.js";
 import jwt from "jsonwebtoken";
 import RefreshToken from "../../models/token/RefreshToken.js";
 import userController from "../user/userController.js";
+import generateOtp from "../../utils/generateOtp.js";
+import sendMail from "../../utils/senderMail.js";
+import Otp from "../../models/otp/Otp.js";
 const authController = {
   //REGISTER
   registerUser: async (req, res) => {
@@ -183,6 +186,81 @@ const authController = {
     res.clearCookie("refreshToken");
     await RefreshToken.deleteOne({ token: req.cookies.refreshToken });
     res.status(200).send("Logged out");
+  },
+
+  sendOtp: async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email)
+        return res.status(400).json({
+          message: "Chưa nhập Email.",
+        });
+      const user = await User.findOne({ email });
+
+      if (!user)
+        return res.status(400).json({
+          message: "Email này chưa liên kết với bất kỳ tài khoản nào.",
+        });
+
+      const otp = await generateOtp(email);
+
+      await sendMail(
+        email,
+        "Mã OTP xác thực",
+        `Mã OTP của bạn là: ${otp}`,
+        `<p>Mã OTP của bạn là: <b>${otp}</b> (hiệu lực 1 phút)</p>`
+      );
+
+      res.status(200).json({ message: "Gửi OTP thành công" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Error sending OTP" });
+    }
+  },
+  verifyOtp: async (req, res) => {
+    try {
+      const { otpString, email } = req.body;
+
+      if (!email || !otpString)
+        return res.status(400).json({
+          message: "Xác thực OTP thất bại.",
+        });
+      const otpExist = await Otp.findOne({ otp: otpString, email });
+
+      if (!otpExist)
+        return res.status(400).json({ message: "OTP không tồn tại hoặc sai" });
+
+      if (otpExist.expiresAt < new Date())
+        return res.status(400).json({ message: "OTP đã hết hạn" });
+      otpExist.deleteOne();
+      res.status(200).json({ message: "Xác thực OTP thành công" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "có lỗi khi xác thực OTP" });
+    }
+  },
+  resetPassword: async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password)
+        return res.status(400).json({
+          message: "có lỗi khi đổi mật khẩu",
+        });
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json("không tìm thấy tài khoản người dùng");
+      }
+      const salt = await bcrypt.genSalt(10);
+      const hashed = await bcrypt.hash(password, salt);
+      user.password = hashed;
+      await user.save();
+      res.status(200).json("Đổi mật khẩu thành công");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "có lỗi khi đổi mật khẩu" });
+    }
   },
 };
 export default authController;

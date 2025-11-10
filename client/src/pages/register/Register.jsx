@@ -1,11 +1,13 @@
-import { Button } from "../components/ui/button";
+import { Button } from "../../components/ui/button";
 import { Home, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { toast } from "../hooks/use-toast";
-import { authApi } from "../services/authApi";
+import { toast } from "../../hooks/use-toast";
+import { authApi } from "../../services/authApi";
 import { useNavigate } from "react-router-dom";
+import MyFacebookBtn from "../../components/customFBLoginBtn";
+import { Link } from "react-router-dom";
 
-const Login = () => {
+const Register = () => {
   // Initialize useNavigate
   const navigate = useNavigate();
 
@@ -14,8 +16,6 @@ const Login = () => {
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,64}$/;
 
-  //show register form or login form
-  const [isRegister, setIsRegister] = useState(false);
   // State riêng cho form đăng ký
   const [fullName, setFullName] = useState("");
   const [emailRegister, setEmailRegister] = useState("");
@@ -24,52 +24,37 @@ const Login = () => {
   const [showPasswordRegister, setShowPasswordRegister] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  //add Mail for login FB
+  const [fbId, setFbId] = useState("");
+  const [nameForFb, setNameForFb] = useState("");
+  const [emailForFb, setEmailForFb] = useState("");
+  const [showEmailForFb, setShowEmailForFb] = useState(false);
+  const [errorEmailForFb, setErrorEmailForFb] = useState(false);
   // Error states
   const [errorName, setErrorName] = useState(false);
   const [errorEmailRegister, setErrorEmailRegister] = useState(false);
   const [errorPasswordRegister, setErrorPasswordRegister] = useState(false);
   const [errorConfirmPassword, setErrorConfirmPassword] = useState(false);
 
-  // State for form inputs
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorEmail, setErrorEmail] = useState(false);
-  const [errorPassword, setErrorPassword] = useState(false);
+  const handleResponseFbLogin = async (response) => {
+    const userData = {
+      name: response.name,
+      email: response.email,
+      facebookId: response.id,
+    };
 
-  // Handle form submission
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    // Implement login logic here
-    let hasError = false;
-
-    // validate email
-    if (!email.trim() || !emailRegex.test(email)) {
-      setErrorEmail(true);
-      hasError = true;
-    } else {
-      setErrorEmail(false);
+    const res = await authApi.loginWithFb(
+      userData.name,
+      userData.email,
+      userData.facebookId
+    );
+    if (res && res.needEmail) {
+      setShowEmailForFb(true);
+      setNameForFb(res.name);
+      setFbId(res.fbId);
+      setEmailForFb("");
     }
-
-    // validate password
-    if (!password.trim() || !passwordRegex.test(password)) {
-      setErrorPassword(true);
-      hasError = true;
-    } else {
-      setErrorPassword(false);
-    }
-
-    if (hasError) {
-      toast({
-        title: "Đăng nhập thất bại",
-        description: "Thông tin không hợp lệ, vui lòng kiểm tra lại!",
-        variant: "destructive",
-      });
-      return;
-    }
-    const loginResponse = await authApi.login(email, password);
-
-    if (loginResponse && loginResponse.accessToken) {
+    if (res && res.accessToken) {
       const userInfo = await authApi.authMe();
       if (userInfo) {
         toast({
@@ -78,11 +63,45 @@ const Login = () => {
           variant: "default",
         });
         if (userInfo.role === "admin") {
-          navigate("/");
+          navigate("/dashboard");
         } else if (userInfo.role === "staff") {
           navigate("/staff");
         } else {
-          navigate("/shop");
+          navigate("/");
+        }
+      }
+    }
+  };
+  const RegisByFb = async (e) => {
+    e.preventDefault();
+    let hasError = false;
+    if (!emailForFb.trim() || !emailRegex.test(emailForFb)) {
+      setErrorEmailForFb(true);
+      hasError = true;
+    }
+    if (hasError) {
+      toast({
+        title: "Thất bại",
+        description: "Vui lòng nhập email hợp lệ!",
+        variant: "destructive",
+      });
+      return;
+    }
+    const res = await authApi.loginWithFb(nameForFb, emailForFb, fbId);
+    if (res && res.accessToken) {
+      const userInfo = await authApi.authMe();
+      if (userInfo) {
+        toast({
+          title: "Đăng nhập thành công",
+          description: "Chào mừng bạn đến với Sportify!",
+          variant: "default",
+        });
+        if (userInfo.role === "admin") {
+          navigate("/dashboard");
+        } else if (userInfo.role === "staff") {
+          navigate("/staff");
+        } else {
+          navigate("/");
         }
       }
     }
@@ -92,39 +111,36 @@ const Login = () => {
     e.preventDefault();
     // Validation đơn giản
     let hasError = false;
-    debugger;
+
     if (!fullName.trim()) {
       setErrorName(true);
       hasError = true;
     } else {
       setErrorName(false);
     }
-    var messss = ""
+
     if (!emailRegister.trim() || !emailRegex.test(emailRegister)) {
       setErrorEmailRegister(true);
       hasError = true;
-      messss = "invalid email";
     } else {
       setErrorEmailRegister(false);
     }
     if (!passwordRegister.trim() || !passwordRegex.test(passwordRegister)) {
       setErrorPasswordRegister(true);
       hasError = true;
-      messss = "invalid password";
     } else {
       setErrorPasswordRegister(false);
     }
     if (passwordRegister !== confirmPassword) {
       setErrorConfirmPassword(true);
       hasError = true;
-      messss = "passwords do not match";
     } else {
       setErrorConfirmPassword(false);
     }
 
     if (hasError) {
       toast({
-        title: "Đăng ký thất bại " + messss,
+        title: "Đăng ký thất bại",
         description: "Thông tin không hợp lệ, vui lòng kiểm tra lại!",
         variant: "destructive",
       });
@@ -141,37 +157,8 @@ const Login = () => {
         description: "Bạn đã đăng ký tài khoản thành công!",
         variant: "default",
       });
-      handleToggleRegister();
+      navigate("/login");
     }
-  };
-
-  //toggle between register form and login form
-  const handleToggleRegister = () => {
-    setIsRegister(!isRegister);
-    if (!isRegister) {
-      resetRegisterForm();
-    }
-    if (isRegister) {
-      resetLoginForm();
-    }
-  };
-
-  const resetRegisterForm = () => {
-    setFullName("");
-    setEmailRegister("");
-    setPasswordRegister("");
-    setConfirmPassword("");
-    setErrorName(false);
-    setErrorEmailRegister(false);
-    setErrorPasswordRegister(false);
-    setErrorConfirmPassword(false);
-  };
-
-  const resetLoginForm = () => {
-    setEmail("");
-    setPassword("");
-    setErrorEmail(false);
-    setErrorPassword(false);
   };
 
   return (
@@ -191,10 +178,12 @@ const Login = () => {
         }}
         id="navbar-login"
       >
-        <Button style={{ color: "black" }} variant="link" size="lg">
-          <Home className="w-5 h-5" />
-          <p className="text-sm">Quay lại</p>
-        </Button>
+        <Link to={"/"}>
+          <Button style={{ color: "black" }} variant="link" size="lg">
+            <Home className="w-5 h-5" />
+            <p className="text-sm">Quay lại</p>
+          </Button>
+        </Link>
         <div
           style={{
             position: "absolute",
@@ -239,15 +228,12 @@ const Login = () => {
             padding: "0 40px",
           }}
         >
-          {/* Login box */}
-          <div className="w-full max-w-lg bg-white rounded-lg  p-8">
-            {!isRegister ? (
-              <form onSubmit={handleLogin}>
-                <h1 className="text-2xl font-semibold text-gray-800 text-center mb-6">
-                  Đăng nhập
-                </h1>
-
-                {/* Email input */}
+          {showEmailForFb ? (
+            <div className="w-full max-w-lg bg-white rounded-lg  p-8">
+              <h1 className="text-2xl font-semibold text-gray-800 text-center mb-6">
+                Nhập Email của bạn
+              </h1>
+              <form onSubmit={RegisByFb}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-600 mb-1">
                     Email
@@ -255,68 +241,27 @@ const Login = () => {
                   <input
                     type="email"
                     placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={emailForFb}
+                    onChange={(e) => setEmailForFb(e.target.value)}
                     onClick={() => {
-                      setErrorEmail(false);
+                      setErrorEmailForFb(false);
                     }}
                     className="w-full px-4 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                {errorEmail && (
+                {errorEmailForFb && (
                   <div className="text-red-500 text-sm mb-5">
                     Vui lòng nhập email hợp lệ
                   </div>
                 )}
-
-                {/* Password input */}
-                <div className="mb-4 relative w-full">
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Mật khẩu
-                  </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onClick={() => {
-                      setErrorPassword(false);
-                    }}
-                    className="w-full px-4 py-2 border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  {/* Icon mắt */}
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="  text-gray-500 hover:text-gray-700"
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      right: "10px",
-                    }}
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-                {errorPassword && (
-                  <div className="text-red-500 text-sm mb-5">
-                    Vui lòng nhập mật khẩu
-                  </div>
-                )}
-                {/* Forgot password */}
-                <div className="flex justify-end mb-4">
-                  <a href="#" className="text-sm text-blue-600 hover:underline">
-                    Quên mật khẩu?
-                  </a>
-                </div>
-
-                {/* Login button */}
                 <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2  font-medium">
-                  Đăng nhập
+                  Thêm
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleRegister} >
+            </div>
+          ) : (
+            <div className="w-full max-w-lg bg-white rounded-lg  p-8">
+              <form onSubmit={handleRegister}>
                 <h1 className="text-2xl font-semibold text-gray-800 text-center mb-6">
                   Đăng ký
                 </h1>
@@ -429,46 +374,44 @@ const Login = () => {
                   Đăng ký
                 </button>
               </form>
-            )}
+              {/* Separator */}
+              <div className="flex items-center my-6">
+                <div className="flex-1 h-px bg-gray-300"></div>
+                <span className="px-3 text-gray-500 text-sm">hoặc</span>
+                <div className="flex-1 h-px bg-gray-300"></div>
+              </div>
 
-            {/* Separator */}
-            <div className="flex items-center my-6">
-              <div className="flex-1 h-px bg-gray-300"></div>
-              <span className="px-3 text-gray-500 text-sm">hoặc</span>
-              <div className="flex-1 h-px bg-gray-300"></div>
+              {/* Social logins */}
+              <button className="w-full border border-gray-300 py-2  mb-3 flex items-center justify-center hover:bg-gray-200">
+                <img
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  alt="Google"
+                  className="h-5 mr-2"
+                />
+                Đăng nhập với Google
+              </button>
+
+              <MyFacebookBtn onFbSuccess={handleResponseFbLogin} />
             </div>
-
-            {/* Social logins */}
-            <button className="w-full border border-gray-300 py-2  mb-3 flex items-center justify-center hover:bg-gray-200">
-              <img
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-                className="h-5 mr-2"
-              />
-              Đăng nhập với Google
-            </button>
-
-            <button className="w-full border border-gray-300 py-2  flex items-center justify-center hover:bg-gray-200">
-              <img
-                src="https://www.svgrepo.com/show/448224/facebook.svg"
-                alt="Facebook"
-                className="h-5 mr-2"
-              />
-              Đăng nhập với Facebook
-            </button>
-          </div>
+          )}
 
           {/* Footer */}
-          <div className="text-sm text-gray-600">
-            {!isRegister ? "Chưa có tài khoản?" : "Đã có tài khoản?"}{" "}
-            <button
-              variant="link"
-              onClick={handleToggleRegister}
-              className="text-blue-600 hover:underline"
-            >
-              {!isRegister ? "Đăng ký" : "Đăng nhập"}
-            </button>
-          </div>
+          {!showEmailForFb ? (
+            <div className="text-sm text-gray-600">
+              Đã có tài khoản?{" "}
+              <button
+                variant="link"
+                onClick={() => {
+                  navigate("/login");
+                }}
+                className="text-blue-600 hover:underline"
+              >
+                Đăng nhập
+              </button>
+            </div>
+          ) : (
+            ""
+          )}
           <div className="mt-6">
             Đăng nhập để luôn nắm bắt thông tin mới nhất từ Sportify
           </div>
@@ -483,4 +426,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;

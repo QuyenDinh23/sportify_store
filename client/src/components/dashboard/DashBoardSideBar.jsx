@@ -29,10 +29,11 @@ import {
 } from "../ui/sidebar";
 import { Button } from "../ui/button";
 import { authApi } from "../../services/authApi";
+import { useSelector } from "react-redux";
 
-const menuItems = [
+let menuItems = [];
+const menuItemsAdmin = [
   { title: "Tổng quan", url: "/dashboard", icon: BarChart3 },
-  { title: "Quản lý đơn hàng", url: "/dashboard/orders", icon: ShoppingCart },
   { title: "Quản lý sản phẩm", url: "/dashboard/products", icon: Package },
   { title: "Quản lý danh mục", url: "/dashboard/categories", icon: Grid3X3 },
   {
@@ -42,20 +43,49 @@ const menuItems = [
   },
   { title: "Quản lý thương hiệu", url: "/dashboard/brands", icon: Award },
   { title: "Quản lý môn thể thao", url: "/dashboard/sports", icon: Trophy },
-  { title: "Quản lý mã giảm giá", url: "/dashboard/vouchers", icon: Ticket },
-  { title: "Quản lý blog", url: "/dashboard/blog", icon: Newspaper },
-
   { title: "Quản lý người dùng", url: "/dashboard/users", icon: Users },
-
-  { title: "Quản lý bảo hành", url: "/dashboard/warranty", icon: Shield },
 ];
 
+const menuItemSaleStaff = [
+  { title: "Tổng quan", url: "/staff-sale/dashboard", icon: BarChart3 },
+  {
+    title: "Quản lý đơn hàng",
+    url: "/staff-sale/dashboard/orders",
+    icon: ShoppingCart,
+  },
+  {
+    title: "Quản lý bảo hành",
+    url: "/staff-sale/dashboard/warranty",
+      icon: Shield,
+  },
+];
+const menuItemsContentStaff = [
+  { title: "Tổng quan", url: "/staff-content/dashboard", icon: BarChart3 },
+  {
+    title: "Quản lý mã giảm giá",
+    url: "/staff-content/dashboard/vouchers",
+    icon: Ticket,
+  },
+  {
+    title: "Quản lý blog",
+    url: "/staff-content/dashboard/blog",
+    icon: Newspaper,
+  },
+];
 export function DashboardSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   const isCollapsed = state === "collapsed";
+  const user = useSelector((state) => state.auth.user);
 
+  if (user.role === "admin") {
+    menuItems = menuItemsAdmin;
+  } else if (user.role === "staff-sale") {
+    menuItems = menuItemSaleStaff;
+  } else if (user.role === "staff-content") {
+    menuItems = menuItemsContentStaff;
+  }
   // eslint-disable-next-line no-unused-vars
   const isActive = (path) => currentPath === path;
 

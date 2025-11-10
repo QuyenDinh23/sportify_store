@@ -36,21 +36,21 @@ const ChangePassword = () => {
   };
 
   const handleReset = () => {
-  setOldPassword("");
-  setPassword("");
-  setPasswordConfirm("");
-  setRule({
-    rule1: false,
-    rule2: false,
-    rule3: false,
-    rule4: false,
-    rule5: false,
-  });
-  setBtnSaveStatus(true);
-  setInvalidPassword(false);
-  setErrorConfirmPassword(false);
-  setWrongOldPassword(false);
-};
+    setOldPassword("");
+    setPassword("");
+    setPasswordConfirm("");
+    setRule({
+      rule1: false,
+      rule2: false,
+      rule3: false,
+      rule4: false,
+      rule5: false,
+    });
+    setBtnSaveStatus(true);
+    setInvalidPassword(false);
+    setErrorConfirmPassword(false);
+    setWrongOldPassword(false);
+  };
   useEffect(() => {
     handlePasswordChange(password);
   }, [password]);
