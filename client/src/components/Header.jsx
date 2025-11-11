@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   LogOut,
   BookOpen,
+  Info,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -92,6 +93,18 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center space-x-2">
+            {/* About Us Link */}
+            <Button
+              variant="ghost"
+              className="hidden md:flex items-center gap-2"
+              asChild
+            >
+              <Link to="/about">
+                <Info className="h-5 w-5" />
+                <span className="text-sm">Về chúng tôi</span>
+              </Link>
+            </Button>
+
             {/* Blog Link */}
             <Button
               variant="ghost"
