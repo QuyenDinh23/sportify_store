@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Product from "../../models/product/Product.js";
 import Subcategory from "../../models/category/SubCategory.js"
+import Cart from "../../models/cart/Cart.js";
 
 export const createProduct = async (req, res) => {
   try {
@@ -271,26 +272,49 @@ export const checkProductName = async (req, res) => {
 export const toggleProductStatus = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Kiểm tra ID hợp lệ
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "ID sản phẩm không hợp lệ" });
     }
 
+    // Tìm sản phẩm
     const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({ message: "Sản phẩm không tồn tại" });
     }
 
-    product.status = product.status === "active" ? "inactive" : "active";
-    product.updatedAt = new Date();
-    await product.save();
+    // Nếu trạng thái hiện tại là "active" (nghĩa là sắp bị ẩn), ta kiểm tra giỏ hàng
+    if (product.status === "active") {
+      const cartWithProduct = await Cart.findOne({
+        "items.productId": id,
+      });
 
-    res.status(200).json({
-      message: `Trạng thái sản phẩm đã được chuyển thành ${product.status}`,
-      product,
+      if (cartWithProduct) {
+        return res.status(400).json({
+          message: "Không thể ẩn sản phẩm vì sản phẩm đang tồn tại trong giỏ hàng của khách hàng.",
+        });
+      }
+    }
+
+    // Đảo trạng thái
+    const newStatus = product.status === "active" ? "inactive" : "active";
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { status: newStatus, updatedAt: new Date() },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      message: `Trạng thái sản phẩm đã được chuyển sang "${updatedProduct.status}"`,
+      product: updatedProduct,
     });
   } catch (error) {
     console.error("Lỗi khi toggle trạng thái sản phẩm:", error);
-    res.status(500).json({ message: "Server error khi cập nhật trạng thái sản phẩm" });
+    return res.status(500).json({
+      message: "Lỗi server khi cập nhật trạng thái sản phẩm",
+    });
   }
 };
 
