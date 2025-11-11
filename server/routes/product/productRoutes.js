@@ -1,10 +1,11 @@
 import express from "express";
 
-import { checkProductName, createProduct, getDiscountedProducts, getProductById, getProducts, getProductsByFilter, getProductsBySport, getRelatedProducts, getSportsShoes, toggleProductStatus, updateProduct } from "../../controllers/product/productController.js";
+import { checkProductName, createProduct, getDiscountedProducts, getProductById, getProducts, getProductsByFilter, getProductsBySport, getRelatedProducts, getSportsShoes, searchActiveProductsByName, toggleProductStatus, updateProduct } from "../../controllers/product/productController.js";
 
 
 const router = express.Router();
 
+router.get("/search", searchActiveProductsByName);
 router.get("/:id/related", getRelatedProducts);
 router.get("/sports-shoes", getSportsShoes);
 router.get("/discounted", getDiscountedProducts);

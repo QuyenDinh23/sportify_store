@@ -113,3 +113,16 @@ export const getRelatedProducts = async (productId) => {
   const response = await axiosInstance.get(`/products/${productId}/related`);
   return response.data;
 };
+
+// Tìm sản phẩm active theo name
+export const searchActiveProducts = async (name) => {
+  try {
+    const res = await axiosInstance.get("/products/search", {
+      params: { name }
+    });
+    return res.data.products; // trả về mảng sản phẩm
+  } catch (err) {
+    console.error("Lỗi tìm kiếm sản phẩm:", err);
+    return [];
+  }
+};

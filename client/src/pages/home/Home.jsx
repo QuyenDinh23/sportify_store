@@ -55,10 +55,10 @@ const Index = () => {
 
       <Header />
       <MainNavigation />
-      
+
       <main className={styles.mainContent}>
         {/* Hero Section */}
-        <section 
+        <section
           ref={setSectionRef(0)}
           className={`${styles.section} ${styles.sectionPrimary} ${visibleSections.has(0) ? styles.fadeInOnScroll + ' ' + styles.visible : styles.fadeInOnScroll}`}
         >
@@ -66,13 +66,13 @@ const Index = () => {
         </section>
 
         {/* Best Selling Section */}
-        <section 
+        <section
           ref={setSectionRef(1)}
           className={`${styles.section} ${styles.sectionPrimary} ${visibleSections.has(1) ? styles.slideInLeft + ' ' + styles.visible : styles.slideInLeft}`}
         >
           <div className={styles.container}>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Sản phẩm bán chạy</h2>
+              <h2 className={styles.sectionTitle}>Danh sách sản phẩm</h2>
               <p className={styles.sectionSubtitle}>
                 Những sản phẩm được yêu thích nhất tại SportShop
               </p>
@@ -84,7 +84,7 @@ const Index = () => {
         <div className={styles.divider}></div>
 
         {/* Category Grid Section */}
-        <section 
+        <section
           ref={setSectionRef(2)}
           className={`${styles.section} ${styles.sectionMuted} ${visibleSections.has(2) ? styles.scaleIn + ' ' + styles.visible : styles.scaleIn}`}
         >
@@ -102,7 +102,7 @@ const Index = () => {
         <div className={styles.divider}></div>
 
         {/* Blog Section */}
-        <section 
+        <section
           ref={setSectionRef(3)}
           className={`${styles.section} ${styles.sectionPrimary} ${visibleSections.has(3) ? styles.slideInRight + ' ' + styles.visible : styles.slideInRight}`}
         >

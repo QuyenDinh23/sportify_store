@@ -28,6 +28,7 @@ const ProductManagement = () => {
   const [selectedSport, setSelectedSport] = useState('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -168,11 +169,10 @@ const ProductManagement = () => {
       if (selectedSubcategory !== "all") params.subcategory = selectedSubcategory;
       if (selectedBrand !== "all") params.brand = selectedBrand;
       if (selectedSport !== "all") params.sport = selectedSport;
-
+      if (selectedStatus !== "all") params.status = selectedStatus;
       const res = await getProductsByFilter(params);
       setProducts(res.products);
       setTotalPages(res.totalPages);
-      console.log("Danh sách sản phẩm filter:", res.products);
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -189,14 +189,17 @@ const ProductManagement = () => {
 
   const handleSubcategoryChange = (subcategoryId) => {
     const sub = subcategories.find(s => s._id === subcategoryId);
-    setBrands(sub?.brands || []);
+    const newBrands = sub?.brands || [];
+    console.log("sub", subcategories);
+    console.log("newBrands", newBrands);
+    setBrands(newBrands); // cập nhật state
   };
 
   useEffect(() => {
     loadCategories();
     loadSports();
     loadProducts();
-  }, [selectedCategory, selectedSubcategory, selectedBrand, selectedSport, searchTerm, currentPage]);
+  }, [selectedCategory, selectedSubcategory, selectedBrand, selectedSport, selectedStatus, searchTerm, currentPage]);
 
   useEffect(() => {
 
@@ -230,15 +233,15 @@ const ProductManagement = () => {
       const res = await toggleProductStatusApi(productToToggle._id);
       const updatedProduct = res.product;
 
-      setProducts((prev) =>
-        prev.map((p) => (p._id === updatedProduct._id ? updatedProduct : p))
-      );
+      setProducts((prev) => {
+        const filtered = prev.filter(p => p._id !== updatedProduct._id);
+        return [...filtered, updatedProduct];
+      });
 
       toast({
         title: "Thành công",
         description: res.message,
       });
-
       setToggleDialogOpen(false);
       setProductToToggle(null);
     } catch (error) {
@@ -254,8 +257,8 @@ const ProductManagement = () => {
     try {
       if (productData.id) {
         //Editing existing product
-        const updatedProduct = await updateProduct(productData.id, productData);
-        setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+        await updateProduct(productData.id, productData);
+        // setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
         toast({
           title: "Đã cập nhật sản phẩm",
           description: `${productData.name} đã được cập nhật thành công`,
@@ -366,6 +369,20 @@ const ProductManagement = () => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="w-1/5 min-w-[150px]">
+            <label className="text-sm font-medium">Trạng thái</label>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="active">Hoạt động</SelectItem>
+                <SelectItem value="inactive">Không hoạt động</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

@@ -72,13 +72,13 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
 
   useEffect(() => {
     if (product) {
-      console.log("Sport value:", product.sport);
+      console.log("brands" + brands);
       reset({
         name: product.name,
         description: product.description,
         category: product.category?._id || '',
         subcategory: product.subcategory?._id || '',
-        brand: product.brand?._id || '',
+        brand: product.brand?._id || (product.subcategory?.brands?.[0]?._id || ''),
         sport: product.sport?._id || '',
         price: product.price,
         importPrice: product.importPrice,
@@ -380,18 +380,23 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                   <Controller
                     name="brand"
                     control={control}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger disabled={readonly}>
-                          <SelectValue placeholder="Chọn thương hiệu" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {brands.map(brand => (
-                            <SelectItem key={brand._id} value={brand._id}>{brand.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                    render={({ field }) => {
+                      const selectedBrand = brands.find(b => b._id === field.value);
+                      return (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger disabled={readonly}>
+                            <SelectValue placeholder="Chọn thương hiệu">
+                              {selectedBrand ? selectedBrand.name : undefined}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {brands.map(brand => (
+                              <SelectItem key={brand._id} value={brand._id}>{brand.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      );
+                    }}
                   />
                   {errors.brand && <p className="text-sm text-destructive">{errors.brand.message}</p>}
                 </div>

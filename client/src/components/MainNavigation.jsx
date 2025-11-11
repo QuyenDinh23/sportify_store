@@ -23,8 +23,8 @@ export function MainNavigation() {
       const data = res?.data ?? res;
       setVoucher(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Get vouchers failed:", error.response.data);
-      throw error.response.data.error;
+      console.error("Get vouchers failed:", error?.response?.data);
+      throw error?.response?.data?.error;
     }
   };
 
@@ -122,7 +122,7 @@ export function MainNavigation() {
 
                             {/* subcategories */}
                             {Array.isArray(category.subcategories) &&
-                            category.subcategories.length > 0 ? (
+                              category.subcategories.length > 0 ? (
                               <ul className="space-y-2">
                                 {category.subcategories.map((sub) => (
                                   <li key={sub._id}>
@@ -155,24 +155,24 @@ export function MainNavigation() {
                 Giảm giá
               </NavigationMenuTrigger>
               <NavigationMenuContent>
-                    <div className="w-screen max-w-6xl p-6 bg-card">
-                      <div className="grid md:grid-cols-3 gap-6">
-                        {voucher?.map((voucher) => (
-                          <div key={voucher._id}>
-                            <h3 className="mb-3 text-sm font-semibold text-foreground">
-                              {voucher.code}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {voucher.description}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Hạn sử dụng: {formatDate(voucher.endDate)}  
-                            </p>
-                          </div>
-                        ))}
+                <div className="w-screen max-w-6xl p-6 bg-card">
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {voucher?.map((voucher) => (
+                      <div key={voucher._id}>
+                        <h3 className="mb-3 text-sm font-semibold text-foreground">
+                          {voucher.code}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {voucher.description}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Hạn sử dụng: {formatDate(voucher.endDate)}
+                        </p>
                       </div>
-                    </div>
-                  </NavigationMenuContent>
+                    ))}
+                  </div>
+                </div>
+              </NavigationMenuContent>
             </NavigationMenuItem>
           </NavigationMenuList>
         </NavigationMenu>

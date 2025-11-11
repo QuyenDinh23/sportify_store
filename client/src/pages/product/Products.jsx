@@ -18,6 +18,7 @@ const Products = () => {
     colors: [],
     sizes: [],
     sports: [],
+    subcategories: [],
     priceRange: [0, 10000000],
   });
 
@@ -49,14 +50,14 @@ const Products = () => {
     };
     fetchProducts();
   }, [location.state, categoryId, subcategoryId]);
-
   useEffect(() => {
     const filtered = allProducts.filter((p) => {
       const brandMatch = filters.brands.length === 0 || filters.brands.includes(p.brand?._id);
       const sportMatch = filters.sports.length === 0 || filters.sports.includes(p.sport?._id);
       const colorMatch = filters.colors.length === 0 || p.colors?.some((c) => filters.colors.includes(c.name));
       const sizeMatch = filters.sizes.length === 0 || p.colors?.some((c) => c.sizes?.some((s) => filters.sizes.includes(s.size)));
-      return brandMatch && sportMatch && colorMatch && sizeMatch;
+      const subcategoryMatch = filters.subcategories.length === 0 || filters.subcategories.includes(p.subcategory?._id);
+      return brandMatch && sportMatch && colorMatch && sizeMatch && subcategoryMatch;
     });
 
     setTotalPages(Math.ceil(filtered.length / itemsPerPage));

@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import Product from "../../models/product/Product.js";
 import Subcategory from "../../models/category/SubCategory.js"
+import Cart from "../../models/cart/Cart.js";
+import removeAccents from 'remove-accents';
 
 export const createProduct = async (req, res) => {
   try {
@@ -194,6 +196,9 @@ export const getProductsByFilter = async (req, res) => {
     if (sport && sport !== "all") {
       query.sport = sport;
     }
+    if (req.query.status && req.query.status !== "all") {
+      query.status = req.query.status;
+    }
     if (search && search.trim() !== "") {
       query.name = { $regex: search, $options: "i" };
     }
@@ -271,26 +276,49 @@ export const checkProductName = async (req, res) => {
 export const toggleProductStatus = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Kiểm tra ID hợp lệ
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "ID sản phẩm không hợp lệ" });
     }
 
+    // Tìm sản phẩm
     const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({ message: "Sản phẩm không tồn tại" });
     }
 
-    product.status = product.status === "active" ? "inactive" : "active";
-    product.updatedAt = new Date();
-    await product.save();
+    // Nếu trạng thái hiện tại là "active" (nghĩa là sắp bị ẩn), ta kiểm tra giỏ hàng
+    if (product.status === "active") {
+      const cartWithProduct = await Cart.findOne({
+        "items.productId": id,
+      });
 
-    res.status(200).json({
-      message: `Trạng thái sản phẩm đã được chuyển thành ${product.status}`,
-      product,
+      if (cartWithProduct) {
+        return res.status(400).json({
+          message: "Không thể ẩn sản phẩm vì sản phẩm đang tồn tại trong giỏ hàng của khách hàng.",
+        });
+      }
+    }
+
+    // Đảo trạng thái
+    const newStatus = product.status === "active" ? "inactive" : "active";
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { status: newStatus, updatedAt: new Date() },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      message: `Trạng thái sản phẩm đã được chuyển sang "${updatedProduct.status}"`,
+      product: updatedProduct,
     });
   } catch (error) {
     console.error("Lỗi khi toggle trạng thái sản phẩm:", error);
-    res.status(500).json({ message: "Server error khi cập nhật trạng thái sản phẩm" });
+    return res.status(500).json({
+      message: "Lỗi server khi cập nhật trạng thái sản phẩm",
+    });
   }
 };
 
@@ -441,5 +469,36 @@ export const getRelatedProducts = async (req, res) => {
   } catch (error) {
     console.error("Error fetching related products:", error);
     res.status(500).json({ message: "Lỗi server khi lấy sản phẩm liên quan" });
+  }
+};
+
+// Tìm sản phẩm active theo name (partial match)
+export const searchActiveProductsByName = async (req, res) => {
+  try {
+    const { name } = req.query;
+
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    // Chuẩn hóa từ khóa tìm kiếm: bỏ dấu, lowercase
+    const normalizedKeyword = removeAccents(name).toLowerCase().trim();
+
+    // Lấy tất cả sản phẩm active
+    const products = await Product.find({ status: 'active' })
+      .populate('category subcategory brand sport');
+
+    // Lọc sản phẩm theo tên chính xác (whole word)
+    const filteredProducts = products.filter(p => {
+      const normalizedProductName = removeAccents(p.name).toLowerCase();
+      // \b = ranh giới từ, tránh trùng ký tự trong từ khác
+      const regex = new RegExp(`\\b${normalizedKeyword}\\b`, 'i');
+      return regex.test(normalizedProductName);
+    });
+
+    res.json({ success: true, products: filteredProducts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error });
   }
 };

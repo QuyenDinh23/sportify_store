@@ -8,17 +8,19 @@ import { cn } from "../..//lib/utils";
 
 const FilterSidebar = ({ onFilterChange, products, className }) => {
   const [expandedSections, setExpandedSections] = useState(
-    new Set(["brand", "color", "size", "sport"])
+    new Set(["subcategory", "brand", "color", "size", "sport"])
   );
   const [staticBrands, setStaticBrands] = useState([]);
   const [staticSports, setStaticSports] = useState([]);
   const [staticColors, setStaticColors] = useState([]);
   const [staticSizes, setStaticSizes] = useState([]);
+  const [staticSubcategories, setStaticSubcategories] = useState([]);
   const [filters, setFilters] = useState({
     brands: [],
     colors: [],
     sizes: [],
     sports: [],
+    subcategories: [],
     priceRange: [0, 10000000],
   });
   useEffect(() => {
@@ -27,12 +29,16 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
       const sportMap = new Map();
       const colorMap = new Map();
       const sizeMap = new Map();
+      const subcategoryMap = new Map();
       products.forEach((p) => {
         if (p.brand && p.brand._id && !brandMap.has(p.brand._id)) {
           brandMap.set(p.brand._id, p.brand.name);
         }
         if (p.sport && p.sport._id && !sportMap.has(p.sport._id)) {
           sportMap.set(p.sport._id, p.sport.name);
+        }
+        if (p.subcategory && p.subcategory._id && !subcategoryMap.has(p.subcategory._id)) {
+          subcategoryMap.set(p.subcategory._id, p.subcategory.name);
         }
         p.colors?.forEach((c) => {
           if (c.name && !colorMap.has(c.name)) {
@@ -50,9 +56,10 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
       setStaticSports(Array.from(sportMap, ([id, name]) => ({ id, name })));
       setStaticColors(Array.from(colorMap, ([name, hex]) => ({ id: name, name, hex })));
       setStaticSizes(Array.from(sizeMap, ([id, name]) => ({ id, name })));
+      setStaticSubcategories(Array.from(subcategoryMap, ([id, name]) => ({ id, name })));
     }
   }, [products]);
-
+  console.log("subcategory map", staticSubcategories);
   const toggleSection = (section) => {
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(section)) {
@@ -83,6 +90,7 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
       colors: [],
       sizes: [],
       sports: [],
+      subcategories: [],
       priceRange: [0, 10000000],
     };
     setFilters(newFilters);
@@ -124,6 +132,22 @@ const FilterSidebar = ({ onFilterChange, products, className }) => {
           Xóa tất cả
         </Button>
       </div>
+
+      {/* Category filter */}
+      {staticSubcategories.length > 1 && (
+        <FilterSection id="subcategory" title="Danh mục con">
+          {staticSubcategories.map((sub) => (
+            <div key={sub.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={`subcategory-${sub.id}`}
+                checked={filters.subcategories.includes(sub.id)}
+                onCheckedChange={() => handleFilterChange("subcategories", sub.id)}
+              />
+              <Label htmlFor={`subcategory-${sub.id}`}>{sub.name}</Label>
+            </div>
+          ))}
+        </FilterSection>
+      )}
 
       <Separator className="mb-4" />
 
