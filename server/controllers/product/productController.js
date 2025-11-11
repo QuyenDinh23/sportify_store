@@ -195,6 +195,9 @@ export const getProductsByFilter = async (req, res) => {
     if (sport && sport !== "all") {
       query.sport = sport;
     }
+    if (req.query.status && req.query.status !== "all") {
+      query.status = req.query.status;
+    }
     if (search && search.trim() !== "") {
       query.name = { $regex: search, $options: "i" };
     }

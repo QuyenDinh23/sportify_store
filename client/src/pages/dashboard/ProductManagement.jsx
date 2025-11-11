@@ -28,6 +28,7 @@ const ProductManagement = () => {
   const [selectedSport, setSelectedSport] = useState('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -168,7 +169,7 @@ const ProductManagement = () => {
       if (selectedSubcategory !== "all") params.subcategory = selectedSubcategory;
       if (selectedBrand !== "all") params.brand = selectedBrand;
       if (selectedSport !== "all") params.sport = selectedSport;
-
+      if (selectedStatus !== "all") params.status = selectedStatus;
       const res = await getProductsByFilter(params);
       setProducts(res.products);
       setTotalPages(res.totalPages);
@@ -196,7 +197,7 @@ const ProductManagement = () => {
     loadCategories();
     loadSports();
     loadProducts();
-  }, [selectedCategory, selectedSubcategory, selectedBrand, selectedSport, searchTerm, currentPage]);
+  }, [selectedCategory, selectedSubcategory, selectedBrand, selectedSport, selectedStatus, searchTerm, currentPage]);
 
   useEffect(() => {
 
@@ -366,6 +367,20 @@ const ProductManagement = () => {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="w-1/5 min-w-[150px]">
+            <label className="text-sm font-medium">Trạng thái</label>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="active">Hoạt động</SelectItem>
+                <SelectItem value="inactive">Không hoạt động</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
