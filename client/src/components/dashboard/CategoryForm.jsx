@@ -35,12 +35,14 @@ import { useToast } from '../../hooks/use-toast';
 const categorySchema = z.object({
   name: z.string().min(1, 'Tên danh mục là bắt buộc'),
   icon: z.string().min(1, 'Icon là bắt buộc'),
-  gender: z.enum(['male', 'female', 'boy', 'girl'], {
-    required_error: "Giới tính là bắt buộc",
-  }),
-  type: z.enum(['clothing', 'shoes', 'accessories'], {
-    required_error: "Loại sản phẩm là bắt buộc",
-  }),
+  gender: z.string().min(1, 'Giới tính là bắt buộc'),
+  type: z.string().min(1, 'Loại sản phẩm là bắt buộc'),
+  // gender: z.enum(['male', 'female', 'boy', 'girl'], {
+  //   required_error: "Giới tính là bắt buộc",
+  // }),
+  // type: z.enum(['clothing', 'shoes', 'accessories'], {
+  //   required_error: "Loại sản phẩm là bắt buộc",
+  // }),
 });
 
 export const CategoryForm = ({ open, readonly, editing, onOpenChange, category, onSubmit }) => {

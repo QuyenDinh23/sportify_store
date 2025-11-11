@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronRight, ShoppingCart, Heart, Share2, Minus, Plus, Star } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -21,6 +21,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 const ProductDetail = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
 
   const [product, setProduct] = useState(null);
@@ -55,6 +57,24 @@ const ProductDetail = () => {
       console.error("Error fetching related products:", error);
     }
   }, [id]);
+
+  const handleBack = () => {
+    // Nếu có state.fromProducts (truyền từ ProductCard)
+    if (location.state?.fromProducts) {
+      navigate('/products', {
+        state: { products: location.state.fromProducts },
+        replace: false,
+      });
+    }
+    // Nếu có query params (searchParams)
+    else if (location.state?.searchParams) {
+      navigate(`/products${location.state.searchParams}`);
+    }
+    // Fallback về trang products chung
+    else {
+      navigate('/products');
+    }
+  };
 
   useEffect(() => {
     fetchProduct();
@@ -129,7 +149,12 @@ const ProductDetail = () => {
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <Link to="/" className="hover:text-primary">Trang chủ</Link>
             <ChevronRight className="h-4 w-4" />
-            <Link to="/products" className="hover:text-primary">Sản phẩm</Link>
+            <button
+              onClick={handleBack}
+              className="text-primary underline p-0 m-0 inline"
+            >
+              Danh sách sản phẩm
+            </button>
             <ChevronRight className="h-4 w-4" />
             <span className="text-foreground">{product.name}</span>
           </div>
