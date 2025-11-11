@@ -173,7 +173,6 @@ const ProductManagement = () => {
       const res = await getProductsByFilter(params);
       setProducts(res.products);
       setTotalPages(res.totalPages);
-      console.log("Danh sách sản phẩm filter:", res.products);
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -190,7 +189,10 @@ const ProductManagement = () => {
 
   const handleSubcategoryChange = (subcategoryId) => {
     const sub = subcategories.find(s => s._id === subcategoryId);
-    setBrands(sub?.brands || []);
+    const newBrands = sub?.brands || [];
+    console.log("sub", subcategories);
+    console.log("newBrands", newBrands);
+    setBrands(newBrands); // cập nhật state
   };
 
   useEffect(() => {
@@ -231,15 +233,15 @@ const ProductManagement = () => {
       const res = await toggleProductStatusApi(productToToggle._id);
       const updatedProduct = res.product;
 
-      setProducts((prev) =>
-        prev.map((p) => (p._id === updatedProduct._id ? updatedProduct : p))
-      );
+      setProducts((prev) => {
+        const filtered = prev.filter(p => p._id !== updatedProduct._id);
+        return [...filtered, updatedProduct];
+      });
 
       toast({
         title: "Thành công",
         description: res.message,
       });
-
       setToggleDialogOpen(false);
       setProductToToggle(null);
     } catch (error) {
@@ -255,8 +257,8 @@ const ProductManagement = () => {
     try {
       if (productData.id) {
         //Editing existing product
-        const updatedProduct = await updateProduct(productData.id, productData);
-        setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+        await updateProduct(productData.id, productData);
+        // setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
         toast({
           title: "Đã cập nhật sản phẩm",
           description: `${productData.name} đã được cập nhật thành công`,
