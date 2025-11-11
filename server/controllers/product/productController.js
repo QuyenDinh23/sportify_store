@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Product from "../../models/product/Product.js";
 import Subcategory from "../../models/category/SubCategory.js"
 import Cart from "../../models/cart/Cart.js";
+import removeAccents from 'remove-accents';
 
 export const createProduct = async (req, res) => {
   try {
@@ -468,5 +469,36 @@ export const getRelatedProducts = async (req, res) => {
   } catch (error) {
     console.error("Error fetching related products:", error);
     res.status(500).json({ message: "Lỗi server khi lấy sản phẩm liên quan" });
+  }
+};
+
+// Tìm sản phẩm active theo name (partial match)
+export const searchActiveProductsByName = async (req, res) => {
+  try {
+    const { name } = req.query;
+
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
+    }
+
+    // Chuẩn hóa từ khóa tìm kiếm: bỏ dấu, lowercase
+    const normalizedKeyword = removeAccents(name).toLowerCase().trim();
+
+    // Lấy tất cả sản phẩm active
+    const products = await Product.find({ status: 'active' })
+      .populate('category subcategory brand sport');
+
+    // Lọc sản phẩm theo tên chính xác (whole word)
+    const filteredProducts = products.filter(p => {
+      const normalizedProductName = removeAccents(p.name).toLowerCase();
+      // \b = ranh giới từ, tránh trùng ký tự trong từ khác
+      const regex = new RegExp(`\\b${normalizedKeyword}\\b`, 'i');
+      return regex.test(normalizedProductName);
+    });
+
+    res.json({ success: true, products: filteredProducts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server error', error });
   }
 };
