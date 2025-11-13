@@ -41,6 +41,9 @@ import OrderManagement from "./pages/dashboard/OrderManagement";
 import WarrantyManagement from "./pages/dashboard/WarrantyManagement";
 import WarrantyRequest from "./pages/AccountManage/WarrantyRequest";
 import ReturnWarrantyPolicy from "./pages/support/ReturnWarrantyPolicy";
+import Register from "./pages/register/Register";
+import ForgetPasswordRoutes from "./pages/ForgetPassword/ForgetPasswordRoutes";
+import AboutUs from "./pages/about/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -53,8 +56,12 @@ const App = () => {
         <BrowserRouter>
           <UseAuthCheck />
           <Routes>
+            <Route path="/*" element={<ForgetPasswordRoutes />} />
+
             {/* route login */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<Register />} />
+
             <Route path="/" element={<Home />} />
             <Route path="products" element={<Products />} />
             <Route path="product/:id" element={<ProductDetail />} />
@@ -64,13 +71,19 @@ const App = () => {
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success/:orderId" element={<OrderSuccess />} />
             <Route path="/order-detail/:orderId" element={<OrderDetail />} />
-            <Route path="/orders" element={<Navigate to="/account/order" replace />} />
-            <Route path="/support/returns-warranty" element={<ReturnWarrantyPolicy />} />
-            {/* route dashboard */}
+            <Route
+              path="/orders"
+              element={<Navigate to="/account/order" replace />}
+            />
+            <Route
+              path="/support/returns-warranty"
+              element={<ReturnWarrantyPolicy />}
+            />
+            <Route path="/about" element={<AboutUs />} />
+            {/* route admin dashboard */}
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>
                 <Route index element={<Overview />} />
-                <Route path="orders" element={<OrderManagement />} />
                 <Route path="products" element={<ProductManagement />} />
                 <Route path="categories" element={<CategoryManagement />} />
                 <Route
@@ -80,42 +93,32 @@ const App = () => {
                 <Route path="account" element={<StaffAccount />} />
                 <Route path="brands" element={<BrandManagement />} />
                 <Route path="sports" element={<SportManagement />} />
-                <Route path="vouchers" element={<VoucherManagement />} />
-                <Route path="blog" element={<BlogManagement />} />
-                <Route path="blog/create" element={<BlogPostForm />} />
-                <Route path="blog/edit/:id" element={<BlogPostForm />} />
-
-                <Route
-                  path="blog/categories"
-                  element={<BlogCategoryManagement />}
-                />
                 <Route path="users" element={<UsersManagement />} />
-                <Route path="warranty" element={<WarrantyManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["staff-sale"]} />}>
+              <Route path="/staff-sale/dashboard" element={<Dashboard />}>
+                <Route index element={<Overview />} />
+                <Route path="orders" element={<OrderManagement />} />
+                <Route path="account" element={<StaffAccount />} />
+                <Route path="warranty" element={<WarrantyManagement />} />
+              </Route>
+            </Route>
+            <Route element={<ProtectedRoute roles={["staff-content"]} />}>
               <Route path="/staff-content/dashboard" element={<Dashboard />}>
                 <Route index element={<Overview />} />
-                <Route path="products" element={<ProductManagement />} />
-                <Route path="categories" element={<CategoryManagement />} />
-                <Route
-                  path="subcategories"
-                  element={<SubcategoryManagement />}
-                />
+
                 <Route path="account" element={<StaffAccount />} />
-                <Route path="brands" element={<BrandManagement />} />
-                <Route path="sports" element={<SportManagement />} />
+
                 <Route path="vouchers" element={<VoucherManagement />} />
                 <Route path="blog" element={<BlogManagement />} />
                 <Route path="blog/create" element={<BlogPostForm />} />
                 <Route path="blog/edit/:id" element={<BlogPostForm />} />
+
                 <Route
                   path="blog/categories"
                   element={<BlogCategoryManagement />}
                 />
-                <Route path="users" element={<UsersManagement />} />
-
-                <Route path="warranty" element={<WarrantyManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["user"]} />}>

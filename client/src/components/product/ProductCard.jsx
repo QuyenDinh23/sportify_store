@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -7,9 +7,19 @@ import { Card, CardContent } from '../../components/ui/card';
 // eslint-disable-next-line no-unused-vars
 import { cn } from "../../lib/utils";
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, productsList }) => {
   const hasDiscount = product.discountPercentage > 0;
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleGoToDetail = () => {
+    navigate(`/product/${product._id}`, {
+      state: {
+        fromProducts: productsList || location.state?.products || null,
+        searchParams: location.search || null,
+      },
+    });
+  };
 
   const handleAddToCart = () => {
     navigate(`/product/${product._id}`);
@@ -18,7 +28,7 @@ const ProductCard = ({ product }) => {
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden border-0 bg-card rounded-xl">
       {/* Product Image */}
-      <Link to={`/product/${product._id}`} className="block relative overflow-hidden">
+      <div onClick={handleGoToDetail} className="block relative overflow-hidden">
         <img
           src={
             product.colors[0]?.images[0] && product.colors[0].images[0].trim() !== ""
@@ -44,7 +54,7 @@ const ProductCard = ({ product }) => {
         >
           <Heart className="h-4 w-4" />
         </Button>
-      </Link>
+      </div>
 
       <CardContent className="p-3">
         {/* Thương hiệu + Đánh giá */}
@@ -55,11 +65,11 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Tên sản phẩm */}
-        <Link to={`/product/${product._id}`}>
+        <div onClick={handleGoToDetail}>
           <h3 className="font-semibold text-sm mb-2 line-clamp-2 h-10 group-hover:text-primary transition-colors leading-tight">
             {product.name}
           </h3>
-        </Link>
+        </div>
 
         {/* Màu sắc */}
         <div className="flex gap-1 mb-2">

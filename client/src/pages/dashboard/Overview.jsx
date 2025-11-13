@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-
-
+import { useNavigate } from "react-router-dom";
 import { Package, Grid3X3, Award, Trophy, ShoppingCart, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { dashboardStats } from '../../data/dashboardData';
 import { getOrderStatistics, getRevenueByMonth, getOrdersByStatus } from '../../api/order/orderApi';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { getProducts } from '../../api/product/productApi';
+import { fetchAllCategories } from '../../api/category/categoryApi';
+import { getBrands } from '../../api/brand/brandApi';
+import { getSports } from '../../api/sport/sportApi';
+
 
 const Overview = () => {
   const [orderStats, setOrderStats] = useState({
@@ -14,9 +17,18 @@ const Overview = () => {
     loading: true
   });
 
+  const [data, setData] = useState({
+    totalProducts: 0,
+    totalCategories: 0,
+    totalBrands: 0,
+    totalSports: 0,
+  });
+
+  const navigate = useNavigate();
   const [revenueData, setRevenueData] = useState([]);
   const [statusData, setStatusData] = useState([]);
   const [chartsLoading, setChartsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // Màu sắc cho pie chart
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
@@ -54,6 +66,31 @@ const Overview = () => {
       }
     };
 
+    const fetchOverviewData = async () => {
+      try {
+        setLoading(true);
+        const [products, categories, brands, sports] = await Promise.all([
+          getProducts(),
+          fetchAllCategories(),
+          getBrands(),
+          getSports(),
+        ]);
+        console.log("products in overview", products);
+        setData({
+          totalProducts: products.length,
+          totalCategories: categories.length,
+          totalBrands: brands.length,
+          totalSports: sports.length,
+        });
+        console.log("overview data", data);
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu tổng quan:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOverviewData();
     fetchAllData();
   }, []);
 
@@ -67,27 +104,31 @@ const Overview = () => {
   const statsCards = [
     {
       title: 'Tổng sản phẩm',
-      value: dashboardStats.totalProducts,
+      value: data.totalProducts,
       icon: Package,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
+      route: "/dashboard/products",
     },
     {
       title: 'Danh mục',
-      value: dashboardStats.totalCategories,
+      value: data.totalCategories,
       icon: Grid3X3,
-      color: 'text-green-600'
+      color: 'text-green-600',
+      route: "/dashboard/categories",
     },
     {
       title: 'Thương hiệu',
-      value: dashboardStats.totalBrands,
+      value: data.totalBrands,
       icon: Award,
-      color: 'text-purple-600'
+      color: 'text-purple-600',
+      route: "/dashboard/brands",
     },
     {
       title: 'Môn thể thao',
-      value: dashboardStats.totalSports,
+      value: data.totalSports,
       icon: Trophy,
-      color: 'text-orange-600'
+      color: 'text-orange-600',
+      route: "/dashboard/sports",
     },
     {
       title: 'Đơn hàng',
@@ -113,7 +154,10 @@ const Overview = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statsCards.map((stat) => (
-          <Card key={stat.title} className="hover:shadow-lg transition-shadow">
+          <Card key={stat.title}
+            onClick={() => stat.route && navigate(stat.route)}
+            className={`hover:shadow-lg transition-shadow cursor-pointer ${stat.route ? "hover:bg-gray-50" : ""
+              }`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
               <stat.icon className={`h-4 w-4 ${stat.color}`} />
@@ -145,23 +189,23 @@ const Overview = () => {
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={revenueData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="month" 
+                  <XAxis
+                    dataKey="month"
                     tick={{ fontSize: 12 }}
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value) => formatCurrency(value)}
                     labelStyle={{ color: '#000' }}
                   />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#8884d8" 
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#8884d8"
                     strokeWidth={2}
                     name="Doanh thu"
                   />
@@ -207,61 +251,6 @@ const Overview = () => {
                 </PieChart>
               </ResponsiveContainer>
             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Hoạt động gần đây</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Thêm sản phẩm mới: Nike Air Max 270</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm">Cập nhật giá sản phẩm: Adidas Predator Edge</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span className="text-sm">Thêm thương hiệu mới: Under Armour</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-sm">Tạo danh mục: Phụ kiện bơi lội</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Thống kê nhanh</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Sản phẩm bán chạy nhất</span>
-                <span className="font-medium">Nike Air Max 270</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Thương hiệu phổ biến</span>
-                <span className="font-medium">Nike</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Môn thể thao hot</span>
-                <span className="font-medium">Chạy bộ</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm">Đơn hàng hôm nay</span>
-                <span className="font-medium">23</span>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

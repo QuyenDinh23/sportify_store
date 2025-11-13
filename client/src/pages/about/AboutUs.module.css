@@ -1,0 +1,942 @@
+/* ============================================
+   ABOUT US PAGE STYLES - BEAUTIFUL CSS STYLING
+   ============================================ */
+
+/* ========== ROOT CONTAINER ========== */
+.aboutContainer {
+  min-height: 100vh;
+  background: linear-gradient(180deg, 
+    hsl(var(--background)) 0%, 
+    hsl(var(--muted) / 0.3) 50%, 
+    hsl(var(--background)) 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Animated background pattern */
+.aboutContainer::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 20% 50%, hsl(var(--primary) / 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, hsl(var(--accent) / 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, hsl(var(--primary) / 0.03) 0%, transparent 50%);
+  background-size: 100% 100%, 100% 100%, 100% 100%;
+  animation: backgroundShift 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes backgroundShift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  33% {
+    transform: translate(2%, 2%) scale(1.05);
+    opacity: 0.8;
+  }
+  66% {
+    transform: translate(-2%, 1%) scale(0.95);
+    opacity: 0.9;
+  }
+}
+
+/* ========== MAIN CONTENT ========== */
+.mainContent {
+  position: relative;
+  z-index: 1;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== DECORATIVE ELEMENTS ========== */
+.decorativeCircle {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary) / 0.1), 
+    hsl(var(--accent) / 0.1));
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+  animation: float 6s ease-in-out infinite;
+}
+
+.decorativeCircle:nth-child(1) {
+  width: 400px;
+  height: 400px;
+  top: 5%;
+  left: -10%;
+  animation-delay: 0s;
+}
+
+.decorativeCircle:nth-child(2) {
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  right: -5%;
+  animation-delay: 2s;
+}
+
+.decorativeCircle:nth-child(3) {
+  width: 350px;
+  height: 350px;
+  bottom: 10%;
+  left: 5%;
+  animation-delay: 4s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+    opacity: 0.7;
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+    opacity: 0.6;
+  }
+}
+
+/* ========== CONTAINER STYLING ========== */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ========== HERO SECTION ========== */
+.heroSection {
+  position: relative;
+  padding: 6rem 0 4rem;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary) / 0.1) 0%, 
+    hsl(var(--accent) / 0.1) 100%);
+  overflow: hidden;
+}
+
+.heroSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(circle at 30% 30%, hsl(var(--primary) / 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, hsl(var(--accent) / 0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.heroContent {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.heroTitle {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, 
+    hsl(var(--foreground)) 0%, 
+    hsl(var(--primary)) 50%, 
+    hsl(var(--accent)) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 5s ease infinite;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.heroSubtitle {
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.heroDescription {
+  font-size: clamp(1rem, 2vw, 1.125rem);
+  color: hsl(var(--foreground) / 0.8);
+  line-height: 1.8;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.heroDescription p {
+  margin: 0;
+}
+
+/* ========== SECTION SPACING & ANIMATIONS ========== */
+.section {
+  position: relative;
+  padding: 5rem 0;
+  overflow: hidden;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    hsl(var(--primary) / 0.03), 
+    transparent);
+  animation: shimmer 8s infinite;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ========== SECTION VARIATIONS ========== */
+.sectionPrimary {
+  background: linear-gradient(135deg, 
+    hsl(var(--background)) 0%, 
+    hsl(var(--muted) / 0.5) 50%, 
+    hsl(var(--background)) 100%);
+  position: relative;
+}
+
+.sectionPrimary::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    hsl(var(--border)), 
+    transparent);
+}
+
+.sectionMuted {
+  background: linear-gradient(180deg, 
+    hsl(var(--muted) / 0.3) 0%, 
+    hsl(var(--muted) / 0.6) 50%, 
+    hsl(var(--muted) / 0.3) 100%);
+  position: relative;
+}
+
+.sectionMuted::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      hsl(var(--border) / 0.03) 10px,
+      hsl(var(--border) / 0.03) 20px
+    );
+  pointer-events: none;
+}
+
+/* ========== SECTION HEADERS ========== */
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 4rem;
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.sectionHeader::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    hsl(var(--primary)), 
+    transparent);
+  border-radius: 2px;
+  animation: expandLine 1s ease-out;
+}
+
+@keyframes expandLine {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 80px;
+    opacity: 1;
+  }
+}
+
+.sectionTitle {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, 
+    hsl(var(--foreground)) 0%, 
+    hsl(var(--primary)) 50%, 
+    hsl(var(--foreground)) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 5s ease infinite;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  position: relative;
+  display: inline-block;
+}
+
+.sectionSubtitle {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: hsl(var(--muted-foreground));
+  font-weight: 400;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+  animation: fadeIn 1s ease-out 0.3s both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ========== MISSION & VISION GRID ========== */
+.missionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.missionCard {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 20px;
+  padding: 2.5rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 1px 3px hsl(var(--foreground) / 0.1),
+    0 1px 2px hsl(var(--foreground) / 0.06);
+}
+
+.missionCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary) / 0.05), 
+    transparent);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.missionCard:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 
+    0 20px 25px -5px hsl(var(--foreground) / 0.1),
+    0 10px 10px -5px hsl(var(--foreground) / 0.04),
+    0 0 0 1px hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.missionCard:hover::before {
+  opacity: 1;
+}
+
+.missionIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary)), 
+    hsl(var(--accent)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px hsl(var(--primary) / 0.3);
+}
+
+.missionIcon .icon {
+  width: 30px;
+  height: 30px;
+  color: white;
+}
+
+.missionTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 1rem;
+}
+
+.missionText {
+  font-size: 1rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ========== VALUES GRID ========== */
+.valuesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.valueCard {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 1px 3px hsl(var(--foreground) / 0.1),
+    0 1px 2px hsl(var(--foreground) / 0.06);
+}
+
+.valueCard::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, 
+    hsl(var(--primary) / 0.1) 0%, 
+    transparent 70%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.valueCard:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 
+    0 20px 25px -5px hsl(var(--foreground) / 0.1),
+    0 10px 10px -5px hsl(var(--foreground) / 0.04),
+    0 0 0 1px hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.valueCard:hover::after {
+  opacity: 1;
+  animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.valueIcon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary) / 0.1), 
+    hsl(var(--accent) / 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  border: 2px solid hsl(var(--primary) / 0.2);
+  transition: all 0.3s ease;
+}
+
+.valueCard:hover .valueIcon {
+  background: linear-gradient(135deg, 
+    hsl(var(--primary)), 
+    hsl(var(--accent)));
+  border-color: hsl(var(--primary));
+  transform: scale(1.1) rotate(5deg);
+}
+
+.valueIcon .icon {
+  width: 35px;
+  height: 35px;
+  color: hsl(var(--primary));
+  transition: color 0.3s ease;
+}
+
+.valueCard:hover .valueIcon .icon {
+  color: white;
+}
+
+.valueTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.75rem;
+}
+
+.valueText {
+  font-size: 0.9375rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ========== ACHIEVEMENTS GRID ========== */
+.achievementsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.achievementCard {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 1px 3px hsl(var(--foreground) / 0.1),
+    0 1px 2px hsl(var(--foreground) / 0.06);
+}
+
+.achievementCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary) / 0.1), 
+    hsl(var(--accent) / 0.1));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.achievementCard:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 
+    0 20px 25px -5px hsl(var(--foreground) / 0.1),
+    0 10px 10px -5px hsl(var(--foreground) / 0.04),
+    0 0 0 1px hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.achievementCard:hover::before {
+  opacity: 1;
+}
+
+.achievementIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary)), 
+    hsl(var(--accent)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  box-shadow: 0 4px 15px hsl(var(--primary) / 0.3);
+}
+
+.achievementIcon .icon {
+  width: 25px;
+  height: 25px;
+  color: white;
+}
+
+.achievementNumber {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary)), 
+    hsl(var(--accent)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.achievementLabel {
+  font-size: 0.9375rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+/* ========== FEATURES GRID ========== */
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 1px 3px hsl(var(--foreground) / 0.1),
+    0 1px 2px hsl(var(--foreground) / 0.06);
+}
+
+.featureItem:hover {
+  transform: translateX(5px);
+  box-shadow: 
+    0 4px 6px -1px hsl(var(--foreground) / 0.1),
+    0 2px 4px -1px hsl(var(--foreground) / 0.06);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.featureIcon {
+  width: 24px;
+  height: 24px;
+  color: hsl(var(--primary));
+  flex-shrink: 0;
+}
+
+.featureText {
+  font-size: 1rem;
+  color: hsl(var(--foreground));
+  font-weight: 500;
+}
+
+/* ========== CONTACT GRID ========== */
+.contactGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.contactCard {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 1px 3px hsl(var(--foreground) / 0.1),
+    0 1px 2px hsl(var(--foreground) / 0.06);
+}
+
+.contactCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    hsl(var(--primary) / 0.05), 
+    transparent);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.contactCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 
+    0 20px 25px -5px hsl(var(--foreground) / 0.1),
+    0 10px 10px -5px hsl(var(--foreground) / 0.04),
+    0 0 0 1px hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.contactCard:hover::before {
+  opacity: 1;
+}
+
+.contactIcon {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 1.5rem;
+  color: hsl(var(--primary));
+  transition: all 0.3s ease;
+}
+
+.contactCard:hover .contactIcon {
+  transform: scale(1.2) rotate(5deg);
+  color: hsl(var(--accent));
+}
+
+.contactTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.75rem;
+}
+
+.contactText {
+  font-size: 1rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ========== SCROLL ANIMATIONS ========== */
+.fadeInOnScroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fadeInOnScroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slideInLeft {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slideInLeft.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.slideInRight {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slideInRight.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.scaleIn {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scaleIn.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 1024px) {
+  .section {
+    padding: 4rem 0;
+  }
+  
+  .decorativeCircle {
+    display: none;
+  }
+  
+  .missionGrid,
+  .valuesGrid,
+  .achievementsGrid,
+  .contactGrid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .heroSection {
+    padding: 4rem 0 3rem;
+  }
+  
+  .section {
+    padding: 3rem 0;
+  }
+  
+  .sectionHeader {
+    margin-bottom: 2.5rem;
+  }
+  
+  .sectionTitle {
+    font-size: 2rem;
+  }
+  
+  .missionGrid,
+  .valuesGrid,
+  .achievementsGrid,
+  .featuresGrid,
+  .contactGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .missionCard,
+  .valueCard,
+  .achievementCard,
+  .contactCard {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .heroSection {
+    padding: 3rem 0 2rem;
+  }
+  
+  .section {
+    padding: 2.5rem 0;
+  }
+  
+  .sectionTitle {
+    font-size: 1.75rem;
+  }
+  
+  .missionCard,
+  .valueCard,
+  .achievementCard,
+  .contactCard {
+    padding: 1.5rem;
+  }
+  
+  .missionIcon,
+  .valueIcon {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* ========== DARK MODE ENHANCEMENTS ========== */
+@media (prefers-color-scheme: dark) {
+  .missionCard,
+  .valueCard,
+  .achievementCard,
+  .featureItem,
+  .contactCard {
+    box-shadow: 
+      0 1px 3px hsl(var(--foreground) / 0.2),
+      0 1px 2px hsl(var(--foreground) / 0.1);
+  }
+  
+  .missionCard:hover,
+  .valueCard:hover,
+  .achievementCard:hover,
+  .contactCard:hover {
+    box-shadow: 
+      0 20px 25px -5px hsl(var(--foreground) / 0.3),
+      0 10px 10px -5px hsl(var(--foreground) / 0.2),
+      0 0 0 1px hsl(var(--primary) / 0.3);
+  }
+  
+  .decorativeCircle {
+    filter: blur(60px);
+  }
+}
+
+/* ========== ACCESSIBILITY ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .decorativeCircle {
+    display: none;
+  }
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+  .aboutContainer::before,
+  .decorativeCircle,
+  .section::before {
+    display: none;
+  }
+  
+  .missionCard:hover,
+  .valueCard:hover,
+  .achievementCard:hover,
+  .contactCard:hover {
+    transform: none;
+  }
+}
+

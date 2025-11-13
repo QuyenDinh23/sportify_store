@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   LogOut,
   BookOpen,
+  Info,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -18,7 +19,7 @@ import { Badge } from "../components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchCart } from "../store/cartSlice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import {
   DropdownMenu,
@@ -29,12 +30,26 @@ import {
 } from "../components/ui/dropdown-menu";
 
 import { authApi } from "../services/authApi";
+import { searchActiveProducts } from "../api/product/productApi";
 
 const Header = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { totalQuantity } = useSelector((state) => state.cart);
   const user = useSelector((state) => state.auth.user);
+  const [keyword, setKeyword] = useState("");
+
+  const handleKeyDown = async (e) => {
+    if (e.key === "Enter") {
+      try {
+        const products = await searchActiveProducts(keyword);
+        navigate("/products", { state: { products } });
+        window.scrollTo(0, 0);
+      } catch (error) {
+        console.error("Error searching products:", error);
+      }
+    }
+  };
 
   // Fetch cart khi component mount (chỉ khi user đã đăng nhập)
   useEffect(() => {
@@ -69,12 +84,27 @@ const Header = () => {
               <Input
                 placeholder="Tìm kiếm sản phẩm thể thao..."
                 className="pl-10 pr-4 w-full"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onKeyDown={handleKeyDown}
               />
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex items-center space-x-2">
+            {/* About Us Link */}
+            <Button
+              variant="ghost"
+              className="hidden md:flex items-center gap-2"
+              asChild
+            >
+              <Link to="/about">
+                <Info className="h-5 w-5" />
+                <span className="text-sm">Về chúng tôi</span>
+              </Link>
+            </Button>
+
             {/* Blog Link */}
             <Button
               variant="ghost"
