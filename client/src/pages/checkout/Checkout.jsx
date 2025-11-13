@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, CreditCard, Truck, MapPin, User, Phone, Mail } from "lucide-react";
+import { ArrowLeft, CreditCard, Truck, MapPin } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -265,50 +265,6 @@ const Checkout = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Checkout Form */}
           <div className="lg:col-span-2 space-y-6">
-            {/* User Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Thông tin khách hàng
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="userFullName">Họ và tên</Label>
-                    <Input
-                      id="userFullName"
-                      value={user?.fullName || user?.name || ''}
-                      readOnly
-                      className="bg-muted"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="userEmail">Email</Label>
-                    <Input
-                      id="userEmail"
-                      value={user?.email || ''}
-                      readOnly
-                      className="bg-muted"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="userPhone">Số điện thoại</Label>
-                  <Input
-                    id="userPhone"
-                    value={user?.phone || ''}
-                    readOnly
-                    className="bg-muted"
-                  />
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <p>Thông tin này được lấy từ tài khoản của bạn. Để thay đổi, vui lòng cập nhật trong phần "Thông tin tài khoản".</p>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Saved Addresses */}
             {savedAddresses.length > 0 && (
               <Card>
@@ -531,28 +487,6 @@ const Checkout = () => {
                       <p className="text-sm text-muted-foreground">Thanh toán bằng tiền mặt khi nhận hàng</p>
                     </div>
                   </div>
-                  
-                  <div 
-                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                      paymentMethod === 'bank_transfer' ? 'border-primary bg-primary/5' : 'border-border'
-                    }`}
-                    onClick={() => setPaymentMethod('bank_transfer')}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="bank_transfer"
-                      checked={paymentMethod === 'bank_transfer'}
-                      onChange={() => setPaymentMethod('bank_transfer')}
-                      className="text-primary"
-                    />
-                    <CreditCard className="h-5 w-5" />
-                    <div>
-                      <p className="font-medium">Chuyển khoản ngân hàng</p>
-                      <p className="text-sm text-muted-foreground">Chuyển khoản trước khi giao hàng</p>
-                    </div>
-                  </div>
-                  
                   <div 
                     className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
                       paymentMethod === 'vnpay' ? 'border-primary bg-primary/5' : 'border-border'
