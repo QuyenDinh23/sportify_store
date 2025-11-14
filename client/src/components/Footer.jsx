@@ -39,8 +39,8 @@ const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Liên kết nhanh</h3>
             <ul className="space-y-2 text-primary-foreground/80">
-              <li><a href="#" className="hover:text-accent transition-colors">Về chúng tôi</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Chính sách đổi trả</a></li>
+              <li><Link to="/about" className="hover:text-accent transition-colors">Về chúng tôi</Link></li>
+              <li><Link to="/support/returns-warranty" className="hover:text-accent transition-colors">Chính sách đổi trả</Link></li>
               <li><a href="#" className="hover:text-accent transition-colors">Hướng dẫn mua hàng</a></li>
               <li><a href="#" className="hover:text-accent transition-colors">Câu hỏi thường gặp</a></li>
               <li><Link to="/blog" className="hover:text-accent transition-colors">Tin tức</Link></li>

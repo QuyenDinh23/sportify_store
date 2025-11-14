@@ -43,6 +43,7 @@ import WarrantyRequest from "./pages/AccountManage/WarrantyRequest";
 import ReturnWarrantyPolicy from "./pages/support/ReturnWarrantyPolicy";
 import Register from "./pages/register/Register";
 import ForgetPasswordRoutes from "./pages/ForgetPassword/ForgetPasswordRoutes";
+import AboutUs from "./pages/about/AboutUs";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => {
               path="/support/returns-warranty"
               element={<ReturnWarrantyPolicy />}
             />
+            <Route path="/about" element={<AboutUs />} />
             {/* route admin dashboard */}
             <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/dashboard" element={<Dashboard />}>
