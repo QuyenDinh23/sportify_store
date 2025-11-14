@@ -156,37 +156,54 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {user && (user.role === "admin" || user.role === "staff-sale" || user.role === "staff-content") && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden md:flex"
-                asChild
-              >
-                <Link to={user.role === "admin" ? "/admin/dashboard" : user.role === "staff-sale" ? "/staff-sale/dashboard/orders" : "/staff-content/dashboard/vouchers"}>
-                  <Settings className="h-5 w-5" />
-                </Link>
-              </Button>
-            )}
+            {user &&
+              (user.role === "admin" ||
+                user.role === "staff-sale" ||
+                user.role === "staff-content") && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden md:flex"
+                  asChild
+                >
+                  <Link
+                    to={
+                      user.role === "admin"
+                        ? "/dashboard"
+                        : user.role === "staff-sale"
+                        ? "/staff-sale/dashboard/orders"
+                        : "/staff-content/dashboard/vouchers"
+                    }
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Link>
+                </Button>
+              )}
 
             <DropdownMenuHover>
               <DropdownMenuTrigger asChild>
-                <Link
-                  to={
-                    user && user?.role === "user"
-                      ? `/account/profile`
-                      : "/login"
-                  }
-                >
-                  <Button
-                    title={user && user?.role === "user" ? "" : "Đăng nhập"}
-                    variant="ghost"
-                    size="icon"
-                    className="hidden md:flex"
+                {(user && user?.role === "admin") ||
+                user?.role === "staff-sale" ||
+                user?.role === "staff-content" ? (
+                  <></>
+                ) : (
+                  <Link
+                    to={
+                      user && user?.role === "user"
+                        ? `/account/profile`
+                        : "/login"
+                    }
                   >
-                    <User className="h-5 w-5" />
-                  </Button>
-                </Link>
+                    <Button
+                      title={user && user?.role === "user" ? "" : "Đăng nhập"}
+                      variant="ghost"
+                      size="icon"
+                      className="hidden md:flex"
+                    >
+                      <User className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                )}
               </DropdownMenuTrigger>
               {user && user?.role === "user" ? (
                 <DropdownMenuContent
