@@ -1,22 +1,42 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronRight, ShoppingCart, Heart, Share2, Minus, Plus, Star } from "lucide-react";
+import {
+  ChevronRight,
+  ShoppingCart,
+  Heart,
+  Share2,
+  Minus,
+  Plus,
+  Star,
+} from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Separator } from "../../components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
 import { cn } from "../../lib/utils";
 import { toast } from "sonner";
-import Header from '../../components/Header';
-import { MainNavigation } from '../../components/MainNavigation';
-import Footer from '../../components/Footer';
-import { getProductById, getRelatedProducts } from "../../api/product/productApi";
+import Header from "../../components/Header";
+import { MainNavigation } from "../../components/MainNavigation";
+import Footer from "../../components/Footer";
+import {
+  getProductById,
+  getRelatedProducts,
+} from "../../api/product/productApi";
 import { addToCart } from "../../store/cartSlice";
-import ProductCard from '../../components/product/ProductCard';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../../components/ui/carousel';
-
-
+import ProductCard from "../../components/product/ProductCard";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "../../components/ui/carousel";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -61,7 +81,7 @@ const ProductDetail = () => {
   const handleBack = () => {
     // Nếu có state.fromProducts (truyền từ ProductCard)
     if (location.state?.fromProducts) {
-      navigate('/products', {
+      navigate("/products", {
         state: { products: location.state.fromProducts },
         replace: false,
       });
@@ -72,7 +92,7 @@ const ProductDetail = () => {
     }
     // Fallback về trang products chung
     else {
-      navigate('/products');
+      navigate("/products");
     }
   };
 
@@ -85,13 +105,17 @@ const ProductDetail = () => {
   useEffect(() => {
     if (product && product.colors && product.colors[selectedColor]) {
       const firstImage = product.colors[selectedColor].images?.[0];
-      setMainImage(firstImage && firstImage.trim() !== "" ? firstImage : "/logo.png");
+      setMainImage(
+        firstImage && firstImage.trim() !== "" ? firstImage : "/logo.png"
+      );
     }
   }, [product, selectedColor]);
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-foreground mb-4">Không tìm thấy sản phẩm</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-4">
+          Không tìm thấy sản phẩm
+        </h1>
         <Link to="/products" className="text-primary hover:underline">
           Quay lại trang sản phẩm
         </Link>
@@ -115,22 +139,29 @@ const ProductDetail = () => {
     }
 
     // Check if user is logged in
-    if (!user || user.role !== 'user') {
+    if (!user) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+      return;
+    }
+    if (user.role !== "user") {
+      toast.error("Quản trị viên không thể thực hiện mua hàng vui lòng đăng nhập bằng tài khoản người dùng");
       return;
     }
 
     try {
       // Extract size from variant object
-      const sizeToSend = typeof selectedSize === 'object' ? selectedSize.size : selectedSize;
+      const sizeToSend =
+        typeof selectedSize === "object" ? selectedSize.size : selectedSize;
 
       // Dispatch async action để thêm vào giỏ hàng
-      await dispatch(addToCart({
-        productId: product._id,
-        selectedColor: product.colors[selectedColor].name,
-        selectedSize: sizeToSend,
-        quantity
-      })).unwrap();
+      await dispatch(
+        addToCart({
+          productId: product._id,
+          selectedColor: product.colors[selectedColor].name,
+          selectedSize: sizeToSend,
+          quantity,
+        })
+      ).unwrap();
 
       toast.success("Đã thêm vào giỏ hàng!");
     } catch (error) {
@@ -139,7 +170,6 @@ const ProductDetail = () => {
   };
 
   return (
-
     <div className="min-h-screen bg-background">
       <Header />
       <MainNavigation />
@@ -147,7 +177,9 @@ const ProductDetail = () => {
       <div className="border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <Link to="/" className="hover:text-primary">Trang chủ</Link>
+            <Link to="/" className="hover:text-primary">
+              Trang chủ
+            </Link>
             <ChevronRight className="h-4 w-4" />
             <button
               onClick={handleBack}
@@ -170,7 +202,9 @@ const ProductDetail = () => {
               {mainImage && mainImage.trim() !== "" ? (
                 <img
                   src={mainImage}
-                  alt={`${product.name} - ${product.colors[selectedColor]?.name || 'Product'}`}
+                  alt={`${product.name} - ${
+                    product.colors[selectedColor]?.name || "Product"
+                  }`}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -181,7 +215,7 @@ const ProductDetail = () => {
             </div>
             {/* Thumbnail images */}
             <div className="flex gap-2 overflow-x-auto mt-2">
-              {product.colors[selectedColor].images.map((img, index) => (
+              {product.colors[selectedColor].images.map((img, index) =>
                 img && img.trim() !== "" ? (
                   <img
                     key={index}
@@ -194,7 +228,7 @@ const ProductDetail = () => {
                     onClick={() => setMainImage(img)} // click thumbnail thay đổi ảnh chính
                   />
                 ) : null
-              ))}
+              )}
             </div>
           </div>
 
@@ -203,11 +237,19 @@ const ProductDetail = () => {
             {/* Title and badges */}
             <div>
               <div className="flex gap-2 mb-3">
-                {hasDiscount && <Badge className="bg-secondary text-secondary-foreground">-{product.discountPercentage}%</Badge>}
+                {hasDiscount && (
+                  <Badge className="bg-secondary text-secondary-foreground">
+                    -{product.discountPercentage}%
+                  </Badge>
+                )}
                 {/* {product.isBestSeller && <Badge className="bg-primary text-primary-foreground">Bán chạy</Badge>} */}
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{product.name}</h1>
-              <p className="text-muted-foreground text-lg">{product.brand.name}</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                {product.name}
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                {product.brand.name}
+              </p>
             </div>
             {/* Price */}
             <div className="flex items-baseline gap-3">
@@ -231,7 +273,10 @@ const ProductDetail = () => {
             {/* Color selection */}
             <div>
               <h3 className="font-semibold text-foreground mb-3">
-                Màu sắc: <span className="text-muted-foreground font-normal">{product.colors[selectedColor].name}</span>
+                Màu sắc:{" "}
+                <span className="text-muted-foreground font-normal">
+                  {product.colors[selectedColor].name}
+                </span>
               </h3>
               <div className="flex gap-3">
                 {product.colors.map((color, index) => (
@@ -300,11 +345,16 @@ const ProductDetail = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      console.log("Plus clicked, current quantity:", quantity, "availableStock:", availableStock, "selectedSize:", selectedSize);
-                      setQuantity((prev) =>
+                      console.log(
+                        "Plus clicked, current quantity:",
+                        quantity,
+                        "availableStock:",
+                        availableStock,
+                        "selectedSize:",
                         selectedSize
-                          ? Math.min(prev + 1, availableStock)
-                          : prev
+                      );
+                      setQuantity((prev) =>
+                        selectedSize ? Math.min(prev + 1, availableStock) : prev
                       );
                     }}
                     className="rounded-l-none"
@@ -323,7 +373,12 @@ const ProductDetail = () => {
 
             {/* Action buttons */}
             <div className="flex gap-3">
-              <Button size="lg" className="w-full" variant="sport" onClick={handleAddToCart}>
+              <Button
+                size="lg"
+                className="w-full"
+                variant="sport"
+                onClick={handleAddToCart}
+              >
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 Thêm vào giỏ
               </Button>
@@ -357,13 +412,22 @@ const ProductDetail = () => {
         <div className="mt-16">
           <Tabs defaultValue="description" className="w-full">
             <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-              <TabsTrigger value="description" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+              <TabsTrigger
+                value="description"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
                 Mô tả sản phẩm
               </TabsTrigger>
-              <TabsTrigger value="specs" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+              <TabsTrigger
+                value="specs"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
                 Thông số kỹ thuật
               </TabsTrigger>
-              <TabsTrigger value="reviews" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
+              <TabsTrigger
+                value="reviews"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
                 Đánh giá (128)
               </TabsTrigger>
             </TabsList>
@@ -372,7 +436,9 @@ const ProductDetail = () => {
               <div className="prose max-w-none">
                 <p className="text-muted-foreground">{product.description}</p>
                 <div className="mt-4">
-                  <h4 className="font-semibold text-foreground mb-2">Vật liệu:</h4>
+                  <h4 className="font-semibold text-foreground mb-2">
+                    Vật liệu:
+                  </h4>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                     {product.materials.map((material, index) => (
                       <li key={index}>{material}</li>
@@ -385,7 +451,10 @@ const ProductDetail = () => {
             <TabsContent value="specs" className="mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries(product.technicalSpecs).map(([key, value]) => (
-                  <div key={key} className="flex justify-between border-b border-border py-3">
+                  <div
+                    key={key}
+                    className="flex justify-between border-b border-border py-3"
+                  >
                     <span className="font-medium text-foreground">{key}</span>
                     <span className="text-muted-foreground">{value}</span>
                   </div>
@@ -394,7 +463,9 @@ const ProductDetail = () => {
             </TabsContent>
 
             <TabsContent value="reviews" className="mt-6">
-              <p className="text-muted-foreground">Phần đánh giá sẽ được cập nhật sau.</p>
+              <p className="text-muted-foreground">
+                Phần đánh giá sẽ được cập nhật sau.
+              </p>
             </TabsContent>
           </Tabs>
 
@@ -402,7 +473,9 @@ const ProductDetail = () => {
           {relatedProducts.length > 0 && (
             <div className="mt-16 pb-16">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-foreground">Sản phẩm liên quan</h2>
+                <h2 className="text-2xl font-bold text-foreground">
+                  Sản phẩm liên quan
+                </h2>
               </div>
 
               <div className="relative">
@@ -429,7 +502,6 @@ const ProductDetail = () => {
               </div>
             </div>
           )}
-
         </div>
       </div>
       <Footer />

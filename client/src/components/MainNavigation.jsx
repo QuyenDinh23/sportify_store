@@ -10,7 +10,7 @@ import {
 } from "../components/ui/navigation-menu";
 import { toast } from "../hooks/use-toast";
 import { Link } from "react-router-dom";
-import { voucherApi } from "../services/voucherApi";
+import { getAvailableVouchers } from "../api/voucher/voucherApi";
 
 export function MainNavigation() {
   const [categories, setCategories] = useState([]);
@@ -19,7 +19,7 @@ export function MainNavigation() {
 
   const fetchVoucher = async () => {
     try {
-      const res = await voucherApi.getAll();
+      const res = await getAvailableVouchers();
       const data = res?.data ?? res;
       setVoucher(Array.isArray(data) ? data : []);
     } catch (error) {
