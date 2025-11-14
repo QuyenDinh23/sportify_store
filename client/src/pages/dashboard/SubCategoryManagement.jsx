@@ -136,10 +136,7 @@ const SubcategoryManagement = () => {
   const handleFormSubmit = async (subcategoryData) => {
     if (subcategoryData.id) {
       // Editing existing subcategory
-      const updatedSub = await updateSubcategory(subcategoryData.id, subcategoryData);
-      setSubcategoryList((prev) =>
-        prev.map((sc) => (sc.id === updatedSub.id ? updatedSub : sc))
-      );
+      await updateSubcategory(subcategoryData.id, subcategoryData);
       toast({
         title: 'Đã cập nhật danh mục con',
         description: `${subcategoryData.name} đã được cập nhật thành công`,

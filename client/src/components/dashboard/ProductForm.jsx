@@ -230,6 +230,10 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
         setError("name", { type: "manual", message: "Tên sản phẩm đã tồn tại" });
         return;
       }
+      if (colors.length === 0 || colors.some(color => !color.sizes || color.sizes.length === 0)) {
+        setError("colors", { type: "manual", message: "Vui lòng thêm ít nhất một màu và một size cho mỗi màu." });
+        return;
+      }
       const allSizes = Array.from(new Set(colors.flatMap(color => color.sizes.map(s => s.size))));
       const productData = {
         id: product?._id,
@@ -581,6 +585,9 @@ export const ProductForm = ({ isOpen, onClose, onSubmit, product, categories, su
                     <Plus className="w-4 h-4 mr-2" />
                     Thêm màu
                   </Button>
+                  {errors.colors && (
+                    <p className="text-sm text-destructive mt-2">{errors.colors.message}</p>
+                  )}
                   <div className="space-y-4">
                     {colors.map((color, index) => (
                       <div key={index} className="border p-4 rounded-lg">
