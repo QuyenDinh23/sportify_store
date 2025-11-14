@@ -61,12 +61,35 @@ export const createWarrantyRequest = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
     }
 
+    // Validate ngày tạo yêu cầu không được quá 7 ngày so với ngày mua đơn hàng
+    const orderDate = new Date(order.createdAt);
+    orderDate.setHours(0, 0, 0, 0);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const daysDiff = Math.floor((now - orderDate) / (1000 * 60 * 60 * 24));
+    if (daysDiff > 7) {
+      return res.status(400).json({ 
+        message: "Đơn hàng đã quá hạn bảo hành" 
+      });
+    }
+
+    // Validate ngày phát hiện lỗi không được là ngày trong tương lai
+    if (issueDate) {
+      const issueDateObj = new Date(issueDate);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // Set to end of today
+      if (issueDateObj > today) {
+        return res.status(400).json({ 
+          message: "Ngày phát hiện lỗi không được là ngày trong tương lai" 
+        });
+      }
+    }
+
     const deliveryDate = order.deliveredAt || order.createdAt;
     const warrantyPeriodMonths = product.warrantyPeriod || 12;
     const warrantyExpiryDate = new Date(deliveryDate);
     warrantyExpiryDate.setMonth(warrantyExpiryDate.getMonth() + warrantyPeriodMonths);
 
-    const now = new Date();
     if (now > warrantyExpiryDate) {
       return res.status(400).json({ 
         message: `Hết thời hạn bảo hành. Thời hạn bảo hành kết thúc vào ${warrantyExpiryDate.toLocaleDateString('vi-VN')}` 

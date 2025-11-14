@@ -148,6 +148,8 @@ const WarrantyManagement = () => {
 
   const watchedAction = watch('action');
   const [replacementOrderNumber, setReplacementOrderNumber] = useState("");
+  const [isCreatingReplacementOrder, setIsCreatingReplacementOrder] = useState(false);
+  const [replacementOrderCreated, setReplacementOrderCreated] = useState(false);
   const watchedStatus = watchUpdateStatus('status');
 
   const columns = [
@@ -256,6 +258,11 @@ const WarrantyManagement = () => {
     
     setSelectedWarranty(warranty);
     setAction(actionType);
+    
+    // Reset replacement order states
+    setReplacementOrderNumber("");
+    setIsCreatingReplacementOrder(false);
+    setReplacementOrderCreated(!!warranty.replacementOrderId);
     
     reset({
       action: '',
@@ -677,41 +684,47 @@ const WarrantyManagement = () => {
                        />
                      )}
                    />
-                   <div className="mt-2">
-                     <Button
-                       type="button"
-                       variant="secondary"
-                       onClick={async () => {
-                         try {
-                           const userId = selectedWarranty?.customerId?._id || selectedWarranty?.customerId;
-                           const payload = {
-                             userId,
-                             items: [{
-                               productId: selectedWarranty?.productId?._id || selectedWarranty?.productId,
-                               selectedColor: selectedWarranty?.selectedColor,
-                               selectedSize: selectedWarranty?.selectedSize,
-                               // Server will infer original quantity from warranty/order if not provided
-                             }],
-                             notes: 'Đơn hàng thay thế cho bảo hành',
-                             warrantyId: selectedWarranty?._id,
-                           };
-                           const res = await createReplacementOrderAdmin(payload);
-                           reset({
-                             action: 'replace',
-                             adminNote: '',
-                             rejectReason: '',
-                             replacementOrderId: res?.data?._id || res?.data?.id,
-                           });
-                           setReplacementOrderNumber(res?.data?.orderNumber || "");
-                           toast({ title: 'Đã tạo đơn thay thế', description: res?.data?.orderNumber || 'Thành công' });
-                         } catch (e) {
-                           toast({ title: 'Lỗi', description: e?.message || 'Không thể tạo đơn thay thế', variant: 'destructive' });
-                         }
-                       }}
-                     >
-                       Tạo đơn thay thế tự động
-                     </Button>
-                   </div>
+                   {!replacementOrderCreated && !replacementOrderNumber && !selectedWarranty?.replacementOrderId && (
+                     <div className="mt-2">
+                       <Button
+                         type="button"
+                         variant="secondary"
+                         disabled={isCreatingReplacementOrder}
+                         onClick={async () => {
+                           try {
+                             setIsCreatingReplacementOrder(true);
+                             const userId = selectedWarranty?.customerId?._id || selectedWarranty?.customerId;
+                             const payload = {
+                               userId,
+                               items: [{
+                                 productId: selectedWarranty?.productId?._id || selectedWarranty?.productId,
+                                 selectedColor: selectedWarranty?.selectedColor,
+                                 selectedSize: selectedWarranty?.selectedSize,
+                                 // Server will infer original quantity from warranty/order if not provided
+                               }],
+                               notes: 'Đơn hàng thay thế cho bảo hành',
+                               warrantyId: selectedWarranty?._id,
+                             };
+                             const res = await createReplacementOrderAdmin(payload);
+                             reset({
+                               action: 'replace',
+                               adminNote: '',
+                               rejectReason: '',
+                               replacementOrderId: res?.data?._id || res?.data?.id,
+                             });
+                             setReplacementOrderNumber(res?.data?.orderNumber || "");
+                             setReplacementOrderCreated(true);
+                             toast({ title: 'Đã tạo đơn thay thế', description: res?.data?.orderNumber || 'Thành công' });
+                           } catch (e) {
+                             toast({ title: 'Lỗi', description: e?.message || 'Không thể tạo đơn thay thế', variant: 'destructive' });
+                             setIsCreatingReplacementOrder(false);
+                           }
+                         }}
+                       >
+                         {isCreatingReplacementOrder ? 'Đang tạo...' : 'Tạo đơn thay thế tự động'}
+                       </Button>
+                     </div>
+                   )}
                    {(replacementOrderNumber || (watch('replacementOrderId') && selectedWarranty?.replacementOrderId)) && (
                      <p className="text-xs text-muted-foreground mt-2">Mã đơn thay thế: <span className="font-medium">{replacementOrderNumber || watch('replacementOrderId')}</span></p>
                    )}

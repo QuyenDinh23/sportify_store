@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,7 +27,7 @@ const WARRANTY_REASONS = [
   "intact_no_longer_needed"
 ];
 
-const warrantyRequestSchema = z.object({
+const createWarrantyRequestSchema = (order) => z.object({
   reason: z.string({
     required_error: "Vui lòng chọn lý do",
   }).refine(
@@ -55,6 +55,37 @@ const warrantyRequestSchema = z.object({
     path: ["attachments"],
     message: "Cần ít nhất 1 file đính kèm",
   }
+).refine(
+  (data) => {
+    // Validate ngày phát hiện lỗi không được là ngày trong tương lai
+    if (data.issueDate) {
+      const issueDate = new Date(data.issueDate);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // Set to end of today
+      return issueDate <= today;
+    }
+    return true;
+  },
+  {
+    path: ["issueDate"],
+    message: "Ngày phát hiện lỗi không được là ngày trong tương lai",
+  }
+).refine(
+  (data) => {
+    // Validate ngày tạo yêu cầu không được quá 7 ngày so với ngày mua đơn hàng
+    if (order && order.createdAt) {
+      const orderDate = new Date(order.createdAt);
+      orderDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysDiff = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
+      return daysDiff <= 7;
+    }
+    return true;
+  },
+  {
+    message: "Đơn hàng đã quá hạn bảo hành",
+  }
 );
 
 const reasonConfig = {
@@ -70,6 +101,8 @@ const reasonConfig = {
 };
 
 export const WarrantyRequestDialog = ({ isOpen, onClose, onSubmit, product, order }) => {
+  const warrantyRequestSchema = useMemo(() => createWarrantyRequestSchema(order), [order]);
+  
   const {
     control,
     handleSubmit,
@@ -102,6 +135,28 @@ export const WarrantyRequestDialog = ({ isOpen, onClose, onSubmit, product, orde
   }, [isOpen, reset]);
 
   const onFormSubmit = (data) => {
+    // Validate ngày phát hiện lỗi không được là ngày trong tương lai
+    if (data.issueDate) {
+      const issueDate = new Date(data.issueDate);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      if (issueDate > today) {
+        return;
+      }
+    }
+
+    // Validate ngày tạo yêu cầu không được quá 7 ngày so với ngày mua đơn hàng
+    if (order && order.createdAt) {
+      const orderDate = new Date(order.createdAt);
+      orderDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const daysDiff = Math.floor((today - orderDate) / (1000 * 60 * 60 * 24));
+      if (daysDiff > 7) {
+        return;
+      }
+    }
+
     const attachments = data.attachments
       .split(",")
       .map((url) => url.trim())
@@ -194,12 +249,21 @@ export const WarrantyRequestDialog = ({ isOpen, onClose, onSubmit, product, orde
               <Controller
                 name="issueDate"
                 control={control}
-                render={({ field }) => <Input type="date" {...field} />}
+                render={({ field }) => (
+                  <Input 
+                    type="date" 
+                    {...field}
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                )}
               />
               {errors.issueDate && (
                 <p className="text-sm text-destructive mt-1">{errors.issueDate.message}</p>
               )}
             </div>
+            {errors.root && (
+              <p className="text-sm text-destructive mt-1">{errors.root.message}</p>
+            )}
 
             <div>
               <Label>Thông tin liên hệ thêm (tùy chọn)</Label>
