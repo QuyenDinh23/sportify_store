@@ -57,9 +57,12 @@ const userController = {
           .status(400)
           .json({ message: "Thiếu tên hoặc email người dùng" });
       }
+      let hashed = null;
+      if (req.body.password) {
+        const salt = await bcrypt.genSalt(10);
+        hashed = await bcrypt.hash(req.body.password, salt);
+      }
 
-      const salt = await bcrypt.genSalt(10);
-      const hashed = await bcrypt.hash(req.body.password, salt);
       //create new user
       const newUser = await new User({
         fullName,
@@ -87,9 +90,11 @@ const userController = {
     try {
       const id = req.params.id;
       const updatedData = { ...req.body };
-      const salt = await bcrypt.genSalt(10);
-      const hashed = await bcrypt.hash(req.body.password, salt);
-
+      if (req.body.password) {
+        const salt = await bcrypt.genSalt(10);
+        const hashed = await bcrypt.hash(req.body.password, salt);
+        updatedData.password = hashed;
+      }
       const updatedUser = await User.findByIdAndUpdate(
         id,
         { $set: updatedData },
@@ -181,7 +186,15 @@ const userController = {
   updateUserInfo: async (req, res) => {
     try {
       const updatedData = { ...req.body };
-
+      const { email } = req.body;
+      const user = req.user;
+      const existingUser = await User.findById(user.id);
+      if (email && email !== existingUser.email) {
+        const emailExists = await User.findOne({ email });
+        if (emailExists) {
+          return res.status(400).json({ codeName: "DuplicateKey" });
+        }
+      }
       const updatedUser = await User.findByIdAndUpdate(
         req.user.id,
         { $set: updatedData },

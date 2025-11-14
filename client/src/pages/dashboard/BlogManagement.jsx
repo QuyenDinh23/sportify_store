@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select.jsx";
-import { Skeleton } from "../../components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -46,6 +45,17 @@ import {
   BookOpen,
 } from "lucide-react";
 import { useToast } from "../../hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
+
 
 const BlogManagement = () => {
   const [posts, setPosts] = useState([]);
@@ -57,6 +67,9 @@ const BlogManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPublished, setSelectedPublished] = useState("all");
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const [postToDelete, setPostToDelete] = useState(null);
   const itemsPerPage = 10;
   const { toast } = useToast();
 
@@ -71,6 +84,10 @@ const BlogManagement = () => {
     selectedPublished,
   ]);
 
+  const handleToggleStatus = (post) => {
+    setPostToDelete(post);
+    setDeleteDialogOpen(true);
+  };
   const fetchPosts = useCallback(async () => {
     try {
       const filters = {
@@ -111,8 +128,6 @@ const BlogManagement = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa bài viết này?")) return;
-
     try {
       await deleteBlogPost(id);
       toast({
@@ -343,7 +358,7 @@ const BlogManagement = () => {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDelete(post._id)}
+                          onClick={() => handleToggleStatus(post)}
                           className="text-destructive"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
@@ -367,7 +382,25 @@ const BlogManagement = () => {
           )}
         </CardContent>
       </Card>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa bài viết</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa bài viết "{postToDelete?.title}"? Sau
+              khi xóa sẽ khônng thể khôi phục. <br />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleDelete(postToDelete._id)}>
+              Xác nhận
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 };
 

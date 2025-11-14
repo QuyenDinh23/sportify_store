@@ -65,17 +65,17 @@ export const authApi = {
       // err.response chứa response từ server (nếu server trả lỗi 4xx/5xx)
       if (err.response) {
         if (err.response.status === 400) {
+          toast({
+            title: "Đăng nhập thất bại",
+            description: err.response.data.message,
+            variant: "destructive",
+          });
           return {
             needEmail: true,
             name: err.response.data.name,
             fbId: err.response.data.fbId,
           };
         }
-        toast({
-          title: "Đăng nhập thất bại",
-          description: err.response.data,
-          variant: "destructive",
-        });
         console.error("Server error:", err.response.data);
         throw new Error(err.response.data.error || "Login failed");
       } else if (err.request) {
@@ -146,5 +146,10 @@ export const authApi = {
       console.error(err);
       return err.response || { message: "Unknown error" };
     }
+  },
+  loginWithGoogle: async (idToken) => {
+    const res = await api.post("/auth/login-google", { googleId: idToken });
+    store.dispatch(setToken(res.data));
+    return res.data;
   },
 };

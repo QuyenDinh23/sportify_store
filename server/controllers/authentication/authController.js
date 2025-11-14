@@ -6,6 +6,9 @@ import userController from "../user/userController.js";
 import generateOtp from "../../utils/generateOtp.js";
 import sendMail from "../../utils/senderMail.js";
 import Otp from "../../models/otp/Otp.js";
+import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+
 const authController = {
   //REGISTER
   registerUser: async (req, res) => {
@@ -52,6 +55,11 @@ const authController = {
       if (user.status === "banned") {
         return res.status(404).send("Tài khoản của bạn đã bị cấm");
       }
+      if (!user.password) {
+        return res
+          .status(400)
+          .send("Vui lòng đăng nhập bằng bên thứ 3 hoặc đặt lại mật khẩu");
+      }
       const isMatch = await bcrypt.compare(req.body.password, user.password);
       if (!isMatch) return res.status(404).send("Sai mật khẩu");
       const accessToken = authController.generateAccessToken(user);
@@ -95,7 +103,7 @@ const authController = {
       } else {
         if (!req.body.email) {
           return res.status(400).json({
-            message: "Email is required",
+            message: "Email không được cung cấp.",
             name: req.body.name,
             fbId: req.body.fbId,
           }); // name and fbId to prefill in client
@@ -103,6 +111,15 @@ const authController = {
         if (req.body.email) {
           const emailExists = await User.findOne({ email: req.body.email });
           if (emailExists) {
+            if (
+              emailExists.role === "admin" ||
+              emailExists.role === "staff-sale" ||
+              emailExists.role === "staff-content"
+            ) {
+              return res.status(400).json({
+                message: "Tài khoản này không thể liên kết với Facebook.",
+              });
+            }
             if (!emailExists.fullName) {
               emailExists.fullName = req.body.name;
             }
@@ -260,6 +277,92 @@ const authController = {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "có lỗi khi đổi mật khẩu" });
+    }
+  },
+
+  logginWithGoogle: async (req, res) => {
+    try {
+      const googleUser = await axios.get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${req.body.googleId}`
+      );
+      const { id, email, name } = googleUser.data;
+      const user = await User.findOne({ googleId: id });
+      if (user) {
+        if (user.status === "banned") {
+          return res.status(404).send("Tài khoản của bạn đã bị cấm");
+        }
+        const accessToken = authController.generateAccessToken(user);
+        const refreshToken = authController.generateRefreshToken(user);
+        await RefreshToken.create({
+          userId: user._id,
+          token: refreshToken,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        });
+        res.cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: false, // set to true if using https
+          sameSite: "strict",
+        });
+        res.status(200).json({ accessToken });
+      } else {
+        if (email) {
+          const emailExists = await User.findOne({ email: email });
+          if (emailExists) {
+            if (
+              emailExists.role === "admin" ||
+              emailExists.role === "staff-sale" ||
+              emailExists.role === "staff-content"
+            ) {
+              return res.status(400).json({
+                message: "Tài khoản này không thể liên kết với Google.",
+              });
+            }
+            if (!emailExists.fullName) {
+              emailExists.fullName = name;
+            }
+            emailExists.googleId = id;
+            const updatedUser = await emailExists.save();
+            const accessToken = authController.generateAccessToken(updatedUser);
+            const refreshToken =
+              authController.generateRefreshToken(updatedUser);
+            await RefreshToken.create({
+              userId: updatedUser._id,
+              token: refreshToken,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            });
+            res.cookie("refreshToken", refreshToken, {
+              httpOnly: true,
+              secure: false, // set to true if using https
+              sameSite: "strict",
+            });
+            return res.status(200).json({ accessToken });
+          }
+          if (!emailExists) {
+            const newUser = await new User({
+              fullName: name,
+              email: email,
+              googleId: id,
+            });
+            //save to db
+            const user = await newUser.save();
+            const accessToken = authController.generateAccessToken(user);
+            const refreshToken = authController.generateRefreshToken(user);
+            await RefreshToken.create({
+              userId: user._id,
+              token: refreshToken,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            });
+            res.cookie("refreshToken", refreshToken, {
+              httpOnly: true,
+              secure: false, // set to true if using https
+              sameSite: "strict",
+            });
+            return res.status(200).json({ accessToken });
+          }
+        }
+      }
+    } catch (error) {
+      res.status(500).json(error);
     }
   },
 };

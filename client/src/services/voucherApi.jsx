@@ -1,4 +1,5 @@
 import api from "./axios";
+import { toast } from "../hooks/use-toast";
 
 export const voucherApi = {
   getAll: async (data) => {
@@ -13,7 +14,7 @@ export const voucherApi = {
   getByPage: async (page, limit, search) => {
     try {
       const res = await api.get("/vouchers/paging", {
-        params: { page, limit, search }
+        params: { page, limit, search },
       });
       return res.data;
     } catch (error) {
@@ -35,6 +36,11 @@ export const voucherApi = {
       const res = await api.post(`/vouchers`, data);
       return res.data;
     } catch (error) {
+      toast({
+        title: "Tạo voucher thất bại",
+        description: error.response.data.message || "",
+        variant: "destructive",
+      });
       console.error("Updated User failed:", error.response.data);
       throw error.response.data.error;
     }
@@ -57,13 +63,30 @@ export const voucherApi = {
       throw error.response.data.error;
     }
   },
-  //   toggleStatus: async (data) => {
-  //     try {
-  //       const res = await api.put(`/vouchers/${id}`);
-  //       return res.data;
-  //     } catch (error) {
-  //       console.error("Updated User failed:", error.response.data);
-  //       throw error.response.data.error;
-  //     }
-  //   },
+  getByCode: async (code) => {
+    try {
+      const res = await api.get(`/vouchers/code/${code}`);
+      return res.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        // Không tìm thấy voucher -> return null để tạo mới
+        return null;
+      }
+      console.error("Get voucher by code failed:", error.response.data);
+      throw error.response.data.error;
+    }
+  },
+  deactivateExpiredVouchers: async () => {
+    try {
+      const res = await api.post(`/vouchers/deactivate-expired`);
+      toast({
+        title: "Đã vô hiệu hóa tất cả voucher hết hạn",
+        variant: "default",
+      });
+      return res.data;
+    } catch (error) {
+      console.error("Updated User failed:", error.response.data);
+      throw error.response.data.error;
+    }
+  },
 };

@@ -248,7 +248,7 @@ const Cart = () => {
   const finalTotal = selectedItemsTotal + shippingFee - voucherDiscount;
 
   // Show login message if user is not logged in
-  if (!user) {
+  if (!user || user.role !== 'user') {
     return (
       <div className="min-h-screen bg-background">
         <Header />

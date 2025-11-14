@@ -73,6 +73,7 @@ const BlogPostForm = () => {
     }
 
     if (!formData.categoryId) errors.push("Vui lòng chọn danh mục.");
+    if (!formData.author.trim()) errors.push("Vui lòng nhập tên tác giả.");
     if (!formData.summary.trim()) errors.push("Vui lòng nhập tóm tắt ngắn.");
     if (!formData.coverImage)
       errors.push("Vui lòng chọn ảnh bìa cho bài viết.");
@@ -294,8 +295,8 @@ const BlogPostForm = () => {
     } catch (error) {
       console.error("Error saving post:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể lưu bài viết",
+        title: "Không thể lưu bài viết",
+        description: error.response.data?.message || "Không thể lưu bài viết",
         variant: "destructive",
       });
     } finally {

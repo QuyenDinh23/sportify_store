@@ -132,7 +132,7 @@ const Header = () => {
                 <DropdownMenuItem
                   className="cursor-pointer"
                   onClick={() => {
-                    if (user) {
+                    if (user && user?.role === "user") {
                       navigate("/account/order");
                     } else {
                       navigate("/login");
@@ -156,14 +156,14 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {user && (user.role === "admin" || user.role === "staff") && (
+            {user && (user.role === "admin" || user.role === "staff-sale" || user.role === "staff-content") && (
               <Button
                 variant="ghost"
                 size="icon"
                 className="hidden md:flex"
                 asChild
               >
-                <Link to="/dashboard">
+                <Link to={user.role === "admin" ? "/admin/dashboard" : user.role === "staff-sale" ? "/staff-sale/dashboard/orders" : "/staff-content/dashboard/vouchers"}>
                   <Settings className="h-5 w-5" />
                 </Link>
               </Button>
@@ -171,9 +171,15 @@ const Header = () => {
 
             <DropdownMenuHover>
               <DropdownMenuTrigger asChild>
-                <Link to={user ? `/account/profile` : "/login"}>
+                <Link
+                  to={
+                    user && user?.role === "user"
+                      ? `/account/profile`
+                      : "/login"
+                  }
+                >
                   <Button
-                    title={user ? "" : "Đăng nhập"}
+                    title={user && user?.role === "user" ? "" : "Đăng nhập"}
                     variant="ghost"
                     size="icon"
                     className="hidden md:flex"
@@ -182,7 +188,7 @@ const Header = () => {
                   </Button>
                 </Link>
               </DropdownMenuTrigger>
-              {user ? (
+              {user && user?.role === "user" ? (
                 <DropdownMenuContent
                   align="end"
                   className="w-56 bg-card z-[100]"
