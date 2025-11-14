@@ -26,4 +26,5 @@ authRoute.post("/login-fb", authController.loginWithFb);
 authRoute.post("/send-otp", authController.sendOtp);
 authRoute.post("/verify-otp", authController.verifyOtp);
 authRoute.post("/reset-password", authController.resetPassword);
+authRoute.post("/login-google", authController.logginWithGoogle);
 export default authRoute;

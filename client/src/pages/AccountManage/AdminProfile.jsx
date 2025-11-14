@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { userApi } from "../../services/userApi";
 import { toast } from "../../hooks/use-toast";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
-const StaffAccount = () => {
+const AdminProfile = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
 
@@ -227,7 +228,7 @@ const StaffAccount = () => {
     };
 
     const res = await userApi.updateUserInfo(data, dispatch);
-
+    
     if (res) {
       toast({
         title: "Cập nhật thành công!",
@@ -307,6 +308,14 @@ const StaffAccount = () => {
     <>
       <h1 className="text-3xl font-bold">Thông tin tài khoản</h1>
       <div style={{ flex: 1, padding: "50px 150px" }}>
+        <Link to={user?.role === "admin" ? "/dashboard/account/password" : user?.role === "staff-sale" ? "/staff-sale/dashboard/account/password" : "/staff-content/dashboard/account/password"}>
+          <Button
+            style={{ position: "absolute", right: "50px" }}
+            variant="sport"
+          >
+            Thay đổi mật khẩu
+          </Button>
+        </Link>
         <h4
           style={{
             marginTop: "20px",
@@ -378,8 +387,7 @@ const StaffAccount = () => {
 
             <div>
               <Button
-                q
-                disabled={editEmail || editDob || editGender || editPhone}
+                disabled={editEmail || editDob || editGender || editPhone || user?.role !== "admin"}
                 onClick={() => handleOpenEdit("Name")}
                 style={{ fontSize: "16px" }}
                 variant="link"
@@ -447,7 +455,7 @@ const StaffAccount = () => {
 
             <div>
               <Button
-                disabled={editName || editEmail || editGender || editPhone}
+                disabled={editName || editEmail || editGender || editPhone || user?.role !== "admin"}
                 onClick={() => handleOpenEdit("Dob")}
                 style={{ fontSize: "16px" }}
                 variant="link"
@@ -534,7 +542,7 @@ const StaffAccount = () => {
 
             <div>
               <Button
-                disabled={editName || editDob || editEmail || editPhone}
+                disabled={editName || editDob || editEmail || editPhone || user?.role !== "admin"}
                 onClick={() => handleOpenEdit("Gender")}
                 style={{ fontSize: "16px" }}
                 variant="link"
@@ -612,7 +620,7 @@ const StaffAccount = () => {
 
             <div>
               <Button
-                disabled={editName || editDob || editGender || editEmail}
+                disabled={editName || editDob || editGender || editEmail || user?.role !== "admin"}
                 onClick={() => handleOpenEdit("Phone")}
                 style={{ fontSize: "16px" }}
                 variant="link"
@@ -676,7 +684,7 @@ const StaffAccount = () => {
 
             <div>
               <Button
-                disabled={editName || editDob || editGender || editPhone}
+                disabled={editName || editDob || editGender || editPhone || user?.role !== "admin"}
                 onClick={() => handleOpenEdit("Email")}
                 style={{ fontSize: "16px" }}
                 variant="link"
@@ -690,4 +698,4 @@ const StaffAccount = () => {
     </>
   );
 };
-export default StaffAccount;
+export default AdminProfile;

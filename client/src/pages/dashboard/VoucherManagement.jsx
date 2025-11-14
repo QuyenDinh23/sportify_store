@@ -18,6 +18,17 @@ import {
 import { useToast } from "../../hooks/use-toast";
 import { voucherApi } from "../../services/voucherApi";
 import Pagination from "../../components/pagination/Pagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
+import { Button } from "../../components/ui/button";
 
 const VoucherManagement = () => {
   const [vouchers, setVouchers] = useState([]);
@@ -28,6 +39,9 @@ const VoucherManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const [voucherToToggle, setVoucherToToggle] = useState(null);
   const itemsPerPage = 10;
   const { toast } = useToast();
 
@@ -37,6 +51,11 @@ const VoucherManagement = () => {
       style: "currency",
       currency: "VND",
     }).format(value);
+
+  const handleToggleStatus = (voucher) => {
+    setVoucherToToggle(voucher);
+    setDeleteDialogOpen(true);
+  };
 
   // Load danh sách voucher theo trang
   const loadVouchers = useCallback(async () => {
@@ -72,6 +91,18 @@ const VoucherManagement = () => {
   const handleEdit = (voucher) => {
     setEditingVoucher(voucher);
     setIsFormOpen(true);
+  };
+  const handleDeActivateExpiredVouchers = async () => {
+    try {
+      await voucherApi.deactivateExpiredVouchers();
+      loadVouchers();
+    } catch (error) {
+      toast({
+        title: "Lỗi vô hiệu hóa voucher",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   // Xóa voucher
@@ -162,6 +193,11 @@ const VoucherManagement = () => {
       render: (value) => (value === 0 ? "Không giới hạn" : value),
     },
     {
+      key: "usedCount",
+      label: "Số lượt đã sử dụng",
+      render: (value) => (value === 0 ? "0" : value),
+    },
+    {
       key: "startDate",
       label: "Thời gian áp dụng",
       render: (value, item) => (
@@ -233,7 +269,9 @@ const VoucherManagement = () => {
           </div>
         </CardContent>
       </Card>
-
+      <Button variant="sport" onClick={handleDeActivateExpiredVouchers}>
+        Vô hiệu hóa tất cả voucher hết hạn
+      </Button>
       {/* Bảng voucher */}
       <DataTable
         title={`Danh sách mã giảm giá (${filteredVouchers.length})`}
@@ -241,7 +279,7 @@ const VoucherManagement = () => {
         columns={columns}
         onAdd={handleAdd}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onDelete={handleToggleStatus}
         searchPlaceholder="Tìm kiếm mã giảm giá..."
         searchTerm={searchTerm}
         onSearch={setSearchTerm}
@@ -264,6 +302,25 @@ const VoucherManagement = () => {
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa voucher</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa voucher "{voucherToToggle?.code}"? Sau
+              khi xóa sẽ khônng thể khôi phục. <br />
+              Hành động này cũng sẽ vô hiệu hóa tất cả các mã voucher đã được
+              cấp phát từ mã này.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleDelete(voucherToToggle)}>
+              Xác nhận
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

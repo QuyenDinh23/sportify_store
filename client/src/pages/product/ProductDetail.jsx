@@ -115,7 +115,7 @@ const ProductDetail = () => {
     }
 
     // Check if user is logged in
-    if (!user) {
+    if (!user || user.role !== 'user') {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
       return;
     }

@@ -48,5 +48,6 @@ router.post(
   middlewareController.verifyToken,
   voucherController.applyVoucher
 );
+router.get("/code/:code" , voucherController.getVoucherByCode);
 
 export default router;

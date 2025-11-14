@@ -1,5 +1,6 @@
 import api from "./axios";
 import { setCredentials } from "../store/authSlice";
+import { toast } from "../hooks/use-toast";
 
 export const userApi = {
   updateUserInfo: async (data, dispatch) => {
@@ -9,6 +10,13 @@ export const userApi = {
       return res.data;
     } catch (error) {
       console.error("Updated User failed:", error.response.data);
+      if (error.response.data.codeName === "DuplicateKey") {
+        toast({
+          title: "Cập nhật thất bại",
+          description: "Email đã tồn tại!",
+          variant: "destructive",
+        });
+      }
       throw error.response.data.error;
     }
   },

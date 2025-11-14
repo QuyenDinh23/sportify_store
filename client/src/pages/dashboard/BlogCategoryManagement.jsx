@@ -47,12 +47,25 @@ import {
 import { useToast } from "../../hooks/use-toast";
 import { Skeleton } from "../../components/ui/skeleton";
 import { uploadToBackend } from "../../api/image/uploadImageApi";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
 
 const BlogCategoryManagement = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -123,23 +136,31 @@ const BlogCategoryManagement = () => {
       setLoading(true);
 
       if (editingCategory) {
-        const url = await uploadToBackend(formData.thumbnail);
-        formData.thumbnail = url;
+        if (formData.thumbnail instanceof File) {
+          console.log(formData.thumbnail);
+
+          const url = await uploadToBackend(formData.thumbnail);
+          formData.thumbnail = url;
+        }
+
         await updateBlogCategory(editingCategory._id, formData);
         toast({
           title: "Thành công",
           description: "Danh mục đã được cập nhật",
         });
       } else {
-        const url = await uploadToBackend(formData.thumbnail);
-        formData.thumbnail = url;
+        if (formData.thumbnail instanceof File) {
+          console.log(formData.thumbnail);
+
+          const url = await uploadToBackend(formData.thumbnail);
+          formData.thumbnail = url;
+        }
         await createBlogCategory(formData);
         toast({
           title: "Thành công",
           description: "Danh mục đã được tạo",
         });
       }
-
       setDialogOpen(false);
       setEditingCategory(null);
       setFormData({ name: "", slug: "", description: "", thumbnail: "" });
@@ -147,8 +168,8 @@ const BlogCategoryManagement = () => {
     } catch (error) {
       console.error("Error saving category:", error);
       toast({
-        title: "Lỗi",
-        description: "Không thể lưu danh mục",
+        title: "Không thể lưu danh mục",
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {
@@ -167,8 +188,11 @@ const BlogCategoryManagement = () => {
     setDialogOpen(true);
   };
 
+  const handleToggleStatus = (category) => {
+    setCategoryToDelete(category);
+    setDeleteDialogOpen(true);
+  };
   const handleDelete = async (id) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa danh mục này?")) return;
 
     try {
       await deleteBlogCategory(id);
@@ -406,7 +430,7 @@ const BlogCategoryManagement = () => {
                             Chỉnh sửa
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleDelete(category._id)}
+                            onClick={() => handleToggleStatus(category)}
                             className="text-destructive"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -422,6 +446,25 @@ const BlogCategoryManagement = () => {
           )}
         </CardContent>
       </Card>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa danh mục</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa danh mục "{categoryToDelete?.name}"? Sau
+              khi xóa sẽ khônng thể khôi phục. <br />
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => handleDelete(categoryToDelete._id)}
+            >
+              Xác nhận
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

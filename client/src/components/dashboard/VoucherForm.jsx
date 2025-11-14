@@ -19,13 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
+import { voucherApi } from "../../services/voucherApi";
 
 // ✅ Schema xác thực cho voucher
 const voucherSchema = z
   .object({
     code: z.string().min(3, "Mã voucher phải có ít nhất 3 ký tự").trim(),
 
-    description: z.string().optional(),
+    description: z
+      .string()
+      .min(1, "Vui lòng nhập mô tả")
+      .max(255, "Mô tả tối đa 255 ký tự"),
 
     discountType: z.enum(["fixed", "percentage"], {
       required_error: "Vui lòng chọn loại giảm giá",
@@ -41,7 +45,7 @@ const voucherSchema = z
 
     usageLimit: z
       .number({ invalid_type_error: "Giới hạn sử dụng phải là số" })
-      .min(0, "Giới hạn sử dụng không hợp lệ"),
+      .min(1, "Giới hạn sử dụng phải lớn hơn 0  "),
 
     usagePerUser: z
       .number({ invalid_type_error: "Số lần sử dụng mỗi người phải là số" })
@@ -67,6 +71,10 @@ const voucherSchema = z
       message: "Ngày bắt đầu phải từ hôm nay trở đi",
     }
   )
+  .refine((data) => data.usagePerUser <= data.usageLimit, {
+    message: "Số lần sử dụng mỗi người phải nhỏ hơn hoặc bằng giới hạn sử dụng",
+    path: ["usagePerUser"], // hiển thị lỗi dưới input usagePerUser
+  })
 
   // ✅ Rule 2: Ngày kết thúc ≥ ngày bắt đầu
   .refine(
@@ -99,6 +107,7 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
   const {
     control,
     handleSubmit,
+    setError,
     reset,
     formState: { errors },
   } = useForm({
@@ -137,10 +146,26 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
         targetUserGroup: voucher.targetUserGroup || "all",
         isActive: voucher.isActive ?? true,
       });
+    } else {
+      reset({});
     }
-  }, [voucher, reset]);
+  }, [voucher, isOpen, onClose]);
 
-  const onFormSubmit = (data) => {
+  const onFormSubmit = async (data) => {
+    if (!voucher) {
+      // Kiểm tra mã voucher đã tồn tại hay chưa (chỉ khi tạo mới)
+      const exists = await voucherApi.getByCode(data.code);
+      if (exists) {
+        setError("code", { type: "manual", message: "Mã voucher đã tồn tại" });
+        return;
+      }
+    } else if (data.code !== voucher.code) {
+      const exists = await voucherApi.getByCode(data.code);
+      if (exists) {
+        setError("code", { type: "manual", message: "Mã voucher đã tồn tại" });
+        return;
+      }
+    }
     onSubmit({
       ...data,
       startDate: new Date(data.startDate),
@@ -213,6 +238,11 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
                 />
               )}
             />
+            {errors.description && (
+              <p className="text-sm text-destructive">
+                {errors.description.message}
+              </p>
+            )}
           </div>
 
           {/* Loại giảm & Giá trị */}
@@ -297,6 +327,11 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
                   />
                 )}
               />
+              {errors.usageLimit && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.usageLimit.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -312,6 +347,11 @@ export const VoucherForm = ({ isOpen, onClose, onSubmit, voucher }) => {
                   />
                 )}
               />
+              {errors.usagePerUser && (
+                <p className="text-sm text-destructive mt-1">
+                  {errors.usagePerUser.message}
+                </p>
+              )}
             </div>
           </div>
 

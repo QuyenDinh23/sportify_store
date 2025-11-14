@@ -102,45 +102,55 @@ const voucherController = {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
-      const search = req.query.search || '';
-      
+      const search = req.query.search || "";
+
       // Tạo query object
       const query = {};
       if (search) {
         query.$or = [
-          { code: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } }
+          { code: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
         ];
       }
-      
+
       // Tính skip
       const skip = (page - 1) * limit;
-      
+
       // Lấy total count và vouchers
       const total = await Voucher.countDocuments(query);
       const vouchers = await Voucher.find(query)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
-      
+
       // Tính total pages
       const totalPages = Math.ceil(total / limit);
-      
+
       res.status(200).json({
         vouchers,
         totalPages,
         currentPage: page,
-        totalItems: total
+        totalItems: total,
       });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   },
 
-
   getVoucherById: async (req, res) => {
     try {
       const voucher = await Voucher.findById(req.params.id);
+      if (!voucher)
+        return res.status(404).json({ message: "Không tìm thấy voucher" });
+      res.status(200).json(voucher);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  getVoucherByCode: async (req, res) => {
+    try {
+      const voucher = await Voucher.findOne({ code: req.params.code });
       if (!voucher)
         return res.status(404).json({ message: "Không tìm thấy voucher" });
       res.status(200).json(voucher);
@@ -188,26 +198,26 @@ const voucherController = {
       console.log("=== GET AVAILABLE VOUCHERS ===");
       const currentDate = new Date();
       console.log("Current date:", currentDate);
-      
+
       const vouchers = await Voucher.find({
         isActive: true,
         startDate: { $lte: currentDate },
         endDate: { $gte: currentDate },
-        $expr: { $lt: ["$usedCount", "$usageLimit"] }
-      }).select('-__v');
+        $expr: { $lt: ["$usedCount", "$usageLimit"] },
+      }).select("-__v");
 
       console.log("Found vouchers:", vouchers.length);
 
       res.status(200).json({
         success: true,
-        data: vouchers
+        data: vouchers,
       });
     } catch (error) {
       console.error("Get available vouchers error:", error);
       res.status(500).json({
         success: false,
         message: "Lỗi khi lấy danh sách voucher",
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -221,17 +231,17 @@ const voucherController = {
       if (!code || !orderAmount) {
         return res.status(400).json({
           success: false,
-          message: "Thiếu thông tin mã voucher hoặc số tiền đơn hàng"
+          message: "Thiếu thông tin mã voucher hoặc số tiền đơn hàng",
         });
       }
 
       // Tìm voucher
       const voucher = await Voucher.findOne({ code, isActive: true });
-      
+
       if (!voucher) {
         return res.status(404).json({
           success: false,
-          message: "Mã voucher không tồn tại hoặc đã hết hạn"
+          message: "Mã voucher không tồn tại hoặc đã hết hạn",
         });
       }
 
@@ -240,29 +250,31 @@ const voucherController = {
       if (currentDate < voucher.startDate || currentDate > voucher.endDate) {
         return res.status(400).json({
           success: false,
-          message: "Mã voucher đã hết hạn"
+          message: "Mã voucher đã hết hạn",
         });
       }
 
       if (orderAmount < voucher.minOrderAmount) {
         return res.status(400).json({
           success: false,
-          message: `Đơn hàng tối thiểu ${voucher.minOrderAmount.toLocaleString("vi-VN")}đ để sử dụng voucher này`
+          message: `Đơn hàng tối thiểu ${voucher.minOrderAmount.toLocaleString(
+            "vi-VN"
+          )}đ để sử dụng voucher này`,
         });
       }
 
       if (voucher.usedCount >= voucher.usageLimit) {
         return res.status(400).json({
           success: false,
-          message: "Mã voucher đã hết lượt sử dụng"
+          message: "Mã voucher đã hết lượt sử dụng",
         });
       }
 
       // Tính toán giảm giá
       let discountAmount = 0;
-      if (voucher.discountType === 'percentage') {
+      if (voucher.discountType === "percentage") {
         discountAmount = (orderAmount * voucher.discountValue) / 100;
-      } else if (voucher.discountType === 'fixed') {
+      } else if (voucher.discountType === "fixed") {
         discountAmount = voucher.discountValue;
       }
 
@@ -274,18 +286,18 @@ const voucherController = {
         data: {
           voucher: voucher,
           discountAmount: discountAmount,
-          finalAmount: orderAmount - discountAmount
-        }
+          finalAmount: orderAmount - discountAmount,
+        },
       });
     } catch (error) {
       console.error("Apply voucher error:", error);
       res.status(500).json({
         success: false,
         message: "Lỗi khi áp dụng voucher",
-        error: error.message
+        error: error.message,
       });
     }
-  }
+  },
 };
 
 export default voucherController;
