@@ -98,12 +98,7 @@ const BrandManagement = () => {
   const handleFormSubmit = async (brandData) => {
     try {
       if (brandData.id) {
-        // Editing existing brand
-        const updatedBrand = await updateBrand(brandData.id, brandData);
-        //Cập nhật lại state brandList
-        setBrandList((prev) =>
-          prev.map((b) => (b.id === updatedBrand.id ? updatedBrand : b))
-        );
+        await updateBrand(brandData.id, brandData);
         toast({
           title: 'Đã cập nhật thương hiệu',
           description: `${brandData.name} đã được cập nhật thành công`,
