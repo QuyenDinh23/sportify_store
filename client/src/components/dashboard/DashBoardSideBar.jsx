@@ -47,7 +47,6 @@ const menuItemsAdmin = [
 ];
 
 const menuItemSaleStaff = [
-  { title: "Tổng quan", url: "/staff-sale/dashboard", icon: BarChart3 },
   {
     title: "Quản lý đơn hàng",
     url: "/staff-sale/dashboard/orders",
@@ -60,7 +59,6 @@ const menuItemSaleStaff = [
   },
 ];
 const menuItemsContentStaff = [
-  { title: "Tổng quan", url: "/staff-content/dashboard", icon: BarChart3 },
   {
     title: "Quản lý mã giảm giá",
     url: "/staff-content/dashboard/vouchers",
@@ -157,7 +155,7 @@ export function DashboardSidebar() {
               className="w-full justify-start"
               asChild
             >
-              <NavLink to="/dashboard/account">
+              <NavLink to={user.role === "admin" ? "/dashboard/account" : user.role === "staff-sale" ? "/staff-sale/dashboard/account" : "/staff-content/dashboard/account"}>
                 <User className="h-4 w-4" />
                 {!isCollapsed && <span className="ml-2">Tài khoản</span>}
               </NavLink>

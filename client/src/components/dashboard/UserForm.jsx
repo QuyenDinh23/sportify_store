@@ -23,17 +23,67 @@ import { userApi } from "../../services/userApi";
 
 // ✅ Schema xác thực dữ liệu
 const userSchema = z.object({
-  fullName: z.string().min(1, "Vui lòng nhập họ và tên"),
+  fullName: z.string().trim().min(1, "Vui lòng nhập họ và tên"),
   email: z.string().email("Email không hợp lệ"),
-  password: z.string().optional(),
-  phone: z.string().optional(),
-  dateOfBirth: z.string().optional(),
-  gender: z.enum(["male", "female", "other"], {
-    errorMap: () => ({ message: "Vui lòng chọn giới tính" }),
+  password: z
+    .string()
+    .optional()
+    .superRefine((val, ctx) => {
+      if (!val) return;
+      const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+      if (!regex.test(val)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "Mật khẩu phải tối thiểu 8 ký tự, gồm chữ cái thường, chữ cái hoa, chữ số và ký tự đặc biệt",
+        });
+      }
+    }),
+
+  phone: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true; // cho phép rỗng
+        const regex = /^(0|\+84)(3|5|7|8|9)\d{8}$/;
+        return regex.test(val);
+      },
+      { message: "Số điện thoại không hợp lệ (định dạng Việt Nam)" }
+    ),
+
+  dateOfBirth: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val) return true; // cho phép rỗng
+        const dob = new Date(val);
+        const ageDifMs = Date.now() - dob.getTime();
+        const ageDate = new Date(ageDifMs);
+        const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+        return age >= 16 && age <= 100;
+      },
+      { message: "Tuổi phải từ 16 đến 100" }
+    ),
+  gender: z.enum(["male", "female", "other"]).superRefine((val, ctx) => {
+    if (!val) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Vui lòng chọn giới tính",
+      });
+    }
   }),
-  role: z.enum(["user", "admin", "staff-sale", "staff-content"], {
-    errorMap: () => ({ message: "Vui lòng chọn vai trò" }),
-  }),
+  role: z
+    .enum(["user", "admin", "staff-sale", "staff-content"])
+    .superRefine((val, ctx) => {
+      if (!val) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Vui lòng chọn vai trò",
+        });
+      }
+    }),
 });
 
 export const UserForm = ({ isOpen, onClose, onSubmit, user, readonly }) => {
@@ -45,6 +95,8 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, readonly }) => {
     reset,
     formState: { errors },
   } = useForm({
+    mode: "oncChange",
+
     resolver: zodResolver(userSchema),
     defaultValues: {
       fullName: "",
@@ -83,7 +135,7 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, readonly }) => {
   };
 
   useEffect(() => {
-    setViewPassword(false)
+    setViewPassword(false);
     if (user) {
       reset({
         fullName: user.fullName || "",
@@ -181,6 +233,11 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, readonly }) => {
                   />
                 )}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
               <div
                 onClick={togglePassword}
                 style={{
@@ -204,6 +261,9 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, readonly }) => {
               control={control}
               render={({ field }) => <Input {...field} disabled={readonly} />}
             />
+            {errors.phone && (
+              <p className="text-sm text-destructive">{errors.phone.message}</p>
+            )}
           </div>
 
           {/* Ngày sinh */}
@@ -216,6 +276,11 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, readonly }) => {
                 <Input type="date" {...field} disabled={readonly} />
               )}
             />
+            {errors.dateOfBirth && (
+              <p className="text-sm text-destructive">
+                {errors.dateOfBirth.message}
+              </p>
+            )}
           </div>
 
           {/* Giới tính */}
@@ -276,6 +341,11 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, readonly }) => {
                 </Select>
               )}
             />
+            {errors.role && (
+              <p className="text-sm text-destructive">
+                {errors.role.message}
+              </p>
+            )}
           </div>
 
           {/* Buttons */}

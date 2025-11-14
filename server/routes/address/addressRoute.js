@@ -4,8 +4,7 @@ import { Router } from "express";
 
 const addressRouter = Router();
 
-addressRouter.get(
-  "/",
+addressRouter.get("/",
   middlewareController.verifyToken,
   addressController.getAddress
 );

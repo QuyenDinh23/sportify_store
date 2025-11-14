@@ -6,6 +6,8 @@ import { authApi } from "../../services/authApi";
 import { useNavigate } from "react-router-dom";
 import MyFacebookBtn from "../../components/customFBLoginBtn";
 import { Link } from "react-router-dom";
+import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   // Initialize useNavigate
@@ -29,6 +31,47 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [errorEmail, setErrorEmail] = useState(false);
   const [errorPassword, setErrorPassword] = useState(false);
+
+  const loginGoogle = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      handleLoginGoogle(tokenResponse);
+    },
+    onError: () => {
+      console.log("Login Failed");
+    },
+  });
+
+  const handleLoginGoogle = async (tokenResponse) => {
+    const { access_token } = tokenResponse;
+    try {
+      const res = await authApi.loginWithGoogle(access_token);
+      if (res && res.accessToken) {
+        const userInfo = await authApi.authMe();
+        if (userInfo) {
+          toast({
+            title: "Đăng nhập thành công",
+            description: "Chào mừng bạn đến với Sportify!",
+            variant: "default",
+          });
+          if (userInfo.role === "admin") {
+            navigate("/dashboard");
+          } else if (userInfo.role === "staff") {
+            navigate("/staff");
+          } else {
+            navigate("/");
+          }
+        }
+      }
+    } catch (err) {
+      toast({
+        title: "Đăng nhập thất bại",
+        description:
+          err.response?.data?.message || "Đã có lỗi xảy ra, vui lòng thử lại.",
+        variant: "destructive",
+      });
+      throw err.response?.data?.error || err.message;
+    }
+  };
 
   // Handle form submission
   const handleLogin = async (e) => {
@@ -73,9 +116,9 @@ const Login = () => {
         if (userInfo.role === "admin") {
           navigate("/dashboard");
         } else if (userInfo.role === "staff-content") {
-          navigate("/staff-content/dashboard");
+          navigate("/staff-content/dashboard/vouchers");
         } else if (userInfo.role === "staff-sale") {
-          navigate("/staff-sale/dashboard");
+          navigate("/staff-sale/dashboard/orders");
         } else if (userInfo.role === "user") {
           navigate("/");
         }
@@ -95,6 +138,7 @@ const Login = () => {
       userData.email,
       userData.facebookId
     );
+    console.log(res);
     if (res && res.needEmail) {
       setShowEmailForFb(true);
       setNameForFb(res.name);
@@ -137,6 +181,8 @@ const Login = () => {
     const res = await authApi.loginWithFb(nameForFb, emailForFb, fbId);
     if (res && res.accessToken) {
       const userInfo = await authApi.authMe();
+      console.log(userInfo);
+
       if (userInfo) {
         toast({
           title: "Đăng nhập thành công",
@@ -338,7 +384,11 @@ const Login = () => {
               </div>
 
               {/* Social logins */}
-              <button className="w-full border border-gray-300 py-2  mb-3 flex items-center justify-center hover:bg-gray-200">
+
+              <button
+                onClick={() => loginGoogle()}
+                className="w-full border border-gray-300 py-2  mb-3 flex items-center justify-center hover:bg-gray-200"
+              >
                 <img
                   src="https://www.svgrepo.com/show/475656/google-color.svg"
                   alt="Google"

@@ -3,7 +3,7 @@ import axiosInstance from "../../lib/axiosInstance";
 // Blog Posts Admin API
 export const getAllBlogPosts = async (params = {}) => {
   try {
-    const response = await axiosInstance.get('/blog/admin/posts', { params });
+    const response = await axiosInstance.get("/blog/admin/posts", { params });
     return response.data;
   } catch (error) {
     throw error;
@@ -21,7 +21,7 @@ export const getBlogPostById = async (id) => {
 
 export const createBlogPost = async (postData) => {
   try {
-    const response = await axiosInstance.post('/blog/admin/posts', postData);
+    const response = await axiosInstance.post("/blog/admin/posts", postData);
     return response.data;
   } catch (error) {
     throw error;
@@ -30,7 +30,10 @@ export const createBlogPost = async (postData) => {
 
 export const updateBlogPost = async (id, postData) => {
   try {
-    const response = await axiosInstance.put(`/blog/admin/posts/${id}`, postData);
+    const response = await axiosInstance.put(
+      `/blog/admin/posts/${id}`,
+      postData
+    );
     return response.data;
   } catch (error) {
     throw error;
@@ -49,7 +52,10 @@ export const deleteBlogPost = async (id) => {
 // Blog Categories Admin API
 export const createBlogCategory = async (categoryData) => {
   try {
-    const response = await axiosInstance.post('/blog/admin/categories', categoryData);
+    const response = await axiosInstance.post(
+      "/blog/admin/categories",
+      categoryData
+    );
     return response.data;
   } catch (error) {
     throw error;
@@ -58,7 +64,10 @@ export const createBlogCategory = async (categoryData) => {
 
 export const updateBlogCategory = async (id, categoryData) => {
   try {
-    const response = await axiosInstance.put(`/blog/admin/categories/${id}`, categoryData);
+    const response = await axiosInstance.put(
+      `/blog/admin/categories/${id}`,
+      categoryData
+    );
     return response.data;
   } catch (error) {
     throw error;
@@ -73,4 +82,3 @@ export const deleteBlogCategory = async (id) => {
     throw error;
   }
 };
-

@@ -102,7 +102,7 @@ const UsersManagement = () => {
           user: "Người dùng",
           admin: "Quản trị viên",
           "staff-sale": "Nhân viên bán hàng",
-          "staff-content": "Nhân viên nội dung",
+          "staff-content": "Nhân viên tiếp thị",
         };
         const variantMap = {
           admin: "default",
@@ -145,10 +145,6 @@ const UsersManagement = () => {
         search: searchTerm || "",
       };
       if (selectedUserStatus !== "all") params.status = selectedUserStatus;
-      // if (selectedSubcategory !== "all")
-      //   params.subcategory = selectedSubcategory;
-      // if (selectedBrand !== "all") params.brand = selectedBrand;
-      // if (selectedSport !== "all") params.sport = selectedSport;
       const res = await userApi.getAllCustomers(params);
       setCustomers(res.customers);
       setTotalPages(res.totalPages);
@@ -169,8 +165,6 @@ const UsersManagement = () => {
       };
       if (selectedUserStatus !== "all") params.status = selectedUserStatus;
       if (selectedTypeStaff !== "all") params.role = selectedTypeStaff;
-      // if (selectedBrand !== "all") params.brand = selectedBrand;
-      // if (selectedSport !== "all") params.sport = selectedSport;
       const res = await userApi.getAllStaffs(params);
       setCustomers(res.staffs);
 
@@ -317,10 +311,7 @@ const UsersManagement = () => {
                   <SelectItem key={1} value="active">
                     Hoạt động
                   </SelectItem>
-                  <SelectItem key={2} value="inactive">
-                    Không hoạt động
-                  </SelectItem>
-                  <SelectItem key={3} value="banned">
+                  <SelectItem key={2} value="banned">
                     Bị cấm
                   </SelectItem>
                 </SelectContent>
@@ -346,7 +337,7 @@ const UsersManagement = () => {
                       Nhân viên bán hàng
                     </SelectItem>
                     <SelectItem key={2} value="staff-content">
-                      Nhân viên nội dung
+                      Nhân viên tiếp thị
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -412,12 +403,6 @@ const UsersManagement = () => {
         onSubmit={handleFormSubmit}
         readonly={isReadOnly}
         user={editingUser}
-        // categories={categories}
-        // subcategories={subcategories}
-        // onCategoryChange={handleCategoryChange}
-        // brands={brands}
-        // onSubCategoryChange={handleSubcategoryChange}
-        // sports={sports}
       />
 
       <Pagination

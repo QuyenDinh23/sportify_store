@@ -34,7 +34,6 @@ import BlogManagement from "./pages/dashboard/BlogManagement";
 import BlogPostForm from "./pages/dashboard/BlogPostForm";
 import BlogCategoryManagement from "./pages/dashboard/BlogCategoryManagement";
 
-import StaffAccount from "./pages/AccountManage/AccountMangageStaff";
 import UsersManagement from "./pages/dashboard/UsersManagement";
 
 import OrderManagement from "./pages/dashboard/OrderManagement";
@@ -44,12 +43,16 @@ import ReturnWarrantyPolicy from "./pages/support/ReturnWarrantyPolicy";
 import Register from "./pages/register/Register";
 import ForgetPasswordRoutes from "./pages/ForgetPassword/ForgetPasswordRoutes";
 import AboutUs from "./pages/about/AboutUs";
+import AdminProfile from "./pages/AccountManage/AdminProfile";
+import AdminChangePassword from "./pages/AccountManage/AdminChangePassword";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const queryClient = new QueryClient();
 
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -90,7 +93,11 @@ const App = () => {
                   path="subcategories"
                   element={<SubcategoryManagement />}
                 />
-                <Route path="account" element={<StaffAccount />} />
+                <Route
+                  path="account/password"
+                  element={<AdminChangePassword />}
+                />
+                <Route path="account" element={<AdminProfile />} />
                 <Route path="brands" element={<BrandManagement />} />
                 <Route path="sports" element={<SportManagement />} />
                 <Route path="users" element={<UsersManagement />} />
@@ -98,18 +105,22 @@ const App = () => {
             </Route>
             <Route element={<ProtectedRoute roles={["staff-sale"]} />}>
               <Route path="/staff-sale/dashboard" element={<Dashboard />}>
-                <Route index element={<Overview />} />
                 <Route path="orders" element={<OrderManagement />} />
-                <Route path="account" element={<StaffAccount />} />
+                <Route path="account" element={<AdminProfile />} />
+                <Route
+                  path="account/password"
+                  element={<AdminChangePassword />}
+                />
                 <Route path="warranty" element={<WarrantyManagement />} />
               </Route>
             </Route>
             <Route element={<ProtectedRoute roles={["staff-content"]} />}>
               <Route path="/staff-content/dashboard" element={<Dashboard />}>
-                <Route index element={<Overview />} />
-
-                <Route path="account" element={<StaffAccount />} />
-
+                <Route path="account" element={<AdminProfile />} />
+                <Route
+                  path="account/password"
+                  element={<AdminChangePassword />}
+                />
                 <Route path="vouchers" element={<VoucherManagement />} />
                 <Route path="blog" element={<BlogManagement />} />
                 <Route path="blog/create" element={<BlogPostForm />} />
@@ -144,6 +155,7 @@ const App = () => {
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </GoogleOAuthProvider>
     </QueryClientProvider>
   );
 };
