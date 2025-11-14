@@ -119,10 +119,7 @@ const SportManagement = () => {
   const handleFormSubmit = async (sportData) => {
     try {
       if (sportData.id) {
-        // Update existing sport
-        const updatedSport = await updateSport(sportData.id, sportData);
-        //Cap nhap lai state
-        setSports(sports.map((s) => (s.id === updatedSport.id ? updatedSport : s)));
+        await updateSport(sportData.id, sportData);
         toast({
           title: 'Đã cập nhật môn thể thao',
           description: `${sportData.name} đã được cập nhật thành công`,
