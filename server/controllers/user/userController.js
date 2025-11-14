@@ -49,7 +49,8 @@ const userController = {
   //CREATEACCOUNT
   createAccount: async (req, res) => {
     try {
-      const { fullName, email, phone, dateOfBirth, gender, role } = req.body;
+      const { fullName, email, phone, dateOfBirth, gender, role, password } =
+        req.body;
 
       // Validate cơ bản
       if (!fullName || !email) {
@@ -57,17 +58,15 @@ const userController = {
           .status(400)
           .json({ message: "Thiếu tên hoặc email người dùng" });
       }
-      let hashed = null;
-      if (req.body.password) {
-        const salt = await bcrypt.genSalt(10);
-        hashed = await bcrypt.hash(req.body.password, salt);
-      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashed = await bcrypt.hash(req.body.password, salt);
 
       //create new user
       const newUser = await new User({
         fullName,
         email,
-        password: hashed || undefined,
+        password: password.trim() !== "" ? hashed : undefined,
         phone,
         dateOfBirth,
         gender,
