@@ -1042,10 +1042,6 @@ export const getOrdersByStatus = async (req, res) => {
       'shipped': 'Đã giao hàng',
       'delivered': 'Đã nhận hàng',
       'cancelled': 'Đã hủy',
-      'return_requested': 'Yêu cầu hoàn trả',
-      'returned': 'Đã trả hàng',
-      'refund_requested': 'Yêu cầu hoàn tiền',
-      'refunded': 'Đã hoàn tiền'
     };
 
     const formattedData = statusData.map(item => ({
@@ -1085,7 +1081,7 @@ export const createReplacementOrder = async (req, res) => {
         const Warranty = (await import('../../models/warranty/Warranty.js')).default;
         const wr = await Warranty.findById(warrantyId);
         if (wr) {
-          const originalOrder = await Order.findById(wr.orderId);
+           var originalOrder = await Order.findById(wr.orderId);
           const matchedItem = originalOrder?.items?.find(it =>
             it.productId.toString() === wr.productId.toString() &&
             it.selectedColor === wr.selectedColor &&
@@ -1126,7 +1122,7 @@ export const createReplacementOrder = async (req, res) => {
     const order = new Order({
       userId,
       items: orderItems,
-      shippingAddress: null,
+      shippingAddress: originalOrder?.shippingAddress,
       paymentMethod: 'bank_transfer',
       subtotal: 0,
       shippingFee: 0,

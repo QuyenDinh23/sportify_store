@@ -640,17 +640,17 @@ const OrderDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <p className="font-medium">{order.shippingAddress.fullName}</p>
+                  <p className="font-medium">{order.shippingAddress?.fullName}</p>
                   <p className="text-sm text-muted-foreground">
                     <Phone className="inline h-4 w-4 mr-1" />
-                    {order.shippingAddress.phone}
+                    {order.shippingAddress?.phone}
                   </p>
                   <p className="text-sm">
-                    {order.shippingAddress.street}, {order.shippingAddress.ward?.name}, {order.shippingAddress.district?.name}, {order.shippingAddress.city?.name}
+                    {order.shippingAddress?.street}, {order.shippingAddress?.ward?.name}, {order.shippingAddress?.district?.name}, {order.shippingAddress?.city?.name}
                   </p>
-                  {order.shippingAddress.note && (
+                  {order.shippingAddress?.note && (
                     <p className="text-sm text-muted-foreground">
-                      Ghi chú: {order.shippingAddress.note}
+                      Ghi chú: {order.shippingAddress?.note}
                     </p>
                   )}
                 </div>

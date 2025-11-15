@@ -69,10 +69,6 @@ const OrderManagement = () => {
       shipped: 'Đã gửi hàng',
       delivered: 'Đã giao hàng',
       cancelled: 'Đã hủy',
-      return_requested: 'Yêu cầu hoàn trả',
-      returned: 'Đã hoàn trả',
-      refund_requested: 'Yêu cầu hoàn tiền',
-      refunded: 'Đã hoàn tiền',
     };
     return statusMap[status] || status;
   };
@@ -205,10 +201,6 @@ const OrderManagement = () => {
                   <SelectItem value="shipped">Đã gửi hàng</SelectItem>
                   <SelectItem value="delivered">Đã giao hàng</SelectItem>
                   <SelectItem value="cancelled">Đã hủy</SelectItem>
-                  <SelectItem value="return_requested">Yêu cầu hoàn trả</SelectItem>
-                  <SelectItem value="returned">Đã hoàn trả</SelectItem>
-                  <SelectItem value="refund_requested">Yêu cầu hoàn tiền</SelectItem>
-                  <SelectItem value="refunded">Đã hoàn tiền</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -463,10 +455,6 @@ const OrderManagement = () => {
                   <SelectItem value="shipped">Đã gửi hàng</SelectItem>
                   <SelectItem value="delivered">Đã giao hàng</SelectItem>
                   <SelectItem value="cancelled">Đã hủy</SelectItem>
-                <SelectItem value="return_requested">Yêu cầu hoàn trả</SelectItem>
-                <SelectItem value="returned">Đã hoàn trả</SelectItem>
-                <SelectItem value="refund_requested">Yêu cầu hoàn tiền</SelectItem>
-                <SelectItem value="refunded">Đã hoàn tiền</SelectItem>
                 </SelectContent>
               </Select>
             </div>

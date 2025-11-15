@@ -616,12 +616,6 @@ const WarrantyManagement = () => {
                          <SelectValue placeholder="Chọn hành động" />
                        </SelectTrigger>
                        <SelectContent>
-                         <SelectItem value="approve">
-                           <div className="flex items-center gap-2">
-                             <ShieldCheck className="h-4 w-4 text-green-600" />
-                             Trả hàng hoàn tiền
-                           </div>
-                         </SelectItem>
                          <SelectItem value="replace">
                            <div className="flex items-center gap-2">
                              <FileText className="h-4 w-4 text-blue-600" />
